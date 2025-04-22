@@ -17,7 +17,7 @@ item_units = data['Item Unit'].tolist()  # Assuming column name is "Item Unit"
 
 # UI for Estimate Drafting
 st.title("ESTIMATE DRAFTER", anchor="center")  # Center-align title and make it uppercase
-estimate_heading = st.text_input("Work Description", "Construction Estimate")  # Changed label to "Work Description"
+estimate_heading = st.text_input("Work Description")  # Changed label to "Work Description"
 
 # Center-align subheading in uppercase
 st.markdown("<h3 style='text-align: center;'>ADD ITEMS TO ESTIMATE</h3>", unsafe_allow_html=True)
