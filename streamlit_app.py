@@ -2,25 +2,6 @@ import pandas as pd
 import streamlit as st
 from fpdf import FPDF
 import math
-# Add this at the beginning of your script (after imports)
-st.markdown("""
-<style>
-    /* Make selectbox options container taller */
-    div[data-baseweb="select"] div {
-        max-height: 500px !important;
-    }
-    /* Make selected value display multiline */
-    div[data-baseweb="select"] > div:first-child {
-        white-space: pre-wrap !important;
-        min-height: 60px !important;
-    }
-</style>
-""", unsafe_allow_html=True)
-
-# Then keep your original selectbox code
-with col1:
-    item_name = st.selectbox("", [''] + item_names, key=f"item_{i}")
-    # ... rest of your code
 from openpyxl import Workbook
 from openpyxl.styles import Alignment, Border, Side
 
