@@ -33,16 +33,56 @@ for i in range(max_items):
     # Create two columns: one for item selection and one for quantity input
     col1, col2 = st.columns([3, 1])
     
-    with col1:
-        # Use st.selectbox for item selection, but increase the height of the item name area using st.text_area
-        item_name = st.selectbox("", [''] + item_names, key=f"item_{i}")
+   # Replace this section in your code:
+with col1:
+    # Use st.selectbox for item selection, but increase the height of the item name area using st.text_area
+    item_name = st.selectbox("", [''] + item_names, key=f"item_{i}")
+    
+    # Auto-fill unit price next to item name selection
+    if item_name != '':
+        unit_price = data.loc[data['Item Name'] == item_name, 'Unit Price'].values[0]
+        st.text(f"Unit Price: {unit_price}")
+    else:
+        st.text("Unit Price: N/A")
+
+# With this improved version:
+with col1:
+    # Create a container to hold both the hidden selectbox and visible text area
+    container = st.container()
+    
+    # Hidden selectbox (we'll make it invisible with CSS)
+    item_name = container.selectbox(
+        "", 
+        [''] + item_names, 
+        key=f"item_{i}",
+        label_visibility="collapsed"
+    )
+    
+    # Visible text area showing the selected item
+    if item_name != '':
+        # Display the full item name in a text area (readonly)
+        container.text_area(
+            "Selected Item",
+            value=item_name,
+            key=f"display_item_{i}",
+            height=25,  # Adjust height as needed
+            disabled=True,
+            label_visibility="visible"
+        )
         
-        # Auto-fill unit price next to item name selection
-        if item_name != '':
-            unit_price = data.loc[data['Item Name'] == item_name, 'Unit Price'].values[0]
-            st.text(f"Unit Price: {unit_price}")
-        else:
-            st.text("Unit Price: N/A")
+        unit_price = data.loc[data['Item Name'] == item_name, 'Unit Price'].values[0]
+        st.text(f"Unit Price: {unit_price}")
+    else:
+        # Placeholder when no item is selected
+        container.text_area(
+            "Selected Item",
+            value="Select an item...",
+            key=f"display_placeholder_{i}",
+            height=25,
+            disabled=True,
+            label_visibility="visible"
+        )
+        st.text("Unit Price: N/A")
     
     with col2:
         # Display the quantity input with no label
