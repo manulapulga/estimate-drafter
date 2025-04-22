@@ -34,10 +34,14 @@ for i in range(max_items):
     col1, col2 = st.columns([3, 1])
     
     with col1:
-        # Use st.selectbox for item selection, but increase the height of the item name area using st.text_area
+        # Selectbox for item selection
         item_name = st.selectbox("", [''] + item_names, key=f"item_{i}")
         
-        # Auto-fill unit price next to item name selection
+        # ✅ Show full item name below the dropdown
+        if item_name:
+            st.text(f"Full Item Name: {item_name}")  # Display full content in plain text
+        
+        # Show unit price if item is selected
         if item_name != '':
             unit_price = data.loc[data['Item Name'] == item_name, 'Unit Price'].values[0]
             st.text(f"Unit Price: {unit_price}")
