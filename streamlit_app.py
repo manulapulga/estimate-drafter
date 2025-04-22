@@ -69,7 +69,7 @@ for i in range(max_items):
             disabled=True,
             label_visibility="visible"
         )
-        st.text("Unit Rate: N/A")
+        st.text("Unit Price: N/A")
     
     with col2:
         # Display the quantity input with no label
