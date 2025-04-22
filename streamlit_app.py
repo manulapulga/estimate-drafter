@@ -109,7 +109,6 @@ with col1:
     # Stop if 50 items are selected
     if len(selected_items) >= max_items:
         break
-
 # Subtotal, GST, Unforeseen, and Final Total
 gst = round(total_cost * 0.18, 2)
 unforeseen = round(total_cost * 0.05, 2)
