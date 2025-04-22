@@ -39,7 +39,7 @@ for i in range(max_items):
         
         # ✅ Show full item name below the dropdown
         if item_name:
-            st.text(f"Item Description: {item_name}")  # Display full content in plain text
+            st.text(f"Full Item Name: {item_name}")  # Display full content in plain text
         
         # Show unit price if item is selected
         if item_name != '':
@@ -184,15 +184,15 @@ if st.button("Generate PDF"):
     pdf.ln()
 
     # Add Table Rows
-    for idx, item in enumerate(selected_items, start=1):  # 👈 ~ Line 155
-    pdf.set_font("Arial", '', 12)
-    pdf.cell(20, 10, str(idx), border=1, align='C')
-    pdf.cell(70, 10, item['Item'], border=1, align='C')  # 👈 Replace this whole block
-    pdf.cell(30, 10, str(item['Unit Price']), border=1, align='C')
-    pdf.cell(30, 10, item['Item Unit'], border=1, align='C')
-    pdf.cell(30, 10, str(item['Quantity']), border=1, align='C')
-    pdf.cell(30, 10, str(item['Cost']), border=1, align='C')
-    pdf.ln()
+    for idx, item in enumerate(selected_items, start=1):
+        pdf.set_font("Arial", '', 12)
+        pdf.cell(20, 10, str(idx), border=1, align='C')
+        pdf.cell(70, 10, item['Item'], border=1, align='C')  # Increase width to 70
+        pdf.cell(30, 10, str(item['Unit Price']), border=1, align='C')
+        pdf.cell(30, 10, item['Item Unit'], border=1, align='C')
+        pdf.cell(30, 10, str(item['Quantity']), border=1, align='C')
+        pdf.cell(30, 10, str(item['Cost']), border=1, align='C')
+        pdf.ln()
 
     # Add Subtotal, GST, Unforeseen, and Grand Total
     pdf.cell(150, 10, "Subtotal", border=1, align='C')
