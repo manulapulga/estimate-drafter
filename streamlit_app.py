@@ -10,7 +10,7 @@ from openpyxl.styles import Alignment, Border, Side
 def load_data(file_path):
     return pd.read_excel(file_path)
 
-data = load_data(r"C:\Users\hp\Desktop\Estimate Tool Using Python\items.xlsx")  # Use raw string for the file path
+data = load_data("items.xlsx")
 item_names = data['Item Name'].tolist()  # Assuming column name is "Item Name"
 unit_prices = data['Unit Price'].tolist()  # Assuming column name is "Unit Price"
 item_units = data['Item Unit'].tolist()  # Assuming column name is "Item Unit"
