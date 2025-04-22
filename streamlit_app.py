@@ -185,14 +185,31 @@ if st.button("Generate PDF"):
 
     # Add Table Rows
     for idx, item in enumerate(selected_items, start=1):
-        pdf.set_font("Arial", '', 12)
-        pdf.cell(20, 10, str(idx), border=1, align='C')
-        pdf.cell(70, 10, item['Item'], border=1, align='C')  # Increase width to 70
-        pdf.cell(30, 10, str(item['Unit Price']), border=1, align='C')
-        pdf.cell(30, 10, item['Item Unit'], border=1, align='C')
-        pdf.cell(30, 10, str(item['Quantity']), border=1, align='C')
-        pdf.cell(30, 10, str(item['Cost']), border=1, align='C')
-        pdf.ln()
+    pdf.set_font("Arial", '', 12)
+
+    line_height = 8
+    item_name_width = 70
+    item_name_lines = pdf.multi_cell(item_name_width, line_height, item['Item'], border=0, align='L', split_only=True)
+    max_lines = len(item_name_lines)
+    row_height = line_height * max_lines
+
+    x = pdf.get_x()
+    y = pdf.get_y()
+
+    pdf.multi_cell(20, row_height, str(idx), border=1, align='C')
+    pdf.set_xy(x + 20, y)
+    pdf.multi_cell(item_name_width, line_height, item['Item'], border=1, align='L')
+    pdf.set_xy(x + 20 + item_name_width, y)
+    pdf.multi_cell(30, row_height, str(item['Unit Price']), border=1, align='C')
+    pdf.set_xy(x + 20 + item_name_width + 30, y)
+    pdf.multi_cell(30, row_height, item['Item Unit'], border=1, align='C')
+    pdf.set_xy(x + 20 + item_name_width + 30 + 30, y)
+    pdf.multi_cell(30, row_height, str(item['Quantity']), border=1, align='C')
+    pdf.set_xy(x + 20 + item_name_width + 30 + 30 + 30, y)
+    pdf.multi_cell(30, row_height, str(item['Cost']), border=1, align='C')
+
+    # Move to the next row
+    pdf.set_y(y + row_height)
 
     # Add Subtotal, GST, Unforeseen, and Grand Total
     pdf.cell(150, 10, "Subtotal", border=1, align='C')
