@@ -39,7 +39,7 @@ for i in range(max_items):
         
         # ✅ Show full item name below the dropdown
         if item_name:
-            st.text(f"Full Item Name: {item_name}")  # Display full content in plain text
+            st.text(f"Item Description: {item_name}")  # Display full content in plain text
         
         # Show unit price if item is selected
         if item_name != '':
