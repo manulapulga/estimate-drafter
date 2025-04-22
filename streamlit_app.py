@@ -16,7 +16,7 @@ unit_prices = data['Unit Price'].tolist()  # Assuming column name is "Unit Price
 item_units = data['Item Unit'].tolist()  # Assuming column name is "Item Unit"
 
 # UI for Estimate Drafting
-st.title("ESTIMATE DRAFTER TOOL", anchor="center")  # Center-align title and make it uppercase
+st.title("ESTIMATE DRAFTER", anchor="center")  # Center-align title and make it uppercase
 estimate_heading = st.text_input("Work Description", "Construction Estimate")  # Changed label to "Work Description"
 
 # Center-align subheading in uppercase
