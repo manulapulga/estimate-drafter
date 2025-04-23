@@ -48,6 +48,9 @@ def calculate_totals():
     
     return total_cost, gst, unforeseen, final_total
 
+# Add Item button
+st.button("➕ Add Item", on_click=add_item)
+
 # Display existing items and allow editing/removal
 for idx, item in enumerate(st.session_state.selected_items):
     with st.expander(f"Item {idx + 1}: {item['Item']}"):
@@ -192,10 +195,6 @@ if st.session_state.item_count > len(st.session_state.selected_items):
                         st.rerun()
                 except ValueError:
                     st.error("Please enter a valid quantity")
-
-# Add Item button - MOVED TO BOTTOM
-if len(st.session_state.selected_items) > 0 or st.session_state.item_count > 0:
-    st.button("➕ Add Item", on_click=add_item)
 
 # Calculate and display totals
 if st.session_state.selected_items:
@@ -401,4 +400,3 @@ if st.session_state.selected_items:
             )
 else:
     st.info("No items added to the estimate yet. Click 'Add Item' to get started.")
-    st.button("➕ Add Item", on_click=add_item)
