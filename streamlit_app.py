@@ -27,12 +27,6 @@ st.markdown("""
             height: 50% !important;
             background-color: #f4f4f4 !important;
         }
-        /* Targets ONLY these two buttons */
-        div[data-testid="column"] button {
-            height: 30px !important;
-            padding: 0.25em 0.5em !important;
-            line-height: 1 !important;
-        }
     </style>
 """, unsafe_allow_html=True)
 
@@ -121,12 +115,11 @@ for idx, item in enumerate(st.session_state.selected_items):
 
 # Add New Item or Subheading
 # Add New Item or Subheading - with right-aligned subheading button
-# Button layout with right alignment
-button_col1, button_col2, button_col3 = st.columns([1, 2, 1])  # Middle column acts as spacer
+button_col1, button_col2, button_col3 = st.columns([1, 2, 1])  # Creates 3 columns with middle column as spacer
 with button_col1:
-    st.button("➕ Add Item", on_click=add_item, key="add_item_btn")
-with button_col3:
-    if st.button("➕ Add Sub Heading", key="add_subheading_btn"):
+    st.button("➕ Add Item", on_click=add_item)
+with button_col3:  # This will push the button to the far right
+    if st.button("➕ Add Sub Heading"):
         st.session_state.adding_subheading = True
 # Subheading input form
 if st.session_state.adding_subheading:
