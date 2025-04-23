@@ -20,7 +20,7 @@ st.markdown("<h1 style='text-align: center; color: #154c79;'>ESTIMATE DRAFTER</h
 st.markdown("""
     <style>
         .stTextInput input {
-            font-size: 150%;
+            font-size: 100%;
             color: #1e81b0;
         }
         button {
