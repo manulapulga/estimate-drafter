@@ -213,8 +213,7 @@ if any(i.get("Type") != "Subheading" for i in st.session_state.selected_items):
 
         with open(excel_file, "rb") as f:
             st.download_button("Download Excel", f, file_name=excel_file, mime="application/vnd.ms-excel")
-
-     # PDF Generation with clean single watermark
+            # PDF Generation with clean single watermark
     if st.button("Generate PDF"):
     pdf = FPDF()
     pdf.set_auto_page_break(auto=True, margin=15)
@@ -362,6 +361,5 @@ if any(i.get("Type") != "Subheading" for i in st.session_state.selected_items):
             file_name=pdf_file,
             mime="application/pdf"
         )
-
 else:
     st.info("No items added to the estimate yet.")
