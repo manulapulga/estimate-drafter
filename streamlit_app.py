@@ -114,12 +114,13 @@ for idx, item in enumerate(st.session_state.selected_items):
             st.rerun()
 
 # Add New Item or Subheading
-colA, colB = st.columns([1, 1])
-with colA:
+# Add New Item or Subheading - with right-aligned subheading button
+button_col1, button_col2, button_col3 = st.columns([1, 2, 1])  # Creates 3 columns with middle column as spacer
+with button_col1:
     st.button("➕ Add Item", on_click=add_item)
-with colB:
-    st.button("➕ Add Sub Heading", on_click=lambda: setattr(st.session_state, 'adding_subheading', True))
-
+with button_col3:  # This will push the button to the far right
+    if st.button("➕ Add Sub Heading"):
+        st.session_state.adding_subheading = True
 # Subheading input form
 if st.session_state.adding_subheading:
     subheading = st.text_input("Enter Sub Heading", key="new_subheading")
