@@ -17,7 +17,7 @@ item_units = data['Item Unit'].tolist()
 
 # UI for Estimate Drafting
 st.title("ESTIMATE DRAFTER", anchor="center")
-estimate_heading = st.text_input("Work Description")
+estimate_heading = st.text_input("Work Description", key="work_description_input")
 st.markdown("<h3 style='text-align: center;'>ADD ITEMS TO ESTIMATE</h3>", unsafe_allow_html=True)
 
 # Initialize session state for items if not exists
@@ -57,22 +57,35 @@ def calculate_totals():
 # Display existing items/subheadings and allow editing/removal
 for idx, item in enumerate(st.session_state.selected_items):
     if item.get('type') == 'subheading':
-        with st.expander(f"📌 {item['text']}", expanded=True):
-            new_text = st.text_input("Subheading Text", value=item['text'], key=f"edit_subheading_{idx}")
-            if st.button(f"Update Subheading", key=f"update_subheading_{idx}"):
-                st.session_state.selected_items[idx]['text'] = new_text
-                st.success("Subheading updated successfully!")
-            if st.button(f"❌ Remove Subheading", key=f"remove_subheading_{idx}"):
-                remove_item(idx)
-                st.rerun()
+        with st.expander(f"📌 {item['text']}", expanded=True, key=f"subheading_expander_{idx}"):
+            new_text = st.text_input("Subheading Text", value=item['text'], key=f"subheading_text_{idx}")
+            col1, col2 = st.columns([1, 1])
+            with col1:
+                if st.button(f"Update Subheading", key=f"update_subheading_btn_{idx}"):
+                    st.session_state.selected_items[idx]['text'] = new_text
+                    st.success("Subheading updated successfully!")
+            with col2:
+                if st.button(f"❌ Remove Subheading", key=f"remove_subheading_btn_{idx}"):
+                    remove_item(idx)
+                    st.rerun()
     else:
-        with st.expander(f"Item {idx + 1}: {item['Item']}"):
+        with st.expander(f"Item {idx + 1}: {item['Item']}", key=f"item_expander_{idx}"):
             col1, col2 = st.columns([3, 1])
             with col1:
-                item_name = st.selectbox("Select Item", [''] + item_names, index=item_names.index(item['Item']) + 1 if item['Item'] in item_names else 0, key=f"edit_item_{idx}")
+                item_name = st.selectbox(
+                    "Select Item", 
+                    [''] + item_names, 
+                    index=item_names.index(item['Item']) + 1 if item['Item'] in item_names else 0, 
+                    key=f"item_select_{idx}"
+                )
                 st.text(f"Item Description: {item_name}" if item_name else "")
             with col2:
-                quantity = st.text_input("Quantity", str(item['Quantity']), key=f"edit_qty_{idx}", placeholder="Input Quantity")
+                quantity = st.text_input(
+                    "Quantity", 
+                    str(item['Quantity']), 
+                    key=f"quantity_input_{idx}", 
+                    placeholder="Input Quantity"
+                )
                 if item_name:
                     item_data = data[data['Item Name'] == item_name].iloc[0]
                     unit_price = item_data['Unit Price']
@@ -85,39 +98,43 @@ for idx, item in enumerate(st.session_state.selected_items):
                                 st.text(f"Amount: {qty * unit_price:.2f}")
                         except ValueError:
                             st.text("Invalid quantity")
-            if st.button(f"Update Item {idx + 1}", key=f"update_{idx}"):
-                if item_name and quantity:
-                    try:
-                        quantity = float(quantity)
-                        if quantity > 0:
-                            item_data = data[data['Item Name'] == item_name].iloc[0]
-                            unit_price = item_data['Unit Price']
-                            unit = item_data['Item Unit']
-                            cost = round(quantity * unit_price, 2)
-                            st.session_state.selected_items[idx] = {
-                                'Item': item_name,
-                                'Quantity': quantity,
-                                'Unit Price': unit_price,
-                                'Item Unit': unit,
-                                'Cost': cost
-                            }
-                            st.success("Item updated successfully!")
-                    except ValueError:
-                        st.error("Please enter a valid quantity")
-            if st.button(f"❌ Remove Item {idx + 1}", key=f"remove_{idx}"):
-                remove_item(idx)
-                st.rerun()
+            
+            col1, col2 = st.columns([1, 1])
+            with col1:
+                if st.button(f"Update Item {idx + 1}", key=f"update_item_btn_{idx}"):
+                    if item_name and quantity:
+                        try:
+                            quantity = float(quantity)
+                            if quantity > 0:
+                                item_data = data[data['Item Name'] == item_name].iloc[0]
+                                unit_price = item_data['Unit Price']
+                                unit = item_data['Item Unit']
+                                cost = round(quantity * unit_price, 2)
+                                st.session_state.selected_items[idx] = {
+                                    'Item': item_name,
+                                    'Quantity': quantity,
+                                    'Unit Price': unit_price,
+                                    'Item Unit': unit,
+                                    'Cost': cost
+                                }
+                                st.success("Item updated successfully!")
+                        except ValueError:
+                            st.error("Please enter a valid quantity")
+            with col2:
+                if st.button(f"❌ Remove Item {idx + 1}", key=f"remove_item_btn_{idx}"):
+                    remove_item(idx)
+                    st.rerun()
 
 # Add new item fields when "Add Item" is clicked
 if st.session_state.item_count > sum(1 for item in st.session_state.selected_items if 'Item' in item):
     idx = len(st.session_state.selected_items)
-    with st.expander(f"New Item {idx + 1}", expanded=True):
+    with st.expander(f"New Item {idx + 1}", expanded=True, key=f"new_item_expander_{idx}"):
         col1, col2 = st.columns([3, 1])
         with col1:
-            item_name = st.selectbox("Select Item", [''] + item_names, key=f"new_item_{idx}")
+            item_name = st.selectbox("Select Item", [''] + item_names, key=f"new_item_select_{idx}")
             st.text(f"Item Description: {item_name}" if item_name else "")
         with col2:
-            quantity = st.text_input("Quantity", "", key=f"new_qty_{idx}", placeholder="Input Quantity")
+            quantity = st.text_input("Quantity", "", key=f"new_quantity_input_{idx}", placeholder="Input Quantity")
             if item_name:
                 item_data = data[data['Item Name'] == item_name].iloc[0]
                 unit_price = item_data['Unit Price']
@@ -130,7 +147,8 @@ if st.session_state.item_count > sum(1 for item in st.session_state.selected_ite
                             st.text(f"Amount: {qty * unit_price:.2f}")
                     except ValueError:
                         st.text("Invalid quantity")
-        if st.button(f"Add to Estimate", key=f"add_{idx}"):
+        
+        if st.button(f"Add to Estimate", key=f"add_item_confirm_{idx}"):
             if item_name and quantity:
                 try:
                     quantity = float(quantity)
@@ -154,9 +172,9 @@ if st.session_state.item_count > sum(1 for item in st.session_state.selected_ite
 # Add new subheading when "Add Subheading" is clicked
 if st.session_state.subheading_count > sum(1 for item in st.session_state.selected_items if item.get('type') == 'subheading'):
     idx = len(st.session_state.selected_items)
-    with st.expander("New Subheading", expanded=True):
-        subheading_text = st.text_input("Subheading Text", key=f"new_subheading_{idx}", placeholder="Enter subheading text")
-        if st.button("Add Subheading", key=f"add_subheading_{idx}"):
+    with st.expander("New Subheading", expanded=True, key=f"new_subheading_expander_{idx}"):
+        subheading_text = st.text_input("Subheading Text", key=f"new_subheading_text_{idx}", placeholder="Enter subheading text")
+        if st.button("Add Subheading", key=f"add_subheading_confirm_{idx}"):
             if subheading_text:
                 st.session_state.selected_items.append({'type': 'subheading', 'text': subheading_text})
                 st.success("Subheading added successfully!")
@@ -164,21 +182,15 @@ if st.session_state.subheading_count > sum(1 for item in st.session_state.select
             else:
                 st.error("Please enter subheading text")
 
-# ✅ Fixed section with unique button keys
+# Display add buttons
 if len(st.session_state.selected_items) > 0 or st.session_state.item_count > 0 or st.session_state.subheading_count > 0:
     col1, col2 = st.columns(2)
     with col1:
-        st.button("➕ Add Item", on_click=add_item, key="add_item_with_items")
+        st.button("➕ Add Item", on_click=add_item, key="add_item_button_bottom")
     with col2:
-        st.button("📌 Add Subheading", on_click=add_subheading, key="add_subheading_with_items")
-else:
-    st.info("No items added to the estimate yet. Click 'Add Item' to get started.")
-    col1, col2 = st.columns(2)
-    with col1:
-        st.button("➕ Add Item", on_click=add_item, key="add_item_no_items")
-    with col2:
-        st.button("📌 Add Subheading", on_click=add_subheading, key="add_subheading_no_items")
+        st.button("📌 Add Subheading", on_click=add_subheading, key="add_subheading_button_bottom")
 
+# Calculate and display totals if items exist
 if any('Cost' in item for item in st.session_state.selected_items):
     total_cost, gst, unforeseen, final_total = calculate_totals()
     st.subheader("Estimate Breakdown")
@@ -187,7 +199,7 @@ if any('Cost' in item for item in st.session_state.selected_items):
     st.write(f"Unforeseen (5%): {unforeseen:.2f}")
     st.write(f"Final Total (Rounded): {final_total:.2f}")
 
-    if st.button("Generate PDF"):
+    if st.button("Generate PDF", key="generate_pdf_button"):
         pdf = FPDF()
         pdf.set_auto_page_break(auto=True, margin=15)
         pdf.add_page()
@@ -264,4 +276,11 @@ if any('Cost' in item for item in st.session_state.selected_items):
         pdf_file = "estimate.pdf"
         pdf.output(pdf_file)
         with open(pdf_file, "rb") as f:
-            st.download_button("Download PDF", data=f, file_name=pdf_file, mime="application/pdf")
+            st.download_button("Download PDF", data=f, file_name=pdf_file, mime="application/pdf", key="download_pdf_button")
+else:
+    st.info("No items added to the estimate yet. Click 'Add Item' to get started.")
+    col1, col2 = st.columns(2)
+    with col1:
+        st.button("➕ Add Item", on_click=add_item, key="add_item_button_empty")
+    with col2:
+        st.button("📌 Add Subheading", on_click=add_subheading, key="add_subheading_button_empty")
