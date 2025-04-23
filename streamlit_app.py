@@ -215,7 +215,7 @@ if any(i.get("Type") != "Subheading" for i in st.session_state.selected_items):
             st.download_button("Download Excel", f, file_name=excel_file, mime="application/vnd.ms-excel")
             # PDF Generation with clean single watermark
     if st.button("Generate PDF"):
-    pdf = FPDF()
+        pdf = FPDF()
     pdf.set_auto_page_break(auto=True, margin=15)
     pdf.add_page()
 
