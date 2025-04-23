@@ -27,14 +27,13 @@ st.markdown("""
             height: 50% !important;
             background-color: #f4f4f4 !important;
         }
+        .stSelectbox select {
+            font-size: 18px;  /* Adjust this value to increase/decrease the font size */
+        }
     </style>
 """, unsafe_allow_html=True)
 
 estimate_heading = st.text_input(" ", placeholder="Work Description", key="work_desc")
-st.markdown(
-    f'<div class="big-input">{estimate_heading}</div>' if estimate_heading else '', 
-    unsafe_allow_html=True
-)
 st.markdown("<h3 style='text-align: center; color: #76b5c5; font-size: 125%;'>ADD ITEMS TO ESTIMATE</h3>", unsafe_allow_html=True)
 
 # Initialize session state
