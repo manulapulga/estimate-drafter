@@ -179,145 +179,84 @@ if any('Cost' in item for item in st.session_state.selected_items):
     st.write(f"Unforeseen (5%): {unforeseen:.2f}")
     st.write(f"Final Total (Rounded): {final_total:.2f}")
 
-# PDF Generation with clean single watermark
     if st.button("Generate PDF"):
         pdf = FPDF()
         pdf.set_auto_page_break(auto=True, margin=15)
         pdf.add_page()
-        
-        # Single elegant watermark
-        pdf.set_font("Arial", style='B', size=72)  # Large bold font
-        pdf.set_text_color(230, 230, 230)  # Very light gray
-        
-        # Calculate center position
-        text = "KERALA GROUND WATER DEPARTMENT"
-        text_width = pdf.get_string_width(text)
-        x = (pdf.w - text_width) / 2
-        y = pdf.h / 2 - 20  # Slightly above center
-        
-        # Rotate 45 degrees at center of page
-        pdf.rotate(45, pdf.w/2, pdf.h/2)
-        pdf.text(x, y, text)
-        pdf.rotate(0)  # Reset rotation
-        
-        # Main content
+        pdf.set_font("Arial", style='B', size=72)
+        pdf.set_text_color(230, 230, 230)
+        watermark = "KERALA GROUND WATER DEPARTMENT"
+        text_width = pdf.get_string_width(watermark)
+        pdf.rotate(45, pdf.w / 2, pdf.h / 2)
+        pdf.text((pdf.w - text_width) / 2, pdf.h / 2 - 20, watermark)
+        pdf.rotate(0)
+
         pdf.set_font("Arial", 'B', 16)
         pdf.set_text_color(0, 0, 0)
         pdf.cell(200, 10, txt=estimate_heading, ln=True, align='C')
-        
-        # Rest of your existing PDF generation code...
-        col_widths = [10, 70, 20, 20, 20, 20]
-        
-        def split_text(text, max_width):
-            if not isinstance(text, str):
-                text = str(text)
-            lines = []
-            words = text.split()
-            current_line = ""
-            
-            for word in words:
-                test_line = current_line + " " + word if current_line else word
-                if pdf.get_string_width(test_line) < max_width - 2:
-                    current_line = test_line
-                else:
-                    lines.append(current_line)
-                    current_line = word
-            if current_line:
-                lines.append(current_line)
-            return lines
-        
-        def calculate_max_lines(row_data):
-            max_lines = 1
-            for i, text in enumerate(row_data):
-                lines = split_text(str(text), col_widths[i])
-                if len(lines) > max_lines:
-                    max_lines = len(lines)
-            return max_lines
-        
         pdf.ln(10)
-        pdf.set_font("Arial", 'B', 10)
+
+        col_widths = [10, 70, 20, 20, 20, 20]
         headers = ["Sl.No", "Item Name", "Rate", "Unit", "Qty", "Total"]
-        
-        x_start = pdf.get_x()
-        y_start = pdf.get_y()
-        
-        pdf.rect(x_start, y_start, sum(col_widths), 6)
-        
-        for i in range(1, len(col_widths)):
-            pdf.line(
-                x_start + sum(col_widths[:i]), y_start,
-                x_start + sum(col_widths[:i]), y_start + 6
-            )
-        
-        for i, header in enumerate(headers):
-            pdf.set_xy(x_start + sum(col_widths[:i]), y_start)
-            pdf.cell(col_widths[i], 6, header, 0, 0, 'C')
-        
-        pdf.set_y(y_start + 6)
-        
-        for idx, item in enumerate(st.session_state.selected_items, start=1):
-            pdf.set_font("Arial", '', 10)
-            row_data = [
-                str(idx),
-                item['Item'],
-                f"{item['Unit Price']:.2f}",
-                item['Item Unit'],
-                f"{item['Quantity']:.2f}",
-                f"{item['Cost']:.2f}"
-            ]
-            
-            x_row_start = pdf.get_x()
-            y_row_start = pdf.get_y()
-            
-            max_lines = calculate_max_lines(row_data)
-            row_height = 6 * max_lines
-            
-            for i, text in enumerate(row_data):
-                pdf.set_xy(x_row_start + sum(col_widths[:i]), y_row_start)
-                
-                cell_lines = split_text(str(text), col_widths[i])
-                
-                vertical_offset = (row_height - (6 * len(cell_lines))) / 2
-                
-                pdf.cell(col_widths[i], row_height, border=1)
-                
-                pdf.set_xy(x_row_start + sum(col_widths[:i]), y_row_start + vertical_offset)
-                
-                for line in cell_lines:
-                    pdf.cell(col_widths[i], 6, line, 0, 0, 'C')
-                    pdf.set_xy(x_row_start + sum(col_widths[:i]), pdf.get_y() + 6)
-            
-            pdf.set_y(y_row_start + row_height)
-        
-        summary_data = [
-            ("Subtotal", f"{total_cost:.2f}"),
-            ("GST (18%)", f"{gst:.2f}"),
-            ("Unforeseen (5%)", f"{unforeseen:.2f}"),
-            ("Grand Total", f"{final_total:.2f}")
-        ]
-        
-        for label, value in summary_data:
-            x = pdf.get_x()
-            y = pdf.get_y()
-            
-            pdf.multi_cell(sum(col_widths[:-1]), 8, label, border=1, align='C')
-            pdf.set_xy(x + sum(col_widths[:-1]), y)
-            
-            pdf.multi_cell(col_widths[-1], 8, value, border=1, align='C')
-            
-            pdf.set_xy(x, y + 8)
-        
+
+        def split_text(text, max_width):
+            if not isinstance(text, str): text = str(text)
+            words, lines, line = text.split(), [], ""
+            for word in words:
+                if pdf.get_string_width((line + ' ' + word).strip()) < max_width - 2:
+                    line = (line + ' ' + word).strip()
+                else:
+                    lines.append(line)
+                    line = word
+            lines.append(line)
+            return lines
+
+        def calculate_max_lines(row_data):
+            return max(len(split_text(str(txt), col_widths[i])) for i, txt in enumerate(row_data))
+
+        item_counter, show_header = 1, True
+        for item in st.session_state.selected_items:
+            if item.get('type') == 'subheading':
+                pdf.set_font("Arial", 'B', 12)
+                pdf.cell(sum(col_widths), 8, item['text'], 0, 1, 'L')
+                pdf.ln(2)
+                show_header = True
+            else:
+                if show_header:
+                    pdf.set_font("Arial", 'B', 10)
+                    x, y = pdf.get_x(), pdf.get_y()
+                    pdf.rect(x, y, sum(col_widths), 6)
+                    for i in range(1, len(col_widths)):
+                        pdf.line(x + sum(col_widths[:i]), y, x + sum(col_widths[:i]), y + 6)
+                    for i, h in enumerate(headers):
+                        pdf.set_xy(x + sum(col_widths[:i]), y)
+                        pdf.cell(col_widths[i], 6, h, 0, 0, 'C')
+                    pdf.set_y(y + 6)
+                    show_header = False
+
+                pdf.set_font("Arial", '', 10)
+                row_data = [str(item_counter), item['Item'], f"{item['Unit Price']:.2f}", item['Item Unit'], f"{item['Quantity']:.2f}", f"{item['Cost']:.2f}"]
+                item_counter += 1
+                x, y = pdf.get_x(), pdf.get_y()
+                row_height = 6 * calculate_max_lines(row_data)
+                for i, val in enumerate(row_data):
+                    pdf.set_xy(x + sum(col_widths[:i]), y)
+                    pdf.multi_cell(col_widths[i], 6, "\n".join(split_text(val, col_widths[i])), border=1, align='C')
+                pdf.set_y(y + row_height)
+
+        if item_counter > 1:
+            summary_data = [("Subtotal", f"{total_cost:.2f}"), ("GST (18%)", f"{gst:.2f}"), ("Unforeseen (5%)", f"{unforeseen:.2f}"), ("Grand Total", f"{final_total:.2f}")]
+            for label, val in summary_data:
+                x, y = pdf.get_x(), pdf.get_y()
+                pdf.multi_cell(sum(col_widths[:-1]), 8, label, border=1, align='C')
+                pdf.set_xy(x + sum(col_widths[:-1]), y)
+                pdf.multi_cell(col_widths[-1], 8, val, border=1, align='C')
+                pdf.set_y(y + 8)
+
         pdf_file = "estimate.pdf"
         pdf.output(pdf_file)
-    
         with open(pdf_file, "rb") as f:
-            st.download_button(
-                label="Download PDF",
-                data=f,
-                file_name=pdf_file,
-                mime="application/pdf"
-            )
-
+            st.download_button("Download PDF", data=f, file_name=pdf_file, mime="application/pdf")
 else:
     st.info("No items added to the estimate yet. Click 'Add Item' to get started.")
     col1, col2 = st.columns(2)
