@@ -180,96 +180,145 @@ if any('Cost' in item for item in st.session_state.selected_items):
     st.write(f"Final Total (Rounded): {final_total:.2f}")
 
     if st.button("Generate PDF"):
-        pdf = FPDF()
-        pdf.set_auto_page_break(auto=True, margin=15)
-        pdf.add_page()
-        pdf.set_font("Arial", style='B', size=72)
-        pdf.set_text_color(230, 230, 230)
-        watermark = "KERALA GROUND WATER DEPARTMENT"
-        text_width = pdf.get_string_width(watermark)
-        pdf.rotate(45, pdf.w / 2, pdf.h / 2)
-        pdf.text((pdf.w - text_width) / 2, pdf.h / 2 - 20, watermark)
-        pdf.rotate(0)
+    pdf = FPDF()
+    pdf.set_auto_page_break(auto=True, margin=15)
+    pdf.add_page()
+    pdf.set_font("Arial", style='B', size=72)
+    pdf.set_text_color(230, 230, 230)
+    watermark = "KERALA GROUND WATER DEPARTMENT"
+    text_width = pdf.get_string_width(watermark)
+    pdf.rotate(45, pdf.w / 2, pdf.h / 2)
+    pdf.text((pdf.w - text_width) / 2, pdf.h / 2 - 20, watermark)
+    pdf.rotate(0)
 
-        pdf.set_font("Arial", 'B', 16)
-        pdf.set_text_color(0, 0, 0)
-        pdf.cell(200, 10, txt=estimate_heading, ln=True, align='C')
-        pdf.ln(10)
+    pdf.set_font("Arial", 'B', 16)
+    pdf.set_text_color(0, 0, 0)
+    pdf.cell(200, 10, txt=estimate_heading, ln=True, align='C')
+    pdf.ln(10)
 
-        col_widths = [10, 70, 20, 20, 20, 20]
-        headers = ["Sl.No", "Item Name", "Rate", "Unit", "Qty", "Total"]
+    col_widths = [10, 70, 20, 20, 20, 20]  # Column widths
+    headers = ["Sl.No", "Item Name", "Rate", "Unit", "Qty", "Total"]
 
-        def split_text(text, max_width):
-            if not isinstance(text, str): text = str(text)
-            words, lines, line = text.split(), [], ""
-            for word in words:
-                if pdf.get_string_width((line + ' ' + word).strip()) < max_width - 2:
-                    line = (line + ' ' + word).strip()
-                else:
-                    lines.append(line)
-                    line = word
-            lines.append(line)
-            return lines
+    def split_text(text, max_width):
+        if not isinstance(text, str): text = str(text)
+        words, lines, line = text.split(), [], ""
+        for word in words:
+            if pdf.get_string_width((line + ' ' + word).strip()) < max_width - 2:
+                line = (line + ' ' + word).strip()
+            else:
+                lines.append(line)
+                line = word
+        lines.append(line)
+        return lines
 
-        def calculate_max_lines(row_data):
-            return max(len(split_text(str(txt), col_widths[i])) for i, txt in enumerate(row_data))
+    def calculate_row_height(row_data):
+        max_lines = 1
+        for i, txt in enumerate(row_data):
+            lines = split_text(str(txt), col_widths[i])
+            if len(lines) > max_lines:
+                max_lines = len(lines)
+        return max_lines * 6  # 6 is the line height
 
-        item_counter, show_header = 1, True
-for item in st.session_state.selected_items:
-    if item.get('type') == 'subheading':
-        pdf.set_font("Arial", 'B', 12)
-        pdf.cell(sum(col_widths), 8, item['text'], 0, 1, 'L')
-        pdf.ln(2)
-        show_header = True
-    else:
-        if show_header:
-            pdf.set_font("Arial", 'B', 10)
-            x, y = pdf.get_x(), pdf.get_y()
-            pdf.rect(x, y, sum(col_widths), 6)
-            for i in range(1, len(col_widths)):
-                pdf.line(x + sum(col_widths[:i]), y, x + sum(col_widths[:i]), y + 6)
-            for i, h in enumerate(headers):
-                pdf.set_xy(x + sum(col_widths[:i]), y)
-                pdf.cell(col_widths[i], 6, h, 0, 0, 'C')
-            pdf.set_y(y + 6)
-            show_header = False
-
-        pdf.set_font("Arial", '', 10)
-        row_data = [
-            str(item_counter),
-            item['Item'],
-            f"{item['Unit Price']:.2f}",
-            item['Item Unit'],
-            f"{item['Quantity']:.2f}",
-            f"{item['Cost']:.2f}"
-        ]
-        item_counter += 1
-
-        max_lines = calculate_max_lines(row_data)
-        row_height = 6 * max_lines
-        x, y = pdf.get_x(), pdf.get_y()
-
-        for i, val in enumerate(row_data):
-            pdf.set_xy(x + sum(col_widths[:i]), y)
-            lines = split_text(val, col_widths[i])
-            padded_lines = lines + [''] * (max_lines - len(lines))  # pad with blank lines if needed
-            cell_text = "\n".join(padded_lines)
-            pdf.multi_cell(col_widths[i], 6, cell_text, border=1, align='C')
-        pdf.set_y(y + row_height)
-
-        if item_counter > 1:
-            summary_data = [("Subtotal", f"{total_cost:.2f}"), ("GST (18%)", f"{gst:.2f}"), ("Unforeseen (5%)", f"{unforeseen:.2f}"), ("Grand Total", f"{final_total:.2f}")]
-            for label, val in summary_data:
+    item_counter = 1
+    show_header = True
+    
+    for item in st.session_state.selected_items:
+        if item.get('type') == 'subheading':
+            pdf.set_font("Arial", 'B', 12)
+            pdf.cell(sum(col_widths), 8, item['text'], 0, 1, 'L')
+            pdf.ln(2)
+            show_header = True
+        else:
+            if show_header:
+                pdf.set_font("Arial", 'B', 10)
                 x, y = pdf.get_x(), pdf.get_y()
-                pdf.multi_cell(sum(col_widths[:-1]), 8, label, border=1, align='C')
-                pdf.set_xy(x + sum(col_widths[:-1]), y)
-                pdf.multi_cell(col_widths[-1], 8, val, border=1, align='C')
-                pdf.set_y(y + 8)
+                pdf.rect(x, y, sum(col_widths), 6)
+                for i in range(1, len(col_widths)):
+                    pdf.line(x + sum(col_widths[:i]), y, x + sum(col_widths[:i]), y + 6)
+                for i, h in enumerate(headers):
+                    pdf.set_xy(x + sum(col_widths[:i]), y)
+                    pdf.cell(col_widths[i], 6, h, 0, 0, 'C')
+                pdf.set_y(y + 6)
+                show_header = False
 
-        pdf_file = "estimate.pdf"
-        pdf.output(pdf_file)
-        with open(pdf_file, "rb") as f:
-            st.download_button("Download PDF", data=f, file_name=pdf_file, mime="application/pdf")
+            pdf.set_font("Arial", '', 10)
+            row_data = [
+                str(item_counter), 
+                item['Item'], 
+                f"{item['Unit Price']:.2f}", 
+                item['Item Unit'], 
+                f"{item['Quantity']:.2f}", 
+                f"{item['Cost']:.2f}"
+            ]
+            
+            # Calculate required height for this row
+            row_height = calculate_row_height(row_data)
+            
+            # Get current position
+            x, y = pdf.get_x(), pdf.get_y()
+            
+            # Draw cells one by one with the same height
+            for i, val in enumerate(row_data):
+                pdf.set_xy(x + sum(col_widths[:i]), y)
+                lines = split_text(str(val), col_widths[i])
+                # Calculate vertical position to center text
+                v_pos = y + (row_height - (len(lines) * 6)) / 2
+                pdf.set_xy(x + sum(col_widths[:i]), v_pos)
+                for line in lines:
+                    pdf.cell(col_widths[i], 6, line, 0, 0, 'C')
+                    pdf.set_xy(x + sum(col_widths[:i]), pdf.get_y())
+            
+            # Draw borders around the entire row
+            pdf.rect(x, y, sum(col_widths), row_height)
+            for i in range(1, len(col_widths)):
+                pdf.line(x + sum(col_widths[:i]), y, x + sum(col_widths[:i]), y + row_height)
+            
+            # Move to next row position
+            pdf.set_y(y + row_height)
+            item_counter += 1
+
+    if item_counter > 1:
+        summary_data = [
+            ("Subtotal", f"{total_cost:.2f}"), 
+            ("GST (18%)", f"{gst:.2f}"), 
+            ("Unforeseen (5%)", f"{unforeseen:.2f}"), 
+            ("Grand Total", f"{final_total:.2f}")
+        ]
+        
+        for label, val in summary_data:
+            x, y = pdf.get_x(), pdf.get_y()
+            # Calculate height needed for both cells
+            label_height = calculate_row_height([label])
+            val_height = calculate_row_height([val])
+            row_height = max(label_height, val_height)
+            
+            # Draw label cell
+            pdf.set_xy(x, y)
+            lines = split_text(label, sum(col_widths[:-1]))
+            v_pos = y + (row_height - (len(lines) * 6)) / 2
+            pdf.set_xy(x, v_pos)
+            for line in lines:
+                pdf.cell(sum(col_widths[:-1]), 6, line, 0, 0, 'C')
+                pdf.set_xy(x, pdf.get_y())
+            
+            # Draw value cell
+            pdf.set_xy(x + sum(col_widths[:-1]), y)
+            lines = split_text(val, col_widths[-1])
+            v_pos = y + (row_height - (len(lines) * 6)) / 2
+            pdf.set_xy(x + sum(col_widths[:-1]), v_pos)
+            for line in lines:
+                pdf.cell(col_widths[-1], 6, line, 0, 0, 'C')
+                pdf.set_xy(x + sum(col_widths[:-1]), pdf.get_y())
+            
+            # Draw borders
+            pdf.rect(x, y, sum(col_widths[:-1]), row_height)
+            pdf.rect(x + sum(col_widths[:-1]), y, col_widths[-1], row_height)
+            pdf.set_y(y + row_height)
+
+    pdf_file = "estimate.pdf"
+    pdf.output(pdf_file)
+    with open(pdf_file, "rb") as f:
+        st.download_button("Download PDF", data=f, file_name=pdf_file, mime="application/pdf")
 else:
     st.info("No items added to the estimate yet. Click 'Add Item' to get started.")
     col1, col2 = st.columns(2)
