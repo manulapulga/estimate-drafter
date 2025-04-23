@@ -15,10 +15,23 @@ item_names = data['Item Name'].tolist()
 unit_prices = data['Unit Price'].tolist()
 item_units = data['Item Unit'].tolist()
 
-# UI for Estimate Drafting
-st.title("ESTIMATE DRAFTER", anchor="center")
+# UI for Estimate Drafting with updated styles
+st.markdown("<h1 style='text-align: center; color: #154c79;'>ESTIMATE DRAFTER</h1>", unsafe_allow_html=True)
+st.markdown("""
+    <style>
+        .stTextInput input {
+            font-size: 150%;
+            color: #1e81b0;
+        }
+        button {
+            height: 50% !important;
+            background-color: #416296 !important;
+        }
+    </style>
+""", unsafe_allow_html=True)
+
 estimate_heading = st.text_input("Work Description")
-st.markdown("<h3 style='text-align: center;'>ADD ITEMS TO ESTIMATE</h3>", unsafe_allow_html=True)
+st.markdown("<h3 style='text-align: center; color: #76b5c5; font-size: 50%;'>ADD ITEMS TO ESTIMATE</h3>", unsafe_allow_html=True)
 
 # Initialize session state
 if 'selected_items' not in st.session_state:
@@ -101,8 +114,7 @@ colA, colB = st.columns([1, 1])
 with colA:
     st.button("➕ Add Item", on_click=add_item)
 with colB:
-    if st.button("➕ Add Sub Heading"):
-        st.session_state.adding_subheading = True
+    st.button("➕ Add Sub Heading", on_click=lambda: setattr(st.session_state, 'adding_subheading', True))
 
 # Subheading input form
 if st.session_state.adding_subheading:
