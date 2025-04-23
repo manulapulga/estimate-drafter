@@ -314,4 +314,3 @@ else:
     col1, col2 = st.columns(2)
     with col1:
         st.button("➕ Add Item", on_click=add_item)
-    with col2:
