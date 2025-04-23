@@ -148,18 +148,26 @@ if st.button("Generate Excel"):
             mime="application/vnd.ms-excel"
         )
 
-# PDF Generation (unchanged)
+# PDF Generation with improved watermark
 if st.button("Generate PDF"):
     pdf = FPDF()
     pdf.set_auto_page_break(auto=True, margin=15)
     pdf.add_page()
     
-    pdf.set_font("Arial", style='I', size=60)
-    pdf.set_text_color(200, 200, 200)
-    pdf.rotate(45, 60, 60)
-    pdf.text(30, 120, "Kerala Ground Water Department")
-    pdf.rotate(0)
+    # Improved watermark design
+    pdf.set_font("Arial", style='B', size=60)  # Changed to bold and larger
+    pdf.set_text_color(220, 220, 220)  # Lighter gray for better background visibility
     
+    # Add multiple watermarks at different angles and positions
+    for angle in [30, 45, 60]:
+        for x_pos in [40, 80, 120]:
+            for y_pos in [60, 120, 180]:
+                pdf.rotate(angle, x_pos, y_pos)
+                pdf.text(x_pos, y_pos, "KERALA GROUND WATER")
+                pdf.text(x_pos, y_pos+30, "DEPARTMENT")
+                pdf.rotate(0)
+    
+    # Main content
     pdf.set_font("Arial", 'B', 16)
     pdf.set_text_color(0, 0, 0)
     pdf.cell(200, 10, txt=estimate_heading, ln=True, align='C')
@@ -264,6 +272,14 @@ if st.button("Generate PDF"):
         pdf.multi_cell(col_widths[-1], 8, value, border=1, align='C')
         
         pdf.set_xy(x, y + 8)
+    
+    # Add a final watermark in the center
+    pdf.set_font("Arial", 'B', 72)
+    pdf.set_text_color(230, 230, 230)
+    pdf.rotate(45, pdf.w/2, pdf.h/2)
+    pdf.text(pdf.w/2 - 100, pdf.h/2, "KERALA GROUND WATER")
+    pdf.text(pdf.w/2 - 100, pdf.h/2 + 40, "DEPARTMENT")
+    pdf.rotate(0)
     
     pdf_file = "estimate.pdf"
     pdf.output(pdf_file)
