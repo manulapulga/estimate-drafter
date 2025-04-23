@@ -11,80 +11,92 @@ def load_data(file_path):
     return pd.read_excel(file_path)
 
 data = load_data("items.xlsx")
-item_names = data['Item Name'].tolist()  # Assuming column name is "Item Name"
-unit_prices = data['Unit Price'].tolist()  # Assuming column name is "Unit Price"
-item_units = data['Item Unit'].tolist()  # Assuming column name is "Item Unit"
+item_names = data['Item Name'].tolist()
+unit_prices = data['Unit Price'].tolist()
+item_units = data['Item Unit'].tolist()
 
 # UI for Estimate Drafting
-st.title("ESTIMATE DRAFTER", anchor="center")  # Center-align title and make it uppercase
-estimate_heading = st.text_input("Work Description")  # Changed label to "Work Description"
-
-# Center-align subheading in uppercase
+st.title("ESTIMATE DRAFTER", anchor="center")
+estimate_heading = st.text_input("Work Description")
 st.markdown("<h3 style='text-align: center;'>ADD ITEMS TO ESTIMATE</h3>", unsafe_allow_html=True)
 
 selected_items = []
 total_cost = 0
-
-# Limit to 50 items
 max_items = 50
 
-# Loop to allow item selection up to 50 items
 for i in range(max_items):
-    # Create two columns: one for item selection and one for quantity input
     col1, col2 = st.columns([3, 1])
     
     with col1:
-        # Selectbox for item selection
         item_name = st.selectbox("", [''] + item_names, key=f"item_{i}")
         
-        # ✅ Show full item name below the dropdown
         if item_name:
-            st.text(f"Full Item Name: {item_name}")  # Display full content in plain text
-        
-        # Show unit price if item is selected
-        if item_name != '':
-            unit_price = data.loc[data['Item Name'] == item_name, 'Unit Price'].values[0]
-            st.text(f"Unit Price: {unit_price}")
+            st.text(f"Full Item Name: {item_name}")
+            
+            # Get item details from dataframe
+            item_data = data[data['Item Name'] == item_name].iloc[0]
+            unit_price = item_data['Unit Price']
+            unit = item_data['Item Unit']
+            
+            # Display unit price with unit
+            st.text(f"Unit Price: {unit_price:.2f}/{unit}")
         else:
             st.text("Unit Price: N/A")
     
     with col2:
-        # Display the quantity input with no label
         quantity = st.text_input("", "", key=f"qty_{i}", placeholder="Input Quantity")
         
-        # Display unit next to quantity field
         if item_name != '':
-            item_unit = data.loc[data['Item Name'] == item_name, 'Item Unit'].values[0]
-            st.text(f"Unit: {item_unit}")
+            item_data = data[data['Item Name'] == item_name].iloc[0]
+            unit = item_data['Item Unit']
+            st.text(f"Unit: {unit}")
+            
+            # Calculate and display total amount when quantity is entered
+            if quantity:
+                try:
+                    qty = float(quantity)
+                    if qty > 0:
+                        unit_price = item_data['Unit Price']
+                        total = qty * unit_price
+                        st.text(f"Total: {total:.2f}")
+                except ValueError:
+                    pass
         else:
             st.text("Unit: N/A")
     
-    if item_name != '' and quantity:  # Proceed only if a valid item is selected and quantity is entered
+    if item_name != '' and quantity:
         try:
             quantity = float(quantity)
-            if quantity > 0:  # Only process if quantity is greater than 0
-                unit_price = data.loc[data['Item Name'] == item_name, 'Unit Price'].values[0]
-                cost = round(quantity * unit_price, 2)  # Round to two decimals
+            if quantity > 0:
+                item_data = data[data['Item Name'] == item_name].iloc[0]
+                unit_price = item_data['Unit Price']
+                unit = item_data['Item Unit']
+                cost = round(quantity * unit_price, 2)
                 total_cost += cost
-                selected_items.append({'Item': item_name, 'Quantity': quantity, 'Unit Price': unit_price, 'Item Unit': item_units[i], 'Cost': cost})
+                selected_items.append({
+                    'Item': item_name,
+                    'Quantity': quantity,
+                    'Unit Price': unit_price,
+                    'Item Unit': unit,
+                    'Cost': cost
+                })
         except ValueError:
-            pass  # If the input is not a valid number, ignore it
+            pass
 
-    # Stop if 50 items are selected
     if len(selected_items) >= max_items:
         break
 
-# Subtotal, GST, Unforeseen, and Final Total
+# Calculate totals
 gst = round(total_cost * 0.18, 2)
 unforeseen = round(total_cost * 0.05, 2)
 final_total = math.ceil((total_cost + gst + unforeseen) / 1000) * 1000
 
-# Display the key amounts (Subtotal, GST, Unforeseen, and Final Total)
+# Display the key amounts
 st.subheader("Estimate Breakdown")
-st.write(f"Subtotal: {total_cost}")
-st.write(f"GST (18%): {gst}")
-st.write(f"Unforeseen (5%): {unforeseen}")
-st.write(f"Final Total (Rounded): {final_total}")
+st.write(f"Subtotal: {total_cost:.2f}")
+st.write(f"GST (18%): {gst:.2f}")
+st.write(f"Unforeseen (5%): {unforeseen:.2f}")
+st.write(f"Final Total (Rounded): {final_total:.2f}")
 
 # Excel Generation
 if st.button("Generate Excel"):
