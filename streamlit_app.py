@@ -290,47 +290,42 @@ if st.button("Generate PDF"):
 
     pdf.set_y(y_start + 6)
 
-    for idx, item in enumerate(st.session_state.selected_items, start=1):
-        pdf.set_font("Arial", '', 10)
-        
-        # Skip details for subheadings
-        if item.get("Type") == "Subheading":
-            # Only print subheading in this row
-            pdf.set_xy(x_start, pdf.get_y())
-            pdf.cell(sum(col_widths), 6, f" {item['Item']}", border=1, align='C')
-            pdf.ln(6)  # Move to the next line
-        else:
-            row_data = [
-                str(idx),
-                item['Item'],
-                f"{item['Unit Price']:.2f}",
-                item['Item Unit'],
-                f"{item['Quantity']:.2f}",
-                f"{item['Cost']:.2f}"
-            ]
-            
-            x_row_start = pdf.get_x()
-            y_row_start = pdf.get_y()
-            
-            max_lines = calculate_max_lines(row_data)
-            row_height = 6 * max_lines
-            
-            for i, text in enumerate(row_data):
-                pdf.set_xy(x_row_start + sum(col_widths[:i]), y_row_start)
-                
-                cell_lines = split_text(str(text), col_widths[i])
-                
-                vertical_offset = (row_height - (6 * len(cell_lines))) / 2
-                
-                pdf.cell(col_widths[i], row_height, border=1)
-                
-                pdf.set_xy(x_row_start + sum(col_widths[:i]), y_row_start + vertical_offset)
-                
-                for line in cell_lines:
-                    pdf.cell(col_widths[i], 6, line, 0, 0, 'C')
-                    pdf.set_xy(x_row_start + sum(col_widths[:i]), pdf.get_y() + 6)
-            
-            pdf.set_y(y_row_start + row_height)
+serial = 1
+
+for item in st.session_state.selected_items:
+    pdf.set_font("Arial", '', 10)
+
+    if item.get("Type") == "Subheading":
+        pdf.set_xy(x_start, pdf.get_y())
+        pdf.cell(sum(col_widths), 6, f" {item['Item']}", border=1, align='C')
+        pdf.ln(6)
+    else:
+        row_data = [
+            str(serial),
+            item['Item'],
+            f"{item['Unit Price']:.2f}",
+            item['Item Unit'],
+            f"{item['Quantity']:.2f}",
+            f"{item['Cost']:.2f}"
+        ]
+
+        x_row_start = pdf.get_x()
+        y_row_start = pdf.get_y()
+        max_lines = calculate_max_lines(row_data)
+        row_height = 6 * max_lines
+
+        for i, text in enumerate(row_data):
+            pdf.set_xy(x_row_start + sum(col_widths[:i]), y_row_start)
+            cell_lines = split_text(str(text), col_widths[i])
+            vertical_offset = (row_height - (6 * len(cell_lines))) / 2
+            pdf.cell(col_widths[i], row_height, border=1)
+            pdf.set_xy(x_row_start + sum(col_widths[:i]), y_row_start + vertical_offset)
+            for line in cell_lines:
+                pdf.cell(col_widths[i], 6, line, 0, 0, 'C')
+                pdf.set_xy(x_row_start + sum(col_widths[:i]), pdf.get_y() + 6)
+
+        serial += 1
+        pdf.set_y(y_row_start + row_height)
 
     summary_data = [
         ("Subtotal", f"{total_cost:.2f}"),
