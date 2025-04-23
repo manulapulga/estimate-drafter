@@ -30,7 +30,11 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-estimate_heading = st.text_input("Work Description")
+estimate_heading = st.text_input(" ", placeholder="Work Description", key="work_desc")
+st.markdown(
+    f'<div class="big-input">{estimate_heading}</div>' if estimate_heading else '', 
+    unsafe_allow_html=True
+)
 st.markdown("<h3 style='text-align: center; color: #76b5c5; font-size: 125%;'>ADD ITEMS TO ESTIMATE</h3>", unsafe_allow_html=True)
 
 # Initialize session state
