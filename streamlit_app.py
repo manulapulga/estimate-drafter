@@ -295,7 +295,7 @@ serial = 1
 for item in st.session_state.selected_items:
         pdf.set_font("Arial", '', 10)
 
-    if item.get("Type") == "Subheading":
+        if item.get("Type") == "Subheading":
         pdf.set_xy(x_start, pdf.get_y())
         pdf.cell(sum(col_widths), 6, f" {item['Item']}", border=1, align='C')
         pdf.ln(6)
