@@ -185,16 +185,17 @@ if any(i.get("Type") != "Subheading" for i in st.session_state.selected_items):
                              top=Side(style='thin'), bottom=Side(style='thin'))
 
         row_num = 2
-        serial = 1
-        for item in st.session_state.selected_items:
-            if item.get("Type") == "Subheading":
-                ws.merge_cells(f'A{row_num}:F{row_num}')
-                ws[f'A{row_num}'] = f" {item['Item']}"
-                row_num += 1
-            else:
-                ws.append([serial, item['Item'], item['Unit Price'], item['Item Unit'], item['Quantity'], item['Cost']])
-                serial += 1
-                row_num += 1
+        serial = 1  # Initialize serial number
+
+for item in st.session_state.selected_items:
+    if item.get("Type") == "Subheading":
+        ws.merge_cells(f'A{row_num}:F{row_num}')
+        ws[f'A{row_num}'] = f" {item['Item']}"
+        row_num += 1
+    else:
+        ws.append([serial, item['Item'], item['Unit Price'], item['Item Unit'], item['Quantity'], item['Cost']])
+        serial += 1  # Only increment serial for items, not subheadings
+        row_num += 1
 
         for label, val in [("Subtotal", total_cost), ("GST (18%)", gst), ("Unforeseen (5%)", unforeseen), ("Grand Total", final_total)]:
             ws.merge_cells(f'A{row_num}:E{row_num}')
