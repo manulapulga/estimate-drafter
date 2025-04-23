@@ -31,7 +31,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 estimate_heading = st.text_input("Work Description")
-st.markdown("<h3 style='text-align: center; color: #76b5c5; font-size: 50%;'>ADD ITEMS TO ESTIMATE</h3>", unsafe_allow_html=True)
+st.markdown("<h3 style='text-align: center; color: #76b5c5; font-size: 125%;'>ADD ITEMS TO ESTIMATE</h3>", unsafe_allow_html=True)
 
 # Initialize session state
 if 'selected_items' not in st.session_state:
