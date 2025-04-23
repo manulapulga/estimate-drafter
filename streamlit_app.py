@@ -215,8 +215,46 @@ if any(i.get("Type") != "Subheading" for i in st.session_state.selected_items):
             st.download_button("Download Excel", f, file_name=excel_file, mime="application/vnd.ms-excel")
 
     if st.button("Generate PDF"):
-        # PDF export logic from earlier stays the same,
-        # just remember to skip cost rows for subheadings and format them differently.
-        st.warning("PDF support for subheadings coming next – let me know if you want that too.")
+    if st.button("Generate PDF"):
+        pdf = FPDF()
+        pdf.add_page()
+        pdf.set_font("Arial", "B", 14)
+        pdf.cell(0, 10, estimate_heading, ln=True, align='C')
+
+        pdf.set_font("Arial", "B", 12)
+        pdf.cell(10, 10, "Sl", 1, 0, 'C')
+        pdf.cell(80, 10, "Item", 1, 0, 'C')
+        pdf.cell(25, 10, "Rate", 1, 0, 'C')
+        pdf.cell(20, 10, "Unit", 1, 0, 'C')
+        pdf.cell(25, 10, "Qty", 1, 0, 'C')
+        pdf.cell(30, 10, "Cost", 1, 1, 'C')
+
+        pdf.set_font("Arial", "", 11)
+        serial = 1
+        for item in st.session_state.selected_items:
+            if item.get("Type") == "Subheading":
+                pdf.set_font("Arial", "B", 11)
+                pdf.cell(190, 10, f"📌 {item['Item']}", 1, 1, 'L')
+                pdf.set_font("Arial", "", 11)
+            else:
+                pdf.cell(10, 10, str(serial), 1, 0, 'C')
+                pdf.cell(80, 10, item['Item'], 1, 0)
+                pdf.cell(25, 10, f"{item['Unit Price']:.2f}", 1, 0, 'R')
+                pdf.cell(20, 10, item['Item Unit'], 1, 0, 'C')
+                pdf.cell(25, 10, str(item['Quantity']), 1, 0, 'R')
+                pdf.cell(30, 10, f"{item['Cost']:.2f}", 1, 1, 'R')
+                serial += 1
+
+        # Totals
+        pdf.set_font("Arial", "B", 11)
+        for label, val in [("Subtotal", total_cost), ("GST (18%)", gst), ("Unforeseen (5%)", unforeseen), ("Grand Total", final_total)]:
+            pdf.cell(160, 10, label, 1, 0, 'R')
+            pdf.cell(30, 10, f"{val:.2f}", 1, 1, 'R')
+
+        pdf_output = "estimate.pdf"
+        pdf.output(pdf_output)
+
+        with open(pdf_output, "rb") as f:
+            st.download_button("Download PDF", f, file_name=pdf_output, mime="application/pdf")
 else:
     st.info("No items added to the estimate yet.")
