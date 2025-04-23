@@ -46,23 +46,20 @@ for i in range(max_items):
     with col2:
         quantity = st.text_input("", "", key=f"qty_{i}", placeholder="Input Quantity")
         
-        if item_name != '':
-            item_data = data[data['Item Name'] == item_name].iloc[0]
-            unit = item_data['Item Unit']
-            st.text(f"Unit: {unit}")
-            
-            # Calculate and display total amount when quantity is entered
-            if quantity:
-                try:
-                    qty = float(quantity)
-                    if qty > 0:
-                        unit_price = item_data['Unit Price']
-                        total = qty * unit_price
-                        st.text(f"Total: {total:.2f}")
-                except ValueError:
-                    pass
+        if item_name != '' and quantity:
+            try:
+                qty = float(quantity)
+                if qty > 0:
+                    item_data = data[data['Item Name'] == item_name].iloc[0]
+                    unit_price = item_data['Unit Price']
+                    total = qty * unit_price
+                    # Display total amount where unit was previously shown
+                    st.text(f"Total: {total:.2f}")
+            except ValueError:
+                st.text("Invalid quantity")
         else:
-            st.text("Unit: N/A")
+            # Show empty space when no quantity or no item selected
+            st.text("")
     
     if item_name != '' and quantity:
         try:
@@ -98,65 +95,52 @@ st.write(f"GST (18%): {gst:.2f}")
 st.write(f"Unforeseen (5%): {unforeseen:.2f}")
 st.write(f"Final Total (Rounded): {final_total:.2f}")
 
-# Excel Generation
+# Excel Generation (unchanged)
 if st.button("Generate Excel"):
-    # Prepare Data for Excel
     items_data = []
     for idx, item in enumerate(selected_items, start=1):
         items_data.append([idx, item['Item'], item['Unit Price'], item['Item Unit'], item['Quantity'], item['Cost']])
 
-    # Add Subtotal, GST, Unforeseen, and Grand Total
     items_data.append(["Subtotal", "", "", "", "", total_cost])
     items_data.append(["GST (18%)", "", "", "", "", gst])
     items_data.append(["Unforeseen (5%)", "", "", "", "", unforeseen])
     items_data.append(["Grand Total", "", "", "", "", final_total])
 
-    # Create a DataFrame
     df = pd.DataFrame(items_data, columns=["S.No", "Item Name", "Item Rate", "Item Unit", "Quantity", "Total"])
     
-    # Create an Excel workbook
     wb = Workbook()
     ws = wb.active
     ws.title = "Estimate"
     
-    # Merging Heading
     ws.merge_cells('A1:F1')
     ws['A1'] = estimate_heading
     ws['A1'].alignment = Alignment(horizontal='center', vertical='center')
     ws['A1'].font = ws['A1'].font.copy(bold=True, size=14)
 
-    # Write the DataFrame to Excel (excluding index)
     for row_idx, row in df.iterrows():
         for col_idx, value in enumerate(row):
             cell = ws.cell(row=row_idx+2, column=col_idx+1, value=value)
-            # Set text wrap and center alignment
             cell.alignment = Alignment(horizontal='center', vertical='center', wrap_text=True)
     
-    # Apply Borders to All Cells
     thin_border = Border(left=Side(style='thin'),
                          right=Side(style='thin'),
                          top=Side(style='thin'),
                          bottom=Side(style='thin'))
     
-    # Apply border to all rows and columns
     for row in ws.iter_rows(min_row=1, max_row=ws.max_row, min_col=1, max_col=ws.max_column):
         for cell in row:
             cell.border = thin_border
 
-    # Merge Cells for Subtotal, GST, Unforeseen, and Grand Total
     for row_idx in range(len(items_data)-4, len(items_data)):
         ws.merge_cells(f'A{row_idx+2}:E{row_idx+2}')
         ws[f'A{row_idx+2}'] = items_data[row_idx][0]
         ws[f'A{row_idx+2}'].alignment = Alignment(horizontal='center', vertical='center')
     
-    # Set the width of "Item Name" column to 70
     ws.column_dimensions['B'].width = 70
 
-    # Save the Excel file
     excel_file = "estimate.xlsx"
     wb.save(excel_file)
 
-    # Provide download link for Excel file
     with open(excel_file, "rb") as f:
         st.download_button(
             label="Download Excel",
@@ -165,29 +149,24 @@ if st.button("Generate Excel"):
             mime="application/vnd.ms-excel"
         )
 
-# PDF Generation with perfect header alignment
+# PDF Generation (unchanged)
 if st.button("Generate PDF"):
-    # Create PDF document
     pdf = FPDF()
     pdf.set_auto_page_break(auto=True, margin=15)
     pdf.add_page()
     
-    # Add watermark
     pdf.set_font("Arial", style='I', size=60)
     pdf.set_text_color(200, 200, 200)
     pdf.rotate(45, 60, 60)
     pdf.text(30, 120, "Watermark")
     pdf.rotate(0)
     
-    # Add Heading
     pdf.set_font("Arial", 'B', 16)
     pdf.set_text_color(0, 0, 0)
     pdf.cell(200, 10, txt=estimate_heading, ln=True, align='C')
     
-    # Calculate column widths
-    col_widths = [10, 70, 20, 20, 20, 20]  # S.No, Item Name, Rate, Unit, Qty, Total
+    col_widths = [10, 70, 20, 20, 20, 20]
     
-    # Function to split text into multiple lines
     def split_text(text, max_width):
         if not isinstance(text, str):
             text = str(text)
@@ -206,7 +185,6 @@ if st.button("Generate PDF"):
             lines.append(current_line)
         return lines
     
-    # Function to calculate maximum lines needed for a row
     def calculate_max_lines(row_data):
         max_lines = 1
         for i, text in enumerate(row_data):
@@ -215,35 +193,27 @@ if st.button("Generate PDF"):
                 max_lines = len(lines)
         return max_lines
     
-    # Add Table Header - Special handling for Sl.No
     pdf.ln(10)
     pdf.set_font("Arial", 'B', 10)
+    headers = ["Sl.No", "Item Name", "Rate", "Unit", "Qty", "Total"]
     
-    # First draw the header border
     x_start = pdf.get_x()
     y_start = pdf.get_y()
     
-    # Draw the full header border first
-    header_height = 6  # Standard height for header
-    pdf.rect(x_start, y_start, sum(col_widths), header_height)
+    pdf.rect(x_start, y_start, sum(col_widths), 6)
     
-    # Now draw the vertical lines between headers
     for i in range(1, len(col_widths)):
         pdf.line(
             x_start + sum(col_widths[:i]), y_start,
-            x_start + sum(col_widths[:i]), y_start + header_height
+            x_start + sum(col_widths[:i]), y_start + 6
         )
-    
-    # Now write the header text - special handling for Sl.No
-    headers = ["Sl.No", "Item Name", "Rate", "Unit", "Qty", "Total"]
     
     for i, header in enumerate(headers):
         pdf.set_xy(x_start + sum(col_widths[:i]), y_start)
-        pdf.cell(col_widths[i], header_height, header, 0, 0, 'C')
+        pdf.cell(col_widths[i], 6, header, 0, 0, 'C')
     
-    pdf.set_y(y_start + header_height)
+    pdf.set_y(y_start + 6)
     
-    # Add Table Rows with uniform height per row
     for idx, item in enumerate(selected_items, start=1):
         pdf.set_font("Arial", '', 10)
         row_data = [
@@ -258,35 +228,26 @@ if st.button("Generate PDF"):
         x_row_start = pdf.get_x()
         y_row_start = pdf.get_y()
         
-        # Calculate maximum lines needed for this row
         max_lines = calculate_max_lines(row_data)
         row_height = 6 * max_lines
         
-        # Draw each cell with the same height
         for i, text in enumerate(row_data):
             pdf.set_xy(x_row_start + sum(col_widths[:i]), y_row_start)
             
-            # Get lines for this specific cell
             cell_lines = split_text(str(text), col_widths[i])
             
-            # Center text vertically by calculating offset
             vertical_offset = (row_height - (6 * len(cell_lines))) / 2
             
-            # Draw border first (full height)
             pdf.cell(col_widths[i], row_height, border=1)
             
-            # Reset position to add text
             pdf.set_xy(x_row_start + sum(col_widths[:i]), y_row_start + vertical_offset)
             
-            # Draw each line of text
             for line in cell_lines:
                 pdf.cell(col_widths[i], 6, line, 0, 0, 'C')
                 pdf.set_xy(x_row_start + sum(col_widths[:i]), pdf.get_y() + 6)
         
-        # Move to next row position
         pdf.set_y(y_row_start + row_height)
     
-    # Add Subtotal, GST, Unforeseen, and Grand Total with uniform height
     summary_data = [
         ("Subtotal", f"{total_cost:.2f}"),
         ("GST (18%)", f"{gst:.2f}"),
@@ -295,25 +256,19 @@ if st.button("Generate PDF"):
     ]
     
     for label, value in summary_data:
-        # Calculate position
         x = pdf.get_x()
         y = pdf.get_y()
         
-        # Draw left cell (merged)
         pdf.multi_cell(sum(col_widths[:-1]), 8, label, border=1, align='C')
         pdf.set_xy(x + sum(col_widths[:-1]), y)
         
-        # Draw right cell
         pdf.multi_cell(col_widths[-1], 8, value, border=1, align='C')
         
-        # Move to next line
         pdf.set_xy(x, y + 8)
     
-    # Save PDF to file
     pdf_file = "estimate.pdf"
     pdf.output(pdf_file)
-    
-    # Provide download link for PDF file
+
     with open(pdf_file, "rb") as f:
         st.download_button(
             label="Download PDF",
