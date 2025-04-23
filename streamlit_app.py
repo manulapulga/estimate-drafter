@@ -55,114 +55,24 @@ def calculate_totals():
     return total_cost, gst, unforeseen, final_total
 
 # Display existing items/subheadings and allow editing/removal
-for idx, item in enumerate(st.session_state.selected_items):
-    if item.get('type') == 'subheading':
-        with st.expander(f"📌 {item['text']}", expanded=True):
-            new_text = st.text_input("Subheading Text", value=item['text'], key=f"edit_subheading_{idx}")
-            if st.button(f"Update Subheading", key=f"update_subheading_{idx}"):
-                st.session_state.selected_items[idx]['text'] = new_text
-                st.success("Subheading updated successfully!")
-            if st.button(f"❌ Remove Subheading", key=f"remove_subheading_{idx}"):
-                remove_item(idx)
-                st.rerun()
-    else:
-        with st.expander(f"Item {idx + 1}: {item['Item']}"):
-            col1, col2 = st.columns([3, 1])
-            with col1:
-                item_name = st.selectbox("Select Item", [''] + item_names, index=item_names.index(item['Item']) + 1 if item['Item'] in item_names else 0, key=f"edit_item_{idx}")
-                st.text(f"Item Description: {item_name}" if item_name else "")
-            with col2:
-                quantity = st.text_input("Quantity", str(item['Quantity']), key=f"edit_qty_{idx}", placeholder="Input Quantity")
-                if item_name:
-                    item_data = data[data['Item Name'] == item_name].iloc[0]
-                    unit_price = item_data['Unit Price']
-                    unit = item_data['Item Unit']
-                    st.text(f"Rate: {unit_price:.2f}/{unit}")
-                    if quantity:
-                        try:
-                            qty = float(quantity)
-                            if qty > 0:
-                                st.text(f"Amount: {qty * unit_price:.2f}")
-                        except ValueError:
-                            st.text("Invalid quantity")
-            if st.button(f"Update Item {idx + 1}", key=f"update_{idx}"):
-                if item_name and quantity:
-                    try:
-                        quantity = float(quantity)
-                        if quantity > 0:
-                            item_data = data[data['Item Name'] == item_name].iloc[0]
-                            unit_price = item_data['Unit Price']
-                            unit = item_data['Item Unit']
-                            cost = round(quantity * unit_price, 2)
-                            st.session_state.selected_items[idx] = {
-                                'Item': item_name,
-                                'Quantity': quantity,
-                                'Unit Price': unit_price,
-                                'Item Unit': unit,
-                                'Cost': cost
-                            }
-                            st.success("Item updated successfully!")
-                    except ValueError:
-                        st.error("Please enter a valid quantity")
-            if st.button(f"❌ Remove Item {idx + 1}", key=f"remove_{idx}"):
-                remove_item(idx)
-                st.rerun()
+# Replace your button creation code with these modifications:
 
-# Add new item fields when "Add Item" is clicked
-if st.session_state.item_count > sum(1 for item in st.session_state.selected_items if 'Item' in item):
-    idx = len(st.session_state.selected_items)
-    with st.expander(f"New Item {idx + 1}", expanded=True):
-        col1, col2 = st.columns([3, 1])
-        with col1:
-            item_name = st.selectbox("Select Item", [''] + item_names, key=f"new_item_{idx}")
-            st.text(f"Item Description: {item_name}" if item_name else "")
-        with col2:
-            quantity = st.text_input("Quantity", "", key=f"new_qty_{idx}", placeholder="Input Quantity")
-            if item_name:
-                item_data = data[data['Item Name'] == item_name].iloc[0]
-                unit_price = item_data['Unit Price']
-                unit = item_data['Item Unit']
-                st.text(f"Rate: {unit_price:.2f}/{unit}")
-                if quantity:
-                    try:
-                        qty = float(quantity)
-                        if qty > 0:
-                            st.text(f"Amount: {qty * unit_price:.2f}")
-                    except ValueError:
-                        st.text("Invalid quantity")
-        if st.button(f"Add to Estimate", key=f"add_{idx}"):
-            if item_name and quantity:
-                try:
-                    quantity = float(quantity)
-                    if quantity > 0:
-                        item_data = data[data['Item Name'] == item_name].iloc[0]
-                        unit_price = item_data['Unit Price']
-                        unit = item_data['Item Unit']
-                        cost = round(quantity * unit_price, 2)
-                        st.session_state.selected_items.append({
-                            'Item': item_name,
-                            'Quantity': quantity,
-                            'Unit Price': unit_price,
-                            'Item Unit': unit,
-                            'Cost': cost
-                        })
-                        st.success("Item added successfully!")
-                        st.rerun()
-                except ValueError:
-                    st.error("Please enter a valid quantity")
+# For the "Add Item" and "Add Subheading" buttons at the bottom
+if len(st.session_state.selected_items) > 0 or st.session_state.item_count > 0 or st.session_state.subheading_count > 0:
+    col1, col2 = st.columns(2)
+    with col1:
+        st.button("➕ Add Item", on_click=add_item, key="add_item_button_bottom")
+    with col2:
+        st.button("📌 Add Subheading", on_click=add_subheading, key="add_subheading_button_bottom")
 
-# Add new subheading when "Add Subheading" is clicked
-if st.session_state.subheading_count > sum(1 for item in st.session_state.selected_items if item.get('type') == 'subheading'):
-    idx = len(st.session_state.selected_items)
-    with st.expander("New Subheading", expanded=True):
-        subheading_text = st.text_input("Subheading Text", key=f"new_subheading_{idx}", placeholder="Enter subheading text")
-        if st.button("Add Subheading", key=f"add_subheading_{idx}"):
-            if subheading_text:
-                st.session_state.selected_items.append({'type': 'subheading', 'text': subheading_text})
-                st.success("Subheading added successfully!")
-                st.rerun()
-            else:
-                st.error("Please enter subheading text")
+# And at the bottom where you have the else case:
+else:
+    st.info("No items added to the estimate yet. Click 'Add Item' to get started.")
+    col1, col2 = st.columns(2)
+    with col1:
+        st.button("➕ Add Item", on_click=add_item, key="add_item_button_empty")
+    with col2:
+        st.button("📌 Add Subheading", on_click=add_subheading, key="add_subheading_button_empty")
 
 if len(st.session_state.selected_items) > 0 or st.session_state.item_count > 0 or st.session_state.subheading_count > 0:
     col1, col2 = st.columns(2)
