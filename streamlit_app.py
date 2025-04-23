@@ -25,7 +25,7 @@ st.markdown("""
         }
         button {
             height: 50% !important;
-            background-color: #416296 !important;
+            background-color: #83c9c4 !important;
         }
     </style>
 """, unsafe_allow_html=True)
