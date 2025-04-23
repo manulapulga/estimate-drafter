@@ -295,7 +295,6 @@ if any(i.get("Type") != "Subheading" for i in st.session_state.selected_items):
             row_data = [
                 str(idx),
                 item['Item'],
-                unit_price = item.get('Unit Price', 0.00)  # Provides default value if key doesn't exist
                 f"{item['Unit Price']:.2f}",
                 item['Item Unit'],
                 f"{item['Quantity']:.2f}",
