@@ -25,10 +25,16 @@ if 'selected_items' not in st.session_state:
     st.session_state.selected_items = []
 if 'item_count' not in st.session_state:
     st.session_state.item_count = 0
+if 'subheading_count' not in st.session_state:
+    st.session_state.subheading_count = 0
 
 # Function to add a new item
 def add_item():
     st.session_state.item_count += 1
+
+# Function to add a new subheading
+def add_subheading():
+    st.session_state.subheading_count += 1
 
 # Function to remove an item
 def remove_item(index):
@@ -40,7 +46,8 @@ def remove_item(index):
 def calculate_totals():
     total_cost = 0
     for item in st.session_state.selected_items:
-        total_cost += item['Cost']
+        if 'Cost' in item:  # Only regular items have cost
+            total_cost += item['Cost']
     
     gst = round(total_cost * 0.18, 2)
     unforeseen = round(total_cost * 0.05, 2)
@@ -48,84 +55,105 @@ def calculate_totals():
     
     return total_cost, gst, unforeseen, final_total
 
-# Display existing items and allow editing/removal
+# Display existing items/subheadings and allow editing/removal
 for idx, item in enumerate(st.session_state.selected_items):
-    with st.expander(f"Item {idx + 1}: {item['Item']}"):
-        col1, col2 = st.columns([3, 1])
-        
-        with col1:
-            # Use the existing item name as default
-            item_name = st.selectbox(
-                "Select Item", 
-                [''] + item_names,
-                index=item_names.index(item['Item']) + 1 if item['Item'] in item_names else 0,
-                key=f"edit_item_{idx}"
+    if item.get('type') == 'subheading':
+        # Subheading display
+        with st.expander(f"📌 {item['text']}", expanded=True):
+            # Text input for editing subheading
+            new_text = st.text_input(
+                "Subheading Text",
+                value=item['text'],
+                key=f"edit_subheading_{idx}"
             )
             
-            if item_name:
-                st.text(f"Item Description: {item_name}")
-            else:
-                st.text("")
-        
-        with col2:
-            # Use the existing quantity as default
-            quantity = st.text_input(
-                "Quantity", 
-                str(item['Quantity']), 
-                key=f"edit_qty_{idx}", 
-                placeholder="Input Quantity"
-            )
+            # Update button
+            if st.button(f"Update Subheading", key=f"update_subheading_{idx}"):
+                st.session_state.selected_items[idx]['text'] = new_text
+                st.success("Subheading updated successfully!")
             
-            if item_name != '':
-                item_data = data[data['Item Name'] == item_name].iloc[0]
-                unit_price = item_data['Unit Price']
-                unit = item_data['Item Unit']
+            # Remove button
+            if st.button(f"❌ Remove Subheading", key=f"remove_subheading_{idx}"):
+                remove_item(idx)
+                st.rerun()
+    else:
+        # Regular item display
+        with st.expander(f"Item {idx + 1}: {item['Item']}"):
+            col1, col2 = st.columns([3, 1])
+            
+            with col1:
+                # Use the existing item name as default
+                item_name = st.selectbox(
+                    "Select Item", 
+                    [''] + item_names,
+                    index=item_names.index(item['Item']) + 1 if item['Item'] in item_names else 0,
+                    key=f"edit_item_{idx}"
+                )
                 
-                st.text(f"Rate: {unit_price:.2f}/{unit}")
-                
-                if quantity:
-                    try:
-                        qty = float(quantity)
-                        if qty > 0:
-                            total = qty * unit_price
-                            st.text(f"Amount: {total:.2f}")
-                    except ValueError:
-                        st.text("Invalid quantity")
+                if item_name:
+                    st.text(f"Item Description: {item_name}")
                 else:
                     st.text("")
-            else:
-                st.text("")
-        
-        # Update button
-        if st.button(f"Update Item {idx + 1}", key=f"update_{idx}"):
-            if item_name != '' and quantity:
-                try:
-                    quantity = float(quantity)
-                    if quantity > 0:
-                        item_data = data[data['Item Name'] == item_name].iloc[0]
-                        unit_price = item_data['Unit Price']
-                        unit = item_data['Item Unit']
-                        cost = round(quantity * unit_price, 2)
-                        
-                        # Update the item in the list
-                        st.session_state.selected_items[idx] = {
-                            'Item': item_name,
-                            'Quantity': quantity,
-                            'Unit Price': unit_price,
-                            'Item Unit': unit,
-                            'Cost': cost
-                        }
-                        st.success("Item updated successfully!")
-                except ValueError:
-                    st.error("Please enter a valid quantity")
-        
-        # Remove button
-        if st.button(f"❌ Remove Item {idx + 1}", key=f"remove_{idx}"):
-            remove_item(idx)
-            st.rerun()
+            
+            with col2:
+                # Use the existing quantity as default
+                quantity = st.text_input(
+                    "Quantity", 
+                    str(item['Quantity']), 
+                    key=f"edit_qty_{idx}", 
+                    placeholder="Input Quantity"
+                )
+                
+                if item_name != '':
+                    item_data = data[data['Item Name'] == item_name].iloc[0]
+                    unit_price = item_data['Unit Price']
+                    unit = item_data['Item Unit']
+                    
+                    st.text(f"Rate: {unit_price:.2f}/{unit}")
+                    
+                    if quantity:
+                        try:
+                            qty = float(quantity)
+                            if qty > 0:
+                                total = qty * unit_price
+                                st.text(f"Amount: {total:.2f}")
+                        except ValueError:
+                            st.text("Invalid quantity")
+                    else:
+                        st.text("")
+                else:
+                    st.text("")
+            
+            # Update button
+            if st.button(f"Update Item {idx + 1}", key=f"update_{idx}"):
+                if item_name != '' and quantity:
+                    try:
+                        quantity = float(quantity)
+                        if quantity > 0:
+                            item_data = data[data['Item Name'] == item_name].iloc[0]
+                            unit_price = item_data['Unit Price']
+                            unit = item_data['Item Unit']
+                            cost = round(quantity * unit_price, 2)
+                            
+                            # Update the item in the list
+                            st.session_state.selected_items[idx] = {
+                                'Item': item_name,
+                                'Quantity': quantity,
+                                'Unit Price': unit_price,
+                                'Item Unit': unit,
+                                'Cost': cost
+                            }
+                            st.success("Item updated successfully!")
+                    except ValueError:
+                        st.error("Please enter a valid quantity")
+            
+            # Remove button
+            if st.button(f"❌ Remove Item {idx + 1}", key=f"remove_{idx}"):
+                remove_item(idx)
+                st.rerun()
 
 # Add new item fields when "Add Item" is clicked
-if st.session_state.item_count > len(st.session_state.selected_items):
+if st.session_state.item_count > sum(1 for item in st.session_state.selected_items if 'Item' in item):
     idx = len(st.session_state.selected_items)
     with st.expander(f"New Item {idx + 1}", expanded=True):
         col1, col2 = st.columns([3, 1])
@@ -193,12 +221,37 @@ if st.session_state.item_count > len(st.session_state.selected_items):
                 except ValueError:
                     st.error("Please enter a valid quantity")
 
-# Add Item button - MOVED TO BOTTOM
-if len(st.session_state.selected_items) > 0 or st.session_state.item_count > 0:
-    st.button("➕ Add Item", on_click=add_item)
+# Add new subheading when "Add Subheading" is clicked
+if st.session_state.subheading_count > sum(1 for item in st.session_state.selected_items if item.get('type') == 'subheading'):
+    idx = len(st.session_state.selected_items)
+    with st.expander("New Subheading", expanded=True):
+        subheading_text = st.text_input(
+            "Subheading Text",
+            key=f"new_subheading_{idx}",
+            placeholder="Enter subheading text"
+        )
+        
+        if st.button("Add Subheading", key=f"add_subheading_{idx}"):
+            if subheading_text:
+                st.session_state.selected_items.append({
+                    'type': 'subheading',
+                    'text': subheading_text
+                })
+                st.success("Subheading added successfully!")
+                st.rerun()
+            else:
+                st.error("Please enter subheading text")
+
+# Action buttons - placed below all items
+if len(st.session_state.selected_items) > 0 or st.session_state.item_count > 0 or st.session_state.subheading_count > 0:
+    col1, col2 = st.columns(2)
+    with col1:
+        st.button("➕ Add Item", on_click=add_item)
+    with col2:
+        st.button("📌 Add Subheading", on_click=add_subheading)
 
 # Calculate and display totals
-if st.session_state.selected_items:
+if any('Cost' in item for item in st.session_state.selected_items):
     total_cost, gst, unforeseen, final_total = calculate_totals()
     
     st.subheader("Estimate Breakdown")
@@ -210,14 +263,29 @@ if st.session_state.selected_items:
     # Excel Generation
     if st.button("Generate Excel"):
         items_data = []
-        for idx, item in enumerate(st.session_state.selected_items, start=1):
-            items_data.append([idx, item['Item'], item['Unit Price'], item['Item Unit'], item['Quantity'], item['Cost']])
-    
-        items_data.append(["Subtotal", "", "", "", "", total_cost])
-        items_data.append(["GST (18%)", "", "", "", "", gst])
-        items_data.append(["Unforeseen (5%)", "", "", "", "", unforeseen])
-        items_data.append(["Grand Total", "", "", "", "", final_total])
-    
+        item_counter = 1
+        
+        for item in st.session_state.selected_items:
+            if item.get('type') == 'subheading':
+                items_data.append([item['text'], "", "", "", "", ""])
+            else:
+                items_data.append([
+                    item_counter,
+                    item['Item'],
+                    item['Unit Price'],
+                    item['Item Unit'],
+                    item['Quantity'],
+                    item['Cost']
+                ])
+                item_counter += 1
+        
+        # Only add totals if there are items with costs
+        if any('Cost' in item for item in st.session_state.selected_items):
+            items_data.append(["Subtotal", "", "", "", "", total_cost])
+            items_data.append(["GST (18%)", "", "", "", "", gst])
+            items_data.append(["Unforeseen (5%)", "", "", "", "", unforeseen])
+            items_data.append(["Grand Total", "", "", "", "", final_total])
+        
         df = pd.DataFrame(items_data, columns=["S.No", "Item Name", "Item Rate", "Item Unit", "Quantity", "Total"])
         
         wb = Workbook()
@@ -244,9 +312,10 @@ if st.session_state.selected_items:
                 cell.border = thin_border
     
         for row_idx in range(len(items_data)-4, len(items_data)):
-            ws.merge_cells(f'A{row_idx+2}:E{row_idx+2}')
-            ws[f'A{row_idx+2}'] = items_data[row_idx][0]
-            ws[f'A{row_idx+2}'].alignment = Alignment(horizontal='center', vertical='center')
+            if isinstance(items_data[row_idx][0], str) and items_data[row_idx][0] in ["Subtotal", "GST (18%)", "Unforeseen (5%)", "Grand Total"]:
+                ws.merge_cells(f'A{row_idx+2}:E{row_idx+2}')
+                ws[f'A{row_idx+2}'] = items_data[row_idx][0]
+                ws[f'A{row_idx+2}'].alignment = Alignment(horizontal='center', vertical='center')
         
         ws.column_dimensions['B'].width = 70
     
@@ -317,77 +386,89 @@ if st.session_state.selected_items:
             return max_lines
         
         pdf.ln(10)
-        pdf.set_font("Arial", 'B', 10)
-        headers = ["Sl.No", "Item Name", "Rate", "Unit", "Qty", "Total"]
+        item_counter = 1
         
-        x_start = pdf.get_x()
-        y_start = pdf.get_y()
+        for item in st.session_state.selected_items:
+            if item.get('type') == 'subheading':
+                # Add subheading
+                pdf.set_font("Arial", 'B', 12)
+                pdf.cell(sum(col_widths), 8, item['text'], 0, 1, 'L')
+                pdf.ln(2)
+            else:
+                # Add regular item
+                pdf.set_font("Arial", 'B', 10)
+                headers = ["Sl.No", "Item Name", "Rate", "Unit", "Qty", "Total"]
+                
+                x_start = pdf.get_x()
+                y_start = pdf.get_y()
+                
+                pdf.rect(x_start, y_start, sum(col_widths), 6)
+                
+                for i in range(1, len(col_widths)):
+                    pdf.line(
+                        x_start + sum(col_widths[:i]), y_start,
+                        x_start + sum(col_widths[:i]), y_start + 6
+                    )
+                
+                for i, header in enumerate(headers):
+                    pdf.set_xy(x_start + sum(col_widths[:i]), y_start)
+                    pdf.cell(col_widths[i], 6, header, 0, 0, 'C')
+                
+                pdf.set_y(y_start + 6)
+                
+                pdf.set_font("Arial", '', 10)
+                row_data = [
+                    str(item_counter),
+                    item['Item'],
+                    f"{item['Unit Price']:.2f}",
+                    item['Item Unit'],
+                    f"{item['Quantity']:.2f}",
+                    f"{item['Cost']:.2f}"
+                ]
+                item_counter += 1
+                
+                x_row_start = pdf.get_x()
+                y_row_start = pdf.get_y()
+                
+                max_lines = calculate_max_lines(row_data)
+                row_height = 6 * max_lines
+                
+                for i, text in enumerate(row_data):
+                    pdf.set_xy(x_row_start + sum(col_widths[:i]), y_row_start)
+                    
+                    cell_lines = split_text(str(text), col_widths[i])
+                    
+                    vertical_offset = (row_height - (6 * len(cell_lines))) / 2
+                    
+                    pdf.cell(col_widths[i], row_height, border=1)
+                    
+                    pdf.set_xy(x_row_start + sum(col_widths[:i]), y_row_start + vertical_offset)
+                    
+                    for line in cell_lines:
+                        pdf.cell(col_widths[i], 6, line, 0, 0, 'C')
+                        pdf.set_xy(x_row_start + sum(col_widths[:i]), pdf.get_y() + 6)
+                
+                pdf.set_y(y_row_start + row_height)
         
-        pdf.rect(x_start, y_start, sum(col_widths), 6)
-        
-        for i in range(1, len(col_widths)):
-            pdf.line(
-                x_start + sum(col_widths[:i]), y_start,
-                x_start + sum(col_widths[:i]), y_start + 6
-            )
-        
-        for i, header in enumerate(headers):
-            pdf.set_xy(x_start + sum(col_widths[:i]), y_start)
-            pdf.cell(col_widths[i], 6, header, 0, 0, 'C')
-        
-        pdf.set_y(y_start + 6)
-        
-        for idx, item in enumerate(st.session_state.selected_items, start=1):
-            pdf.set_font("Arial", '', 10)
-            row_data = [
-                str(idx),
-                item['Item'],
-                f"{item['Unit Price']:.2f}",
-                item['Item Unit'],
-                f"{item['Quantity']:.2f}",
-                f"{item['Cost']:.2f}"
+        # Add totals if there are items with costs
+        if any('Cost' in item for item in st.session_state.selected_items):
+            summary_data = [
+                ("Subtotal", f"{total_cost:.2f}"),
+                ("GST (18%)", f"{gst:.2f}"),
+                ("Unforeseen (5%)", f"{unforeseen:.2f}"),
+                ("Grand Total", f"{final_total:.2f}")
             ]
             
-            x_row_start = pdf.get_x()
-            y_row_start = pdf.get_y()
-            
-            max_lines = calculate_max_lines(row_data)
-            row_height = 6 * max_lines
-            
-            for i, text in enumerate(row_data):
-                pdf.set_xy(x_row_start + sum(col_widths[:i]), y_row_start)
+            for label, value in summary_data:
+                x = pdf.get_x()
+                y = pdf.get_y()
                 
-                cell_lines = split_text(str(text), col_widths[i])
+                pdf.multi_cell(sum(col_widths[:-1]), 8, label, border=1, align='C')
+                pdf.set_xy(x + sum(col_widths[:-1]), y)
                 
-                vertical_offset = (row_height - (6 * len(cell_lines))) / 2
+                pdf.multi_cell(col_widths[-1], 8, value, border=1, align='C')
                 
-                pdf.cell(col_widths[i], row_height, border=1)
-                
-                pdf.set_xy(x_row_start + sum(col_widths[:i]), y_row_start + vertical_offset)
-                
-                for line in cell_lines:
-                    pdf.cell(col_widths[i], 6, line, 0, 0, 'C')
-                    pdf.set_xy(x_row_start + sum(col_widths[:i]), pdf.get_y() + 6)
-            
-            pdf.set_y(y_row_start + row_height)
-        
-        summary_data = [
-            ("Subtotal", f"{total_cost:.2f}"),
-            ("GST (18%)", f"{gst:.2f}"),
-            ("Unforeseen (5%)", f"{unforeseen:.2f}"),
-            ("Grand Total", f"{final_total:.2f}")
-        ]
-        
-        for label, value in summary_data:
-            x = pdf.get_x()
-            y = pdf.get_y()
-            
-            pdf.multi_cell(sum(col_widths[:-1]), 8, label, border=1, align='C')
-            pdf.set_xy(x + sum(col_widths[:-1]), y)
-            
-            pdf.multi_cell(col_widths[-1], 8, value, border=1, align='C')
-            
-            pdf.set_xy(x, y + 8)
+                pdf.set_xy(x, y + 8)
         
         pdf_file = "estimate.pdf"
         pdf.output(pdf_file)
@@ -401,4 +482,8 @@ if st.session_state.selected_items:
             )
 else:
     st.info("No items added to the estimate yet. Click 'Add Item' to get started.")
-    st.button("➕ Add Item", on_click=add_item)
+    col1, col2 = st.columns(2)
+    with col1:
+        st.button("➕ Add Item", on_click=add_item)
+    with col2:
+        st.button("📌 Add Subheading", on_click=add_subheading)
