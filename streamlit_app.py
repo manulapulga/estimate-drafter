@@ -360,6 +360,3 @@ if st.button("Generate PDF"):
             file_name=pdf_file,
             mime="application/pdf"
         )
-
-else:
-    st.info("No items added to the estimate yet.")
