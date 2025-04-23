@@ -25,113 +25,80 @@ if 'selected_items' not in st.session_state:
     st.session_state.selected_items = []
 if 'item_count' not in st.session_state:
     st.session_state.item_count = 0
-if 'subheading_count' not in st.session_state:
-    st.session_state.subheading_count = 0
 
 # Function to add a new item
 def add_item():
     st.session_state.item_count += 1
 
-# Function to add a new subheading
-def add_subheading():
-    st.session_state.subheading_count += 1
-
 # Function to remove an item
 def remove_item(index):
     st.session_state.selected_items.pop(index)
+    # Recalculate totals after removal
     calculate_totals()
 
 # Function to calculate totals
 def calculate_totals():
     total_cost = 0
     for item in st.session_state.selected_items:
-        if 'Cost' in item:
-            total_cost += item['Cost']
-
+        total_cost += item['Cost']
+    
     gst = round(total_cost * 0.18, 2)
     unforeseen = round(total_cost * 0.05, 2)
     final_total = math.ceil((total_cost + gst + unforeseen) / 1000) * 1000
-
+    
     return total_cost, gst, unforeseen, final_total
 
-# Display existing items/subheadings and allow editing/removal
+# Display existing items and allow editing/removal
 for idx, item in enumerate(st.session_state.selected_items):
-    if item.get('type') == 'subheading':
-        with st.expander(f"📌 {item['text']}", expanded=True):
-            new_text = st.text_input("Subheading Text", value=item['text'], key=f"edit_subheading_{idx}")
-            if st.button(f"Update Subheading", key=f"update_subheading_{idx}"):
-                st.session_state.selected_items[idx]['text'] = new_text
-                st.success("Subheading updated successfully!")
-            if st.button(f"❌ Remove Subheading", key=f"remove_subheading_{idx}"):
-                remove_item(idx)
-                st.rerun()
-    else:
-        with st.expander(f"Item {idx + 1}: {item['Item']}"):
-            col1, col2 = st.columns([3, 1])
-            with col1:
-                item_name = st.selectbox("Select Item", [''] + item_names, index=item_names.index(item['Item']) + 1 if item['Item'] in item_names else 0, key=f"edit_item_{idx}")
-                st.text(f"Item Description: {item_name}" if item_name else "")
-            with col2:
-                quantity = st.text_input("Quantity", str(item['Quantity']), key=f"edit_qty_{idx}", placeholder="Input Quantity")
-                if item_name:
-                    item_data = data[data['Item Name'] == item_name].iloc[0]
-                    unit_price = item_data['Unit Price']
-                    unit = item_data['Item Unit']
-                    st.text(f"Rate: {unit_price:.2f}/{unit}")
-                    if quantity:
-                        try:
-                            qty = float(quantity)
-                            if qty > 0:
-                                st.text(f"Amount: {qty * unit_price:.2f}")
-                        except ValueError:
-                            st.text("Invalid quantity")
-            if st.button(f"Update Item {idx + 1}", key=f"update_{idx}"):
-                if item_name and quantity:
-                    try:
-                        quantity = float(quantity)
-                        if quantity > 0:
-                            item_data = data[data['Item Name'] == item_name].iloc[0]
-                            unit_price = item_data['Unit Price']
-                            unit = item_data['Item Unit']
-                            cost = round(quantity * unit_price, 2)
-                            st.session_state.selected_items[idx] = {
-                                'Item': item_name,
-                                'Quantity': quantity,
-                                'Unit Price': unit_price,
-                                'Item Unit': unit,
-                                'Cost': cost
-                            }
-                            st.success("Item updated successfully!")
-                    except ValueError:
-                        st.error("Please enter a valid quantity")
-            if st.button(f"❌ Remove Item {idx + 1}", key=f"remove_{idx}"):
-                remove_item(idx)
-                st.rerun()
-
-# Add new item fields when "Add Item" is clicked
-if st.session_state.item_count > sum(1 for item in st.session_state.selected_items if 'Item' in item):
-    idx = len(st.session_state.selected_items)
-    with st.expander(f"New Item {idx + 1}", expanded=True):
+    with st.expander(f"Item {idx + 1}: {item['Item']}"):
         col1, col2 = st.columns([3, 1])
+        
         with col1:
-            item_name = st.selectbox("Select Item", [''] + item_names, key=f"new_item_{idx}")
-            st.text(f"Item Description: {item_name}" if item_name else "")
-        with col2:
-            quantity = st.text_input("Quantity", "", key=f"new_qty_{idx}", placeholder="Input Quantity")
+            # Use the existing item name as default
+            item_name = st.selectbox(
+                "Select Item", 
+                [''] + item_names,
+                index=item_names.index(item['Item']) + 1 if item['Item'] in item_names else 0,
+                key=f"edit_item_{idx}"
+            )
+            
             if item_name:
+                st.text(f"Item Description: {item_name}")
+            else:
+                st.text("")
+        
+        with col2:
+            # Use the existing quantity as default
+            quantity = st.text_input(
+                "Quantity", 
+                str(item['Quantity']), 
+                key=f"edit_qty_{idx}", 
+                placeholder="Input Quantity"
+            )
+            
+            if item_name != '':
                 item_data = data[data['Item Name'] == item_name].iloc[0]
                 unit_price = item_data['Unit Price']
                 unit = item_data['Item Unit']
+                
                 st.text(f"Rate: {unit_price:.2f}/{unit}")
+                
                 if quantity:
                     try:
                         qty = float(quantity)
                         if qty > 0:
-                            st.text(f"Amount: {qty * unit_price:.2f}")
+                            total = qty * unit_price
+                            st.text(f"Amount: {total:.2f}")
                     except ValueError:
                         st.text("Invalid quantity")
-        if st.button(f"Add to Estimate", key=f"add_{idx}"):
-            if item_name and quantity:
+                else:
+                    st.text("")
+            else:
+                st.text("")
+        
+        # Update button
+        if st.button(f"Update Item {idx + 1}", key=f"update_{idx}"):
+            if item_name != '' and quantity:
                 try:
                     quantity = float(quantity)
                     if quantity > 0:
@@ -139,6 +106,81 @@ if st.session_state.item_count > sum(1 for item in st.session_state.selected_ite
                         unit_price = item_data['Unit Price']
                         unit = item_data['Item Unit']
                         cost = round(quantity * unit_price, 2)
+                        
+                        # Update the item in the list
+                        st.session_state.selected_items[idx] = {
+                            'Item': item_name,
+                            'Quantity': quantity,
+                            'Unit Price': unit_price,
+                            'Item Unit': unit,
+                            'Cost': cost
+                        }
+                        st.success("Item updated successfully!")
+                except ValueError:
+                    st.error("Please enter a valid quantity")
+        
+        # Remove button
+        if st.button(f"❌ Remove Item {idx + 1}", key=f"remove_{idx}"):
+            remove_item(idx)
+            st.rerun()
+
+# Add new item fields when "Add Item" is clicked
+if st.session_state.item_count > len(st.session_state.selected_items):
+    idx = len(st.session_state.selected_items)
+    with st.expander(f"New Item {idx + 1}", expanded=True):
+        col1, col2 = st.columns([3, 1])
+        
+        with col1:
+            item_name = st.selectbox(
+                "Select Item", 
+                [''] + item_names,
+                key=f"new_item_{idx}"
+            )
+            
+            if item_name:
+                st.text(f"Item Description: {item_name}")
+            else:
+                st.text("")
+        
+        with col2:
+            quantity = st.text_input(
+                "Quantity", 
+                "", 
+                key=f"new_qty_{idx}", 
+                placeholder="Input Quantity"
+            )
+            
+            if item_name != '':
+                item_data = data[data['Item Name'] == item_name].iloc[0]
+                unit_price = item_data['Unit Price']
+                unit = item_data['Item Unit']
+                
+                st.text(f"Rate: {unit_price:.2f}/{unit}")
+                
+                if quantity:
+                    try:
+                        qty = float(quantity)
+                        if qty > 0:
+                            total = qty * unit_price
+                            st.text(f"Amount: {total:.2f}")
+                    except ValueError:
+                        st.text("Invalid quantity")
+                else:
+                    st.text("")
+            else:
+                st.text("")
+        
+        # Add to list button
+        if st.button(f"Add to Estimate", key=f"add_{idx}"):
+            if item_name != '' and quantity:
+                try:
+                    quantity = float(quantity)
+                    if quantity > 0:
+                        item_data = data[data['Item Name'] == item_name].iloc[0]
+                        unit_price = item_data['Unit Price']
+                        unit = item_data['Item Unit']
+                        cost = round(quantity * unit_price, 2)
+                        
                         st.session_state.selected_items.append({
                             'Item': item_name,
                             'Quantity': quantity,
@@ -151,178 +193,212 @@ if st.session_state.item_count > sum(1 for item in st.session_state.selected_ite
                 except ValueError:
                     st.error("Please enter a valid quantity")
 
-# Add new subheading when "Add Subheading" is clicked
-if st.session_state.subheading_count > sum(1 for item in st.session_state.selected_items if item.get('type') == 'subheading'):
-    idx = len(st.session_state.selected_items)
-    with st.expander("New Subheading", expanded=True):
-        subheading_text = st.text_input("Subheading Text", key=f"new_subheading_{idx}", placeholder="Enter subheading text")
-        if st.button("Add Subheading", key=f"add_subheading_{idx}"):
-            if subheading_text:
-                st.session_state.selected_items.append({'type': 'subheading', 'text': subheading_text})
-                st.success("Subheading added successfully!")
-                st.rerun()
-            else:
-                st.error("Please enter subheading text")
+# Add Item button - MOVED TO BOTTOM
+if len(st.session_state.selected_items) > 0 or st.session_state.item_count > 0:
+    st.button("➕ Add Item", on_click=add_item)
 
-if len(st.session_state.selected_items) > 0 or st.session_state.item_count > 0 or st.session_state.subheading_count > 0:
-    col1, col2 = st.columns(2)
-    with col1:
-        st.button("➕ Add Item", on_click=add_item)
-    with col2:
-        st.button("📌 Add Subheading", on_click=add_subheading)
-
-if any('Cost' in item for item in st.session_state.selected_items):
+# Calculate and display totals
+if st.session_state.selected_items:
     total_cost, gst, unforeseen, final_total = calculate_totals()
+    
     st.subheader("Estimate Breakdown")
     st.write(f"Subtotal: {total_cost:.2f}")
     st.write(f"GST (18%): {gst:.2f}")
     st.write(f"Unforeseen (5%): {unforeseen:.2f}")
     st.write(f"Final Total (Rounded): {final_total:.2f}")
-
-    if st.button("Generate PDF"):
-    pdf = FPDF()
-    pdf.set_auto_page_break(auto=True, margin=15)
-    pdf.add_page()
-    pdf.set_font("Arial", style='B', size=72)
-    pdf.set_text_color(230, 230, 230)
-    watermark = "KERALA GROUND WATER DEPARTMENT"
-    text_width = pdf.get_string_width(watermark)
-    pdf.rotate(45, pdf.w / 2, pdf.h / 2)
-    pdf.text((pdf.w - text_width) / 2, pdf.h / 2 - 20, watermark)
-    pdf.rotate(0)
-
-    pdf.set_font("Arial", 'B', 16)
-    pdf.set_text_color(0, 0, 0)
-    pdf.cell(200, 10, txt=estimate_heading, ln=True, align='C')
-    pdf.ln(10)
-
-    col_widths = [10, 70, 20, 20, 20, 20]  # Column widths
-    headers = ["Sl.No", "Item Name", "Rate", "Unit", "Qty", "Total"]
-
-    def split_text(text, max_width):
-        if not isinstance(text, str): text = str(text)
-        words, lines, line = text.split(), [], ""
-        for word in words:
-            if pdf.get_string_width((line + ' ' + word).strip()) < max_width - 2:
-                line = (line + ' ' + word).strip()
-            else:
-                lines.append(line)
-                line = word
-        lines.append(line)
-        return lines
-
-    def calculate_row_height(row_data):
-        max_lines = 1
-        for i, txt in enumerate(row_data):
-            lines = split_text(str(txt), col_widths[i])
-            if len(lines) > max_lines:
-                max_lines = len(lines)
-        return max_lines * 6  # 6 is the line height
-
-    item_counter = 1
-    show_header = True
     
-    for item in st.session_state.selected_items:
-        if item.get('type') == 'subheading':
-            pdf.set_font("Arial", 'B', 12)
-            pdf.cell(sum(col_widths), 8, item['text'], 0, 1, 'L')
-            pdf.ln(2)
-            show_header = True
-        else:
-            if show_header:
-                pdf.set_font("Arial", 'B', 10)
-                x, y = pdf.get_x(), pdf.get_y()
-                pdf.rect(x, y, sum(col_widths), 6)
-                for i in range(1, len(col_widths)):
-                    pdf.line(x + sum(col_widths[:i]), y, x + sum(col_widths[:i]), y + 6)
-                for i, h in enumerate(headers):
-                    pdf.set_xy(x + sum(col_widths[:i]), y)
-                    pdf.cell(col_widths[i], 6, h, 0, 0, 'C')
-                pdf.set_y(y + 6)
-                show_header = False
-
+    # Excel Generation
+    if st.button("Generate Excel"):
+        items_data = []
+        for idx, item in enumerate(st.session_state.selected_items, start=1):
+            items_data.append([idx, item['Item'], item['Unit Price'], item['Item Unit'], item['Quantity'], item['Cost']])
+    
+        items_data.append(["Subtotal", "", "", "", "", total_cost])
+        items_data.append(["GST (18%)", "", "", "", "", gst])
+        items_data.append(["Unforeseen (5%)", "", "", "", "", unforeseen])
+        items_data.append(["Grand Total", "", "", "", "", final_total])
+    
+        df = pd.DataFrame(items_data, columns=["S.No", "Item Name", "Item Rate", "Item Unit", "Quantity", "Total"])
+        
+        wb = Workbook()
+        ws = wb.active
+        ws.title = "Estimate"
+        
+        ws.merge_cells('A1:F1')
+        ws['A1'] = estimate_heading
+        ws['A1'].alignment = Alignment(horizontal='center', vertical='center')
+        ws['A1'].font = ws['A1'].font.copy(bold=True, size=14)
+    
+        for row_idx, row in df.iterrows():
+            for col_idx, value in enumerate(row):
+                cell = ws.cell(row=row_idx+2, column=col_idx+1, value=value)
+                cell.alignment = Alignment(horizontal='center', vertical='center', wrap_text=True)
+        
+        thin_border = Border(left=Side(style='thin'),
+                             right=Side(style='thin'),
+                             top=Side(style='thin'),
+                             bottom=Side(style='thin'))
+        
+        for row in ws.iter_rows(min_row=1, max_row=ws.max_row, min_col=1, max_col=ws.max_column):
+            for cell in row:
+                cell.border = thin_border
+    
+        for row_idx in range(len(items_data)-4, len(items_data)):
+            ws.merge_cells(f'A{row_idx+2}:E{row_idx+2}')
+            ws[f'A{row_idx+2}'] = items_data[row_idx][0]
+            ws[f'A{row_idx+2}'].alignment = Alignment(horizontal='center', vertical='center')
+        
+        ws.column_dimensions['B'].width = 70
+    
+        excel_file = "estimate.xlsx"
+        wb.save(excel_file)
+    
+        with open(excel_file, "rb") as f:
+            st.download_button(
+                label="Download Excel",
+                data=f,
+                file_name=excel_file,
+                mime="application/vnd.ms-excel"
+            )
+    
+    # PDF Generation with clean single watermark
+    if st.button("Generate PDF"):
+        pdf = FPDF()
+        pdf.set_auto_page_break(auto=True, margin=15)
+        pdf.add_page()
+        
+        # Single elegant watermark
+        pdf.set_font("Arial", style='B', size=72)  # Large bold font
+        pdf.set_text_color(230, 230, 230)  # Very light gray
+        
+        # Calculate center position
+        text = "KERALA GROUND WATER DEPARTMENT"
+        text_width = pdf.get_string_width(text)
+        x = (pdf.w - text_width) / 2
+        y = pdf.h / 2 - 20  # Slightly above center
+        
+        # Rotate 45 degrees at center of page
+        pdf.rotate(45, pdf.w/2, pdf.h/2)
+        pdf.text(x, y, text)
+        pdf.rotate(0)  # Reset rotation
+        
+        # Main content
+        pdf.set_font("Arial", 'B', 16)
+        pdf.set_text_color(0, 0, 0)
+        pdf.cell(200, 10, txt=estimate_heading, ln=True, align='C')
+        
+        # Rest of your existing PDF generation code...
+        col_widths = [10, 70, 20, 20, 20, 20]
+        
+        def split_text(text, max_width):
+            if not isinstance(text, str):
+                text = str(text)
+            lines = []
+            words = text.split()
+            current_line = ""
+            
+            for word in words:
+                test_line = current_line + " " + word if current_line else word
+                if pdf.get_string_width(test_line) < max_width - 2:
+                    current_line = test_line
+                else:
+                    lines.append(current_line)
+                    current_line = word
+            if current_line:
+                lines.append(current_line)
+            return lines
+        
+        def calculate_max_lines(row_data):
+            max_lines = 1
+            for i, text in enumerate(row_data):
+                lines = split_text(str(text), col_widths[i])
+                if len(lines) > max_lines:
+                    max_lines = len(lines)
+            return max_lines
+        
+        pdf.ln(10)
+        pdf.set_font("Arial", 'B', 10)
+        headers = ["Sl.No", "Item Name", "Rate", "Unit", "Qty", "Total"]
+        
+        x_start = pdf.get_x()
+        y_start = pdf.get_y()
+        
+        pdf.rect(x_start, y_start, sum(col_widths), 6)
+        
+        for i in range(1, len(col_widths)):
+            pdf.line(
+                x_start + sum(col_widths[:i]), y_start,
+                x_start + sum(col_widths[:i]), y_start + 6
+            )
+        
+        for i, header in enumerate(headers):
+            pdf.set_xy(x_start + sum(col_widths[:i]), y_start)
+            pdf.cell(col_widths[i], 6, header, 0, 0, 'C')
+        
+        pdf.set_y(y_start + 6)
+        
+        for idx, item in enumerate(st.session_state.selected_items, start=1):
             pdf.set_font("Arial", '', 10)
             row_data = [
-                str(item_counter), 
-                item['Item'], 
-                f"{item['Unit Price']:.2f}", 
-                item['Item Unit'], 
-                f"{item['Quantity']:.2f}", 
+                str(idx),
+                item['Item'],
+                f"{item['Unit Price']:.2f}",
+                item['Item Unit'],
+                f"{item['Quantity']:.2f}",
                 f"{item['Cost']:.2f}"
             ]
             
-            # Calculate required height for this row
-            row_height = calculate_row_height(row_data)
+            x_row_start = pdf.get_x()
+            y_row_start = pdf.get_y()
             
-            # Get current position
-            x, y = pdf.get_x(), pdf.get_y()
+            max_lines = calculate_max_lines(row_data)
+            row_height = 6 * max_lines
             
-            # Draw cells one by one with the same height
-            for i, val in enumerate(row_data):
-                pdf.set_xy(x + sum(col_widths[:i]), y)
-                lines = split_text(str(val), col_widths[i])
-                # Calculate vertical position to center text
-                v_pos = y + (row_height - (len(lines) * 6)) / 2
-                pdf.set_xy(x + sum(col_widths[:i]), v_pos)
-                for line in lines:
+            for i, text in enumerate(row_data):
+                pdf.set_xy(x_row_start + sum(col_widths[:i]), y_row_start)
+                
+                cell_lines = split_text(str(text), col_widths[i])
+                
+                vertical_offset = (row_height - (6 * len(cell_lines))) / 2
+                
+                pdf.cell(col_widths[i], row_height, border=1)
+                
+                pdf.set_xy(x_row_start + sum(col_widths[:i]), y_row_start + vertical_offset)
+                
+                for line in cell_lines:
                     pdf.cell(col_widths[i], 6, line, 0, 0, 'C')
-                    pdf.set_xy(x + sum(col_widths[:i]), pdf.get_y())
+                    pdf.set_xy(x_row_start + sum(col_widths[:i]), pdf.get_y() + 6)
             
-            # Draw borders around the entire row
-            pdf.rect(x, y, sum(col_widths), row_height)
-            for i in range(1, len(col_widths)):
-                pdf.line(x + sum(col_widths[:i]), y, x + sum(col_widths[:i]), y + row_height)
-            
-            # Move to next row position
-            pdf.set_y(y + row_height)
-            item_counter += 1
-
-    if item_counter > 1:
+            pdf.set_y(y_row_start + row_height)
+        
         summary_data = [
-            ("Subtotal", f"{total_cost:.2f}"), 
-            ("GST (18%)", f"{gst:.2f}"), 
-            ("Unforeseen (5%)", f"{unforeseen:.2f}"), 
+            ("Subtotal", f"{total_cost:.2f}"),
+            ("GST (18%)", f"{gst:.2f}"),
+            ("Unforeseen (5%)", f"{unforeseen:.2f}"),
             ("Grand Total", f"{final_total:.2f}")
         ]
         
-        for label, val in summary_data:
-            x, y = pdf.get_x(), pdf.get_y()
-            # Calculate height needed for both cells
-            label_height = calculate_row_height([label])
-            val_height = calculate_row_height([val])
-            row_height = max(label_height, val_height)
+        for label, value in summary_data:
+            x = pdf.get_x()
+            y = pdf.get_y()
             
-            # Draw label cell
-            pdf.set_xy(x, y)
-            lines = split_text(label, sum(col_widths[:-1]))
-            v_pos = y + (row_height - (len(lines) * 6)) / 2
-            pdf.set_xy(x, v_pos)
-            for line in lines:
-                pdf.cell(sum(col_widths[:-1]), 6, line, 0, 0, 'C')
-                pdf.set_xy(x, pdf.get_y())
-            
-            # Draw value cell
+            pdf.multi_cell(sum(col_widths[:-1]), 8, label, border=1, align='C')
             pdf.set_xy(x + sum(col_widths[:-1]), y)
-            lines = split_text(val, col_widths[-1])
-            v_pos = y + (row_height - (len(lines) * 6)) / 2
-            pdf.set_xy(x + sum(col_widths[:-1]), v_pos)
-            for line in lines:
-                pdf.cell(col_widths[-1], 6, line, 0, 0, 'C')
-                pdf.set_xy(x + sum(col_widths[:-1]), pdf.get_y())
             
-            # Draw borders
-            pdf.rect(x, y, sum(col_widths[:-1]), row_height)
-            pdf.rect(x + sum(col_widths[:-1]), y, col_widths[-1], row_height)
-            pdf.set_y(y + row_height)
-
-    pdf_file = "estimate.pdf"
-    pdf.output(pdf_file)
-    with open(pdf_file, "rb") as f:
-        st.download_button("Download PDF", data=f, file_name=pdf_file, mime="application/pdf")
+            pdf.multi_cell(col_widths[-1], 8, value, border=1, align='C')
+            
+            pdf.set_xy(x, y + 8)
+        
+        pdf_file = "estimate.pdf"
+        pdf.output(pdf_file)
+    
+        with open(pdf_file, "rb") as f:
+            st.download_button(
+                label="Download PDF",
+                data=f,
+                file_name=pdf_file,
+                mime="application/pdf"
+            )
 else:
     st.info("No items added to the estimate yet. Click 'Add Item' to get started.")
-    col1, col2 = st.columns(2)
-    with col1:
-        st.button("➕ Add Item", on_click=add_item)
-    with col2:
-        st.button("📌 Add Subheading", on_click=add_subheading)
+    st.button("➕ Add Item", on_click=add_item)
