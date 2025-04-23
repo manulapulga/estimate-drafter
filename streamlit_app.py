@@ -148,30 +148,33 @@ if st.button("Generate Excel"):
             mime="application/vnd.ms-excel"
         )
 
-# PDF Generation with improved watermark
+# PDF Generation with clean single watermark
 if st.button("Generate PDF"):
     pdf = FPDF()
     pdf.set_auto_page_break(auto=True, margin=15)
     pdf.add_page()
     
-    # Improved watermark design
-    pdf.set_font("Arial", style='B', size=60)  # Changed to bold and larger
-    pdf.set_text_color(220, 220, 220)  # Lighter gray for better background visibility
+    # Single elegant watermark
+    pdf.set_font("Arial", style='B', size=72)  # Large bold font
+    pdf.set_text_color(230, 230, 230)  # Very light gray
     
-    # Add multiple watermarks at different angles and positions
-    for angle in [30, 45, 60]:
-        for x_pos in [40, 80, 120]:
-            for y_pos in [60, 120, 180]:
-                pdf.rotate(angle, x_pos, y_pos)
-                pdf.text(x_pos, y_pos, "KERALA GROUND WATER")
-                pdf.text(x_pos, y_pos+30, "DEPARTMENT")
-                pdf.rotate(0)
+    # Calculate center position
+    text = "KERALA GROUND WATER DEPARTMENT"
+    text_width = pdf.get_string_width(text)
+    x = (pdf.w - text_width) / 2
+    y = pdf.h / 2 - 20  # Slightly above center
+    
+    # Rotate 45 degrees at center of page
+    pdf.rotate(45, pdf.w/2, pdf.h/2)
+    pdf.text(x, y, text)
+    pdf.rotate(0)  # Reset rotation
     
     # Main content
     pdf.set_font("Arial", 'B', 16)
     pdf.set_text_color(0, 0, 0)
     pdf.cell(200, 10, txt=estimate_heading, ln=True, align='C')
     
+    # Rest of your existing PDF generation code...
     col_widths = [10, 70, 20, 20, 20, 20]
     
     def split_text(text, max_width):
@@ -272,14 +275,6 @@ if st.button("Generate PDF"):
         pdf.multi_cell(col_widths[-1], 8, value, border=1, align='C')
         
         pdf.set_xy(x, y + 8)
-    
-    # Add a final watermark in the center
-    pdf.set_font("Arial", 'B', 72)
-    pdf.set_text_color(230, 230, 230)
-    pdf.rotate(45, pdf.w/2, pdf.h/2)
-    pdf.text(pdf.w/2 - 100, pdf.h/2, "KERALA GROUND WATER")
-    pdf.text(pdf.w/2 - 100, pdf.h/2 + 40, "DEPARTMENT")
-    pdf.rotate(0)
     
     pdf_file = "estimate.pdf"
     pdf.output(pdf_file)
