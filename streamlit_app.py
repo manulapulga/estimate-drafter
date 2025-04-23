@@ -31,7 +31,7 @@ for i in range(max_items):
         item_name = st.selectbox("", [''] + item_names, key=f"item_{i}")
         
         if item_name:
-            st.text(f"Full Item Name: {item_name}")
+            st.text(f"Item Description: {item_name}")
         else:
             st.text("")  # Empty space when no item selected
     
@@ -157,7 +157,7 @@ if st.button("Generate PDF"):
     pdf.set_font("Arial", style='I', size=60)
     pdf.set_text_color(200, 200, 200)
     pdf.rotate(45, 60, 60)
-    pdf.text(30, 120, "Watermark")
+    pdf.text(30, 120, "Kerala Ground Water Department")
     pdf.rotate(0)
     
     pdf.set_font("Arial", 'B', 16)
