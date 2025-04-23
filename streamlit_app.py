@@ -32,35 +32,39 @@ for i in range(max_items):
         
         if item_name:
             st.text(f"Full Item Name: {item_name}")
-            
-            # Get item details from dataframe
+        else:
+            st.text("")  # Empty space for alignment
+    
+    with col2:
+        if item_name != '':
+            # Get item details
             item_data = data[data['Item Name'] == item_name].iloc[0]
             unit_price = item_data['Unit Price']
             unit = item_data['Item Unit']
             
-            # Display unit price with unit
-            st.text(f"Unit Price: {unit_price:.2f}/{unit}")
+            # Display unit price with unit in the right column
+            st.text(f"Price: {unit_price:.2f}/{unit}")
+            
+            # Quantity input
+            quantity = st.text_input("", "", key=f"qty_{i}", placeholder="Qty")
+            
+            # Calculate and display total when quantity is entered
+            if quantity:
+                try:
+                    qty = float(quantity)
+                    if qty > 0:
+                        total = qty * unit_price
+                        st.text(f"Total: {total:.2f}")
+                except ValueError:
+                    st.text("Invalid Qty")
+            else:
+                st.text("")  # Empty space when no quantity
         else:
-            st.text("Unit Price: N/A")
+            # Empty column when no item selected
+            quantity = st.text_input("", "", key=f"qty_{i}", placeholder="Qty")
+            st.text("")  # Empty space
     
-    with col2:
-        quantity = st.text_input("", "", key=f"qty_{i}", placeholder="Input Quantity")
-        
-        if item_name != '' and quantity:
-            try:
-                qty = float(quantity)
-                if qty > 0:
-                    item_data = data[data['Item Name'] == item_name].iloc[0]
-                    unit_price = item_data['Unit Price']
-                    total = qty * unit_price
-                    # Display total amount where unit was previously shown
-                    st.text(f"Total: {total:.2f}")
-            except ValueError:
-                st.text("Invalid quantity")
-        else:
-            # Show empty space when no quantity or no item selected
-            st.text("")
-    
+    # Add to selected items if valid
     if item_name != '' and quantity:
         try:
             quantity = float(quantity)
