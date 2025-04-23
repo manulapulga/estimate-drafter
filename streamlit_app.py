@@ -264,5 +264,3 @@ else:
         st.button("➕ Add Item", on_click=add_item)
     with col2:
         st.button("📌 Add Subheading", on_click=add_subheading)
-
-in the generated pdf the headings sl no, item, rate etc are showing for every items. this has to be limited to main heading (at the top) and for the starting row of subheadings only
