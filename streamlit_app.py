@@ -215,21 +215,21 @@ if any(i.get("Type") != "Subheading" for i in st.session_state.selected_items):
             st.download_button("Download Excel", f, file_name=excel_file, mime="application/vnd.ms-excel")
 
         if st.button("Generate PDF"):
-        pdf = FPDF()
-        pdf.add_page()
-        pdf.set_font("Arial", "B", 14)
-        pdf.cell(0, 10, estimate_heading, ln=True, align='C')
+            pdf = FPDF()
+            pdf.add_page()
+            pdf.set_font("Arial", "B", 14)
+            pdf.cell(0, 10, estimate_heading, ln=True, align='C')
 
-        pdf.set_font("Arial", "B", 12)
-        pdf.cell(10, 10, "Sl", 1, 0, 'C')
-        pdf.cell(80, 10, "Item", 1, 0, 'C')
-        pdf.cell(25, 10, "Rate", 1, 0, 'C')
-        pdf.cell(20, 10, "Unit", 1, 0, 'C')
-        pdf.cell(25, 10, "Qty", 1, 0, 'C')
-        pdf.cell(30, 10, "Cost", 1, 1, 'C')
+            pdf.set_font("Arial", "B", 12)
+            pdf.cell(10, 10, "Sl", 1, 0, 'C')
+            pdf.cell(80, 10, "Item", 1, 0, 'C')
+            pdf.cell(25, 10, "Rate", 1, 0, 'C')
+            pdf.cell(20, 10, "Unit", 1, 0, 'C')
+            pdf.cell(25, 10, "Qty", 1, 0, 'C')
+            pdf.cell(30, 10, "Cost", 1, 1, 'C')
 
-        pdf.set_font("Arial", "", 11)
-        serial = 1
+            pdf.set_font("Arial", "", 11)
+            serial = 1
         for item in st.session_state.selected_items:
             if item.get("Type") == "Subheading":
                 pdf.set_font("Arial", "B", 11)
