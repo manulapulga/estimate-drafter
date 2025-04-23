@@ -213,8 +213,7 @@ if any(i.get("Type") != "Subheading" for i in st.session_state.selected_items):
 
         with open(excel_file, "rb") as f:
             st.download_button("Download Excel", f, file_name=excel_file, mime="application/vnd.ms-excel")
-
-    if st.button("Generate PDF"):
+            
     if st.button("Generate PDF"):
         pdf = FPDF()
         pdf.add_page()
