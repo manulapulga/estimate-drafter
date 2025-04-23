@@ -293,7 +293,7 @@ if st.button("Generate PDF"):
 serial = 1
 
 for item in st.session_state.selected_items:
-    pdf.set_font("Arial", '', 10)
+        pdf.set_font("Arial", '', 10)
 
     if item.get("Type") == "Subheading":
         pdf.set_xy(x_start, pdf.get_y())
