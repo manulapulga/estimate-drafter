@@ -117,7 +117,7 @@ for idx, item in enumerate(st.session_state.selected_items):
 colA, colB = st.columns([1, 1])
 with colA:
     st.button("➕ Add Item", on_click=add_item)
-with colB:
+with colC:
     st.button("➕ Add Sub Heading", on_click=lambda: setattr(st.session_state, 'adding_subheading', True))
 
 # Subheading input form
