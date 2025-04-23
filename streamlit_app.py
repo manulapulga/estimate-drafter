@@ -45,7 +45,7 @@ def calculate_totals():
 # Display added items and subheadings
 for idx, item in enumerate(st.session_state.selected_items):
     if item.get('Type') == 'Subheading':
-        st.markdown(f"### 📌 {item['Item']}")
+        st.markdown(f"###  {item['Item']}")
         if st.button(f"❌ Remove Subheading {idx + 1}", key=f"remove_sub_{idx}"):
             remove_item(idx)
             st.rerun()
@@ -189,7 +189,7 @@ if any(i.get("Type") != "Subheading" for i in st.session_state.selected_items):
         for item in st.session_state.selected_items:
             if item.get("Type") == "Subheading":
                 ws.merge_cells(f'A{row_num}:F{row_num}')
-                ws[f'A{row_num}'] = f"📌 {item['Item']}"
+                ws[f'A{row_num}'] = f" {item['Item']}"
                 row_num += 1
             else:
                 ws.append([serial, item['Item'], item['Unit Price'], item['Item Unit'], item['Quantity'], item['Cost']])
@@ -297,7 +297,7 @@ if st.button("Generate PDF"):
         if item.get("Type") == "Subheading":
             # Only print subheading in this row
             pdf.set_xy(x_start, pdf.get_y())
-            pdf.cell(sum(col_widths), 6, f"📌 {item['Item']}", border=1, align='C')
+            pdf.cell(sum(col_widths), 6, f" {item['Item']}", border=1, align='C')
             pdf.ln(6)  # Move to the next line
         else:
             row_data = [
