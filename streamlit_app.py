@@ -153,7 +153,7 @@ if st.button("Generate Excel"):
             mime="application/vnd.ms-excel"
         )
 
-# PDF Generation with proper cell formatting and uniform row heights
+# PDF Generation with perfect header alignment
 if st.button("Generate PDF"):
     # Create PDF document
     pdf = FPDF()
@@ -203,20 +203,33 @@ if st.button("Generate PDF"):
                 max_lines = len(lines)
         return max_lines
     
-    # Add Table Header
+    # Add Table Header - Special handling for Sl.No
     pdf.ln(10)
     pdf.set_font("Arial", 'B', 10)
-    headers = ["S.No", "Item Name", "Rate", "Unit", "Qty", "Total"]
     
-    # Draw header cells with uniform height
+    # First draw the header border
     x_start = pdf.get_x()
     y_start = pdf.get_y()
     
+    # Draw the full header border first
+    header_height = 6  # Standard height for header
+    pdf.rect(x_start, y_start, sum(col_widths), header_height)
+    
+    # Now draw the vertical lines between headers
+    for i in range(1, len(col_widths)):
+        pdf.line(
+            x_start + sum(col_widths[:i]), y_start,
+            x_start + sum(col_widths[:i]), y_start + header_height
+        )
+    
+    # Now write the header text - special handling for Sl.No
+    headers = ["Sl.No", "Item Name", "Rate", "Unit", "Qty", "Total"]
+    
     for i, header in enumerate(headers):
         pdf.set_xy(x_start + sum(col_widths[:i]), y_start)
-        pdf.multi_cell(col_widths[i], 6, header, border=1, align='C')
+        pdf.cell(col_widths[i], header_height, header, 0, 0, 'C')
     
-    pdf.set_y(y_start + 6)  # Move down by header height
+    pdf.set_y(y_start + header_height)
     
     # Add Table Rows with uniform height per row
     for idx, item in enumerate(selected_items, start=1):
