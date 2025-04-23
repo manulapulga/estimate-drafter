@@ -30,23 +30,6 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-st.markdown("""
-    <style>
-        .stTextInput input {
-            font-size: 150%;
-            color: #1e81b0;
-        }
-        .stTextInput>label {
-            font-size: 150%;
-            color: #1e81b0;
-        }
-        button {
-            height: 50% !important;
-            background-color: #416296 !important;
-        }
-    </style>
-""", unsafe_allow_html=True)
-
 estimate_heading = st.text_input("Work Description")
 st.markdown("<h3 style='text-align: center; color: #76b5c5; font-size: 125%;'>ADD ITEMS TO ESTIMATE</h3>", unsafe_allow_html=True)
 
