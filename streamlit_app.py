@@ -178,7 +178,59 @@ if any('Cost' in item for item in st.session_state.selected_items):
     st.write(f"GST (18%): {gst:.2f}")
     st.write(f"Unforeseen (5%): {unforeseen:.2f}")
     st.write(f"Final Total (Rounded): {final_total:.2f}")
-
+ # Excel Generation
+    if st.button("Generate Excel"):
+        items_data = []
+        for idx, item in enumerate(st.session_state.selected_items, start=1):
+            items_data.append([idx, item['Item'], item['Unit Price'], item['Item Unit'], item['Quantity'], item['Cost']])
+    
+        items_data.append(["Subtotal", "", "", "", "", total_cost])
+        items_data.append(["GST (18%)", "", "", "", "", gst])
+        items_data.append(["Unforeseen (5%)", "", "", "", "", unforeseen])
+        items_data.append(["Grand Total", "", "", "", "", final_total])
+    
+        df = pd.DataFrame(items_data, columns=["S.No", "Item Name", "Item Rate", "Item Unit", "Quantity", "Total"])
+        
+        wb = Workbook()
+        ws = wb.active
+        ws.title = "Estimate"
+        
+        ws.merge_cells('A1:F1')
+        ws['A1'] = estimate_heading
+        ws['A1'].alignment = Alignment(horizontal='center', vertical='center')
+        ws['A1'].font = ws['A1'].font.copy(bold=True, size=14)
+    
+        for row_idx, row in df.iterrows():
+            for col_idx, value in enumerate(row):
+                cell = ws.cell(row=row_idx+2, column=col_idx+1, value=value)
+                cell.alignment = Alignment(horizontal='center', vertical='center', wrap_text=True)
+        
+        thin_border = Border(left=Side(style='thin'),
+                             right=Side(style='thin'),
+                             top=Side(style='thin'),
+                             bottom=Side(style='thin'))
+        
+        for row in ws.iter_rows(min_row=1, max_row=ws.max_row, min_col=1, max_col=ws.max_column):
+            for cell in row:
+                cell.border = thin_border
+    
+        for row_idx in range(len(items_data)-4, len(items_data)):
+            ws.merge_cells(f'A{row_idx+2}:E{row_idx+2}')
+            ws[f'A{row_idx+2}'] = items_data[row_idx][0]
+            ws[f'A{row_idx+2}'].alignment = Alignment(horizontal='center', vertical='center')
+        
+        ws.column_dimensions['B'].width = 70
+    
+        excel_file = "estimate.xlsx"
+        wb.save(excel_file)
+    
+        with open(excel_file, "rb") as f:
+            st.download_button(
+                label="Download Excel",
+                data=f,
+                file_name=excel_file,
+                mime="application/vnd.ms-excel"
+            )
     if st.button("Generate PDF"):
         pdf = FPDF()
         pdf.set_auto_page_break(auto=True, margin=15)
