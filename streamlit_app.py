@@ -32,34 +32,33 @@ for i in range(max_items):
         
         if item_name:
             st.text(f"Full Item Name: {item_name}")
-            
-            # Get item details from dataframe
-            item_data = data[data['Item Name'] == item_name].iloc[0]
-            unit_price = item_data['Unit Price']
-            unit = item_data['Item Unit']
-            
-            # Display unit price with unit
-            st.text(f"Unit Price: {unit_price:.2f}/{unit}")
         else:
-            st.text("Unit Price: N/A")
+            st.text("")  # Empty space when no item selected
     
     with col2:
         quantity = st.text_input("", "", key=f"qty_{i}", placeholder="Input Quantity")
         
-        if item_name != '' and quantity:
-            try:
-                qty = float(quantity)
-                if qty > 0:
-                    item_data = data[data['Item Name'] == item_name].iloc[0]
-                    unit_price = item_data['Unit Price']
-                    total = qty * unit_price
-                    # Display total amount where unit was previously shown
-                    st.text(f"Total: {total:.2f}")
-            except ValueError:
-                st.text("Invalid quantity")
+        if item_name != '':
+            item_data = data[data['Item Name'] == item_name].iloc[0]
+            unit_price = item_data['Unit Price']
+            unit = item_data['Item Unit']
+            
+            # Display unit price with unit below quantity field
+            st.text(f"Rate: {unit_price:.2f}/{unit}")
+            
+            if quantity:
+                try:
+                    qty = float(quantity)
+                    if qty > 0:
+                        total = qty * unit_price
+                        # Display total amount below unit price
+                        st.text(f"Amount: {total:.2f}")
+                except ValueError:
+                    st.text("Invalid quantity")
+            else:
+                st.text("")  # Empty space when no quantity
         else:
-            # Show empty space when no quantity or no item selected
-            st.text("")
+            st.text("")  # Empty space when no item selected
     
     if item_name != '' and quantity:
         try:
