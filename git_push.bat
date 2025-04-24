@@ -1,5 +1,5 @@
 @echo off
-cd "C:\Users\manup\Desktop\Estimate Tool Using Python"
+cd "C:\Users\manup\Desktop\estimate drafter"
 git add .
 git commit -m "Updated app"
 git push
