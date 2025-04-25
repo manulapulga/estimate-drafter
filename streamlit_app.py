@@ -548,8 +548,8 @@ def main_app():
         with col2:
             if st.button("Generate PDF"):
     	            pdf = FPDF()
-    		        pdf.set_auto_page_break(auto=True, margin=15)
-    		        pdf.add_page()
+    		    pdf.set_auto_page_break(auto=True, margin=15)
+    		    pdf.add_page()
 
     		# Watermark
     		pdf.set_font("Arial", style='B', size=72)
