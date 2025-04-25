@@ -19,7 +19,7 @@ def load_item_data():
 
 # 2. ITEM WIZARD COMPONENT
 def show_item_wizard(items_df, add_callback):
-    """Displays the item selection wizard with middle column for pagination"""
+    """Displays the item selection wizard with items in middle column and pagination on right"""
     
     # CSS Styling
     st.markdown("""
@@ -46,9 +46,14 @@ def show_item_wizard(items_df, add_callback):
         }
         .pagination-container {
             display: flex;
-            justify-content: center;
+            flex-direction: column;
+            align-items: center;
             gap: 0.2rem;
             margin: 0.5rem 0;
+        }
+        .pagination-buttons {
+            display: flex;
+            gap: 0.2rem;
         }
         .pagination-btn {
             padding: 0.25rem 0.5rem;
@@ -67,6 +72,12 @@ def show_item_wizard(items_df, add_callback):
             border-color: #4CAF50;
             font-weight: bold;
         }
+        .results-count {
+            text-align: center;
+            margin-top: 0.5rem;
+            font-size: 0.9rem;
+            color: #666;
+        }
     </style>
     """, unsafe_allow_html=True)
 
@@ -74,10 +85,10 @@ def show_item_wizard(items_df, add_callback):
         st.markdown("<div class='wizard-container'>", unsafe_allow_html=True)
         st.markdown("#### Item Selection Wizard")
         
-        # Three column layout (filters | pagination | items)
-        filter_col, pagination_col, items_col = st.columns([3, 6, 1])
+        # Three column layout (filters | items | pagination)
+        filter_col, items_col, pagination_col = st.columns([3, 6, 1])
 
-        # FILTERS COLUMN
+        # FILTERS COLUMN (left)
         with filter_col:
             # Search box
             search_term = st.text_input("🔍 Search items", key="wizard_search")
@@ -172,7 +183,18 @@ def show_item_wizard(items_df, add_callback):
                 filtered_items['Item Name'].str.contains(search_term, case=False)
             ]
 
+        # ITEMS COLUMN (middle)
         with items_col:
+            PAGE_SIZE = 50
+            total_items = len(filtered_items)
+            total_pages = max(1, math.ceil(total_items / PAGE_SIZE))
+            
+            if 'current_page' not in st.session_state:
+                st.session_state.current_page = 1
+            
+            start_idx = (st.session_state.current_page - 1) * PAGE_SIZE
+            end_idx = min(start_idx + PAGE_SIZE, total_items)
+            
             for idx in range(start_idx, end_idx):
                 row = filtered_items.iloc[idx]
                 col1, col2 = st.columns([5, 1])
@@ -193,24 +215,16 @@ def show_item_wizard(items_df, add_callback):
                         add_callback(row['Item Name'])
                         st.rerun()
 
-        # PAGINATION COLUMN (now right column)
+        # PAGINATION COLUMN (right)
         with pagination_col:
-            PAGE_SIZE = 50
-            total_items = len(filtered_items)
-            total_pages = max(1, math.ceil(total_items / PAGE_SIZE))
+            st.markdown("<div class='pagination-container'>", unsafe_allow_html=True)
             
-            if 'current_page' not in st.session_state:
-                st.session_state.current_page = 1
-            
-            start_idx = (st.session_state.current_page - 1) * PAGE_SIZE
-            end_idx = min(start_idx + PAGE_SIZE, total_items)
-            
-            # Vertical space for alignment
+            # Vertical spacer to align with items
             st.write("")
             st.write("")
             
             # Pagination controls
-            st.markdown("<div class='pagination-container'>", unsafe_allow_html=True)
+            st.markdown("<div class='pagination-buttons'>", unsafe_allow_html=True)
             
             if st.button("⏮", key="first_page"):
                 st.session_state.current_page = 1
@@ -244,15 +258,21 @@ def show_item_wizard(items_df, add_callback):
                 st.session_state.current_page = total_pages
                 st.rerun()
             
-            st.markdown("</div>", unsafe_allow_html=True)
+            st.markdown("</div>", unsafe_allow_html=True)  # Close pagination-buttons
             
-            # Results count below pagination
+            # Results count
             st.markdown(
-                f"<div style='text-align: center; margin-top: 0.5rem;'>"
+                f"<div class='results-count'>"
                 f"Page {st.session_state.current_page} of {total_pages}<br>"
-                f"{total_items} items</div>", 
+                f"{total_items} items"
+                f"</div>", 
                 unsafe_allow_html=True
             )
+            
+            st.markdown("</div>", unsafe_allow_html=True)  # Close pagination-container
+        
+        st.markdown("</div>", unsafe_allow_html=True)  # Close wizard-container
+
 # 3. EXAMPLE USAGE
 if __name__ == "__main__":
     st.title("Item Selection Demo")
