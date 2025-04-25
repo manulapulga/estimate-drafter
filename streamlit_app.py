@@ -21,22 +21,28 @@ def authenticate(username, password, credentials_df):
         return user_row.iloc[0]['password'] == password
     return False
 
-# Load data
-try:
-    credentials_df = load_credentials("items.xlsx")
-    data = pd.read_excel("items.xlsx", sheet_name=0)  # Sheet 1 is index 0
-    item_names = data['Item Name'].tolist()
-    unit_prices = data['Unit Price'].tolist()
-    item_units = data['Item Unit'].tolist()
-except FileNotFoundError:
-    st.error("Database file not found. Please contact administrator.")
-    st.stop()
-except Exception as e:
-    st.error(f"Error loading data: {str(e)}")
-    st.stop()
+# Load main items data
+@st.cache_data
+def load_main_items():
+    try:
+        data = pd.read_excel("items.xlsx", sheet_name=0)  # Sheet 1 is index 0
+        return data['Item Name'].tolist(), data['Unit Price'].tolist(), data['Item Unit'].tolist(), data
+    except Exception as e:
+        st.error(f"Error loading main items data: {str(e)}")
+        st.stop()
+
+# Load wizard items data
+@st.cache_data
+def load_wizard_items():
+    try:
+        wizard_data = pd.read_excel("items_wizard.xlsx", sheet_name=0)
+        return wizard_data
+    except Exception as e:
+        st.error(f"Error loading wizard items data: {str(e)}")
+        st.stop()
 
 # Login screen
-def login_page():
+def login_page(credentials_df):
     st.markdown("<h1 style='text-align: center; color: #154c79;'>ESTIMATE DRAFTER LOGIN</h1>", unsafe_allow_html=True)
     
     username_input = st.text_input("Username", key="username_input")
@@ -52,6 +58,10 @@ def login_page():
 
 # Main app
 def main_app():
+    # Load data
+    item_names, unit_prices, item_units, data = load_main_items()
+    wizard_data = load_wizard_items()
+    
     # UI for Estimate Drafting with updated styles
     st.markdown("<h1 style='text-align: center; color: #154c79;'>ESTIMATE DRAFTER</h1>", unsafe_allow_html=True)
     st.markdown(f"<p style='text-align: right; color: #666;'>Logged in as: {st.session_state.logged_in_username}</p>", unsafe_allow_html=True)
@@ -147,13 +157,27 @@ def main_app():
         return total_cost, gst, unforeseen, final_total
 
     def handle_item_selection(selected_item):
-        item_data = data[data['Item Name'] == selected_item].iloc[0]
+        # Find the item in wizard data first
+        wizard_item = wizard_data[wizard_data['Item Name'] == selected_item].iloc[0]
+        
+        # Try to find matching item in main data for unit price and unit
+        main_item = data[data['Item Name'] == selected_item]
+        
+        if not main_item.empty:
+            main_item = main_item.iloc[0]
+            unit_price = main_item['Unit Price']
+            unit = main_item['Item Unit']
+        else:
+            # Use wizard data if not found in main data
+            unit_price = wizard_item['Unit Price']
+            unit = wizard_item['Item Unit']
+        
         st.session_state.selected_items.append({
             'Item': selected_item,
             'Quantity': 1.0,
-            'Unit Price': item_data['Unit Price'],
-            'Item Unit': item_data['Item Unit'],
-            'Cost': item_data['Unit Price'],
+            'Unit Price': unit_price,
+            'Item Unit': unit,
+            'Cost': unit_price,
             'Type': 'Standard',
             'GST_Applicable': True
         })
@@ -349,7 +373,7 @@ def main_app():
 
     # Show Item Selection Wizard if toggled on
     if st.session_state.get('show_wizard', False):
-        show_item_wizard(data, handle_item_selection)
+        show_item_wizard(wizard_data, handle_item_selection)
         if st.button("✕ Close Wizard", key="close_wizard", type="primary"):
             st.session_state.show_wizard = False
             st.rerun()
@@ -715,10 +739,17 @@ if 'authenticated' not in st.session_state:
     st.session_state.authenticated = False
     st.session_state.logged_in_username = None
 
+# Load credentials
+try:
+    credentials_df = load_credentials("items.xlsx")
+except Exception as e:
+    st.error(f"Error loading credentials: {str(e)}")
+    st.stop()
+
 if st.session_state.authenticated:
     main_app()
 else:
-    login_page()
+    login_page(credentials_df)
     
 # Add logout button if authenticated
 if st.session_state.get('authenticated', False):

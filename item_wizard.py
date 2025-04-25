@@ -1,7 +1,7 @@
 import pandas as pd
 import streamlit as st
 
-def show_item_wizard(items_df, callback):
+def show_item_wizard(wizard_items_df, callback):
     """Display the item selection wizard inline in the main window"""
     st.markdown("""
         <style>
@@ -89,7 +89,7 @@ def show_item_wizard(items_df, callback):
             
             # Main Category filter (always visible)
             st.markdown("<div class='filter-header'>Main Categories</div>", unsafe_allow_html=True)
-            main_categories = sorted(items_df['Main Category'].dropna().unique().tolist())
+            main_categories = sorted(wizard_items_df['Main Category'].dropna().unique().tolist())
             for category in main_categories:
                 checked = st.checkbox(
                     category, 
@@ -111,11 +111,11 @@ def show_item_wizard(items_df, callback):
             
             # Determine available sub1 options based on selection
             if st.session_state.selected_filters['main_categories']:
-                sub1_options = items_df[
-                    items_df['Main Category'].isin(st.session_state.selected_filters['main_categories'])
+                sub1_options = wizard_items_df[
+                    wizard_items_df['Main Category'].isin(st.session_state.selected_filters['main_categories'])
                 ]['Sub Category 1'].dropna().unique().tolist()
             else:
-                sub1_options = items_df['Sub Category 1'].dropna().unique().tolist()
+                sub1_options = wizard_items_df['Sub Category 1'].dropna().unique().tolist()
             
             for sub1 in sorted(sub1_options):
                 checked = st.checkbox(
@@ -138,11 +138,11 @@ def show_item_wizard(items_df, callback):
             
             # Determine available sub2 options based on selection
             if st.session_state.selected_filters['sub1_categories']:
-                sub2_options = items_df[
-                    items_df['Sub Category 1'].isin(st.session_state.selected_filters['sub1_categories'])
+                sub2_options = wizard_items_df[
+                    wizard_items_df['Sub Category 1'].isin(st.session_state.selected_filters['sub1_categories'])
                 ]['Sub Category 2'].dropna().unique().tolist()
             else:
-                sub2_options = items_df['Sub Category 2'].dropna().unique().tolist()
+                sub2_options = wizard_items_df['Sub Category 2'].dropna().unique().tolist()
             
             for sub2 in sorted(sub2_options):
                 checked = st.checkbox(
@@ -161,7 +161,7 @@ def show_item_wizard(items_df, callback):
 
         with items_col:
             # Apply filters to items
-            filtered_items = items_df.copy()
+            filtered_items = wizard_items_df.copy()
             
             # Apply category filters
             if st.session_state.selected_filters['main_categories']:
