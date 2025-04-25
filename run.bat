@@ -1,4 +1,4 @@
 @echo off
-cd /d "C:\Users\manup\Desktop\estimate drafter"
+cd /d "C:\Users\manup\Desktop\Estimate Tool Using Python"
 streamlit run streamlit_app.py
 pause
