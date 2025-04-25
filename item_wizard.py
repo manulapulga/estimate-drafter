@@ -24,7 +24,7 @@ def load_item_data():
 # 2. ITEM WIZARD COMPONENT
 def show_item_wizard(items_df, add_callback):
     """
-    Displays the item selection wizard with filters and pagination
+    Displays the Smart Filter with filters and pagination
     Parameters:
     - items_df: Your pandas DataFrame of items
     - add_callback: Function to call when "Add" button is clicked
@@ -91,7 +91,7 @@ def show_item_wizard(items_df, add_callback):
     with st.container():
         # Wizard container
         st.markdown("<div class='wizard-container'>", unsafe_allow_html=True)
-        st.markdown("#### Item Selection Wizard")
+        st.markdown("#### Smart Filter")
         
         # Two column layout (filters on left, items on right)
         filter_col, items_col = st.columns([2, 8])
