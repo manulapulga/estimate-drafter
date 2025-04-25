@@ -24,7 +24,7 @@ def load_item_data():
 # 2. ITEM WIZARD COMPONENT
 def show_item_wizard(items_df, add_callback):
     """
-    Displays the item selection wizard with filters and pagination
+    Displays the Smart Filter with filters and pagination
     Parameters:
     - items_df: Your pandas DataFrame of items
     - add_callback: Function to call when "Add" button is clicked
@@ -82,16 +82,19 @@ def show_item_wizard(items_df, add_callback):
         .pagination-info {
             padding-top: 0.5rem;
         }
+        .pagination-button {
+            margin: 0 0.2rem;
+        }
     </style>
     """, unsafe_allow_html=True)
 
     with st.container():
         # Wizard container
         st.markdown("<div class='wizard-container'>", unsafe_allow_html=True)
-        st.markdown("#### Item Selection Wizard")
+        st.markdown("#### Smart Filter")
         
         # Two column layout (filters on left, items on right)
-        filter_col, items_col = st.columns([3, 7])
+        filter_col, items_col = st.columns([2, 8])
 
         # FILTERS COLUMN
         with filter_col:
@@ -198,23 +201,39 @@ def show_item_wizard(items_df, add_callback):
             PAGE_SIZE = 50
             total_items = len(filtered_items)
             total_pages = max(1, (total_items // PAGE_SIZE) + (1 if total_items % PAGE_SIZE else 0))
-            page = 1  # Default page
             
+            # Initialize current page in session state if not exists
+            if 'current_page' not in st.session_state:
+                st.session_state.current_page = 1
+            
+            # Navigation buttons
             if total_pages > 1:
-                col1, col2, _ = st.columns([1, 1, 6])
+                col1, col2, col3, col4, _ = st.columns([1, 1, 1, 1, 6])
+                
                 with col1:
-                    page = st.number_input(
-                        "Page", 
-                        min_value=1, 
-                        max_value=total_pages, 
-                        value=1,
-                        key="wizard_page"
-                    )
+                    if st.button("⏮️ First", disabled=st.session_state.current_page == 1, 
+                               key="first_page", help="Go to first page"):
+                        st.session_state.current_page = 1
+                        st.rerun()
+                
                 with col2:
-                    st.markdown(f"<div class='pagination-info'>of {total_pages}</div>", unsafe_allow_html=True)
+                    if st.button("◀️ Previous", disabled=st.session_state.current_page == 1, 
+                               key="prev_page", help="Previous page"):
+                        st.session_state.current_page -= 1
+                        st.rerun()
+                
+                with col3:
+                    st.markdown(f"<div class='pagination-info'>Page {st.session_state.current_page} of {total_pages}</div>", 
+                               unsafe_allow_html=True)
+                
+                with col4:
+                    if st.button("Next ▶️", disabled=st.session_state.current_page == total_pages, 
+                               key="next_page", help="Next page"):
+                        st.session_state.current_page += 1
+                        st.rerun()
             
             # Calculate which items to show
-            start_idx = (page - 1) * PAGE_SIZE
+            start_idx = (st.session_state.current_page - 1) * PAGE_SIZE
             end_idx = min(start_idx + PAGE_SIZE, total_items)
             
             # Show results count

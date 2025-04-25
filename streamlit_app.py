@@ -280,7 +280,7 @@ def main_app():
             st.session_state.show_add_other = False
             st.rerun()
     with button_col2:
-        if st.button("🔍 Item Selection Wizard", key="open_wizard"):
+        if st.button("🔍 Smart Filter", key="open_wizard"):
             # Toggle wizard and hide others
             st.session_state.show_wizard = not st.session_state.get('show_wizard', False)
             st.session_state.show_add_item = False
@@ -371,7 +371,7 @@ def main_app():
                     st.rerun()
             st.markdown("</div>", unsafe_allow_html=True)
 
-    # Show Item Selection Wizard if toggled on
+    # Show Smart Filter if toggled on
     if st.session_state.get('show_wizard', False):
         show_item_wizard(wizard_data, handle_item_selection)
         if st.button("✕ Close Wizard", key="close_wizard", type="primary"):
