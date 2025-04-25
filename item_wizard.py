@@ -172,7 +172,6 @@ def show_item_wizard(items_df, add_callback):
                 filtered_items['Item Name'].str.contains(search_term, case=False)
             ]
 
-        # ITEMS COLUMN
         with items_col:
             for idx in range(start_idx, end_idx):
                 row = filtered_items.iloc[idx]
@@ -193,9 +192,8 @@ def show_item_wizard(items_df, add_callback):
                     if st.button("Add", key=f"add_{idx}"):
                         add_callback(row['Item Name'])
                         st.rerun()
-        
-        st.markdown("</div>", unsafe_allow_html=True)
-        # PAGINATION COLUMN (middle column)
+
+        # PAGINATION COLUMN (now right column)
         with pagination_col:
             PAGE_SIZE = 50
             total_items = len(filtered_items)
@@ -254,7 +252,7 @@ def show_item_wizard(items_df, add_callback):
                 f"Page {st.session_state.current_page} of {total_pages}<br>"
                 f"{total_items} items</div>", 
                 unsafe_allow_html=True
-            ) 
+            )
 # 3. EXAMPLE USAGE
 if __name__ == "__main__":
     st.title("Item Selection Demo")
