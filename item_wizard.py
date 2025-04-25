@@ -18,8 +18,8 @@ def load_item_data():
     return pd.DataFrame(data)
 
 # 2. ITEM WIZARD COMPONENT
-def show_item_wizard(items_df, add_callback):
-    """Displays the item selection wizard with items in middle column and pagination on right"""
+def show_item_wizard(items_df, add_callback, close_callback=None):
+    """Displays the item selection wizard with combined pagination and close controls"""
     
     # CSS Styling
     st.markdown("""
@@ -44,16 +44,16 @@ def show_item_wizard(items_df, add_callback):
             border-radius: 0.3rem;
             background-color: white;
         }
+        .controls-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 1rem 0;
+        }
         .pagination-container {
             display: flex;
-            flex-direction: column;
+            gap: 0.2rem;
             align-items: center;
-            gap: 0.2rem;
-            margin: 0.5rem 0;
-        }
-        .pagination-buttons {
-            display: flex;
-            gap: 0.2rem;
         }
         .pagination-btn {
             padding: 0.25rem 0.5rem;
@@ -62,6 +62,7 @@ def show_item_wizard(items_df, add_callback):
             cursor: pointer;
             min-width: 2rem;
             text-align: center;
+            border-radius: 0.25rem;
         }
         .pagination-btn:hover {
             background: #f0f0f0;
@@ -73,10 +74,12 @@ def show_item_wizard(items_df, add_callback):
             font-weight: bold;
         }
         .results-count {
-            text-align: center;
-            margin-top: 0.5rem;
+            margin: 0 0.5rem;
             font-size: 0.9rem;
             color: #666;
+        }
+        .close-btn {
+            margin-left: auto;
         }
     </style>
     """, unsafe_allow_html=True)
@@ -85,8 +88,8 @@ def show_item_wizard(items_df, add_callback):
         st.markdown("<div class='wizard-container'>", unsafe_allow_html=True)
         st.markdown("#### Item Selection Wizard")
         
-        # Three column layout (filters | items | pagination)
-        filter_col, items_col, pagination_col = st.columns([2, 7, 1])
+        # Two column layout (filters | items)
+        filter_col, items_col = st.columns([3, 7])
 
         # FILTERS COLUMN (left)
         with filter_col:
@@ -183,7 +186,7 @@ def show_item_wizard(items_df, add_callback):
                 filtered_items['Item Name'].str.contains(search_term, case=False)
             ]
 
-        # ITEMS COLUMN (middle)
+        # ITEMS COLUMN (right)
         with items_col:
             PAGE_SIZE = 50
             total_items = len(filtered_items)
@@ -215,61 +218,57 @@ def show_item_wizard(items_df, add_callback):
                         add_callback(row['Item Name'])
                         st.rerun()
 
-        # PAGINATION COLUMN (right)
-        with pagination_col:
-            st.markdown("<div class='pagination-container'>", unsafe_allow_html=True)
-            
-            # Vertical spacer to align with items
-            st.write("")
-            st.write("")
-            
-            # Pagination controls
-            st.markdown("<div class='pagination-buttons'>", unsafe_allow_html=True)
-            
-            if st.button("⏮", key="first_page"):
-                st.session_state.current_page = 1
+        # COMBINED PAGINATION AND CLOSE CONTROLS
+        st.markdown("<div class='controls-container'>", unsafe_allow_html=True)
+        
+        # Pagination controls
+        st.markdown("<div class='pagination-container'>", unsafe_allow_html=True)
+        
+        if st.button("⏮", key="first_page"):
+            st.session_state.current_page = 1
+            st.rerun()
+        
+        if st.button("◀", key="prev_page"):
+            if st.session_state.current_page > 1:
+                st.session_state.current_page -= 1
                 st.rerun()
-            
-            if st.button("◀", key="prev_page"):
-                if st.session_state.current_page > 1:
-                    st.session_state.current_page -= 1
-                    st.rerun()
-            
-            max_visible_pages = 5
-            half_visible = max_visible_pages // 2
-            start_page = max(1, st.session_state.current_page - half_visible)
-            end_page = min(total_pages, start_page + max_visible_pages - 1)
-            
-            if end_page - start_page + 1 < max_visible_pages:
-                start_page = max(1, end_page - max_visible_pages + 1)
-            
-            for p in range(start_page, end_page + 1):
-                if st.button(str(p), key=f"page_{p}", 
-                           type="primary" if p == st.session_state.current_page else "secondary"):
-                    st.session_state.current_page = p
-                    st.rerun()
-            
-            if st.button("▶", key="next_page"):
-                if st.session_state.current_page < total_pages:
-                    st.session_state.current_page += 1
-                    st.rerun()
-            
-            if st.button("⏭", key="last_page"):
-                st.session_state.current_page = total_pages
+        
+        max_visible_pages = 5
+        half_visible = max_visible_pages // 2
+        start_page = max(1, st.session_state.current_page - half_visible)
+        end_page = min(total_pages, start_page + max_visible_pages - 1)
+        
+        if end_page - start_page + 1 < max_visible_pages:
+            start_page = max(1, end_page - max_visible_pages + 1)
+        
+        for p in range(start_page, end_page + 1):
+            if st.button(str(p), key=f"page_{p}", 
+                       type="primary" if p == st.session_state.current_page else "secondary"):
+                st.session_state.current_page = p
                 st.rerun()
-            
-            st.markdown("</div>", unsafe_allow_html=True)  # Close pagination-buttons
-            
-            # Results count
-            st.markdown(
-                f"<div class='results-count'>"
-                f"Page {st.session_state.current_page} of {total_pages}<br>"
-                f"{total_items} items"
-                f"</div>", 
-                unsafe_allow_html=True
-            )
-            
-            st.markdown("</div>", unsafe_allow_html=True)  # Close pagination-container
+        
+        if st.button("▶", key="next_page"):
+            if st.session_state.current_page < total_pages:
+                st.session_state.current_page += 1
+                st.rerun()
+        
+        if st.button("⏭", key="last_page"):
+            st.session_state.current_page = total_pages
+            st.rerun()
+        
+        st.markdown(f"<div class='results-count'>Page {st.session_state.current_page} of {total_pages} • {total_items} items</div>", unsafe_allow_html=True)
+        
+        st.markdown("</div>", unsafe_allow_html=True)  # Close pagination-container
+        
+        # Close button
+        if close_callback:
+            if st.button("Close Wizard", key="close_wizard", type="primary", 
+                        help="Close the item selection wizard", 
+                        use_container_width=True, 
+                        class_="close-btn"):
+                close_callback()
+        
+        st.markdown("</div>", unsafe_allow_html=True)  # Close controls-container
         
         st.markdown("</div>", unsafe_allow_html=True)  # Close wizard-container
 
@@ -283,10 +282,23 @@ if __name__ == "__main__":
             st.session_state.selected_items = []
         st.session_state.selected_items.append(item_name)
     
-    items_data = load_item_data()
-    show_item_wizard(items_data, handle_add_item)
+    def handle_close_wizard():
+        st.session_state.show_wizard = False
+        st.rerun()
+    
+    if 'show_wizard' not in st.session_state:
+        st.session_state.show_wizard = True
+    
+    if st.session_state.show_wizard:
+        items_data = load_item_data()
+        show_item_wizard(items_data, handle_add_item, handle_close_wizard)
     
     if 'selected_items' in st.session_state and st.session_state.selected_items:
         st.subheader("Your Selections")
         for item in st.session_state.selected_items:
             st.write(f"- {item}")
+    
+    if not st.session_state.show_wizard:
+        if st.button("Show Item Wizard"):
+            st.session_state.show_wizard = True
+            st.rerun()
