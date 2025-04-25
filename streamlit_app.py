@@ -737,59 +737,6 @@ def main_app():
                         file_name=pdf_file,
                         mime="application/pdf"
                     )
-                    
-                        x_row_start = pdf.get_x()
-                        y_row_start = pdf.get_y()
-                    
-                        max_lines = calculate_max_lines(row_data)
-                        row_height = 6 * max_lines
-                    
-                        for i, text in enumerate(row_data):
-                            pdf.set_xy(x_row_start + sum(col_widths[:i]), y_row_start)
-                        
-                            cell_lines = split_text(str(text), col_widths[i])
-                        
-                            vertical_offset = (row_height - (6 * len(cell_lines))) / 2
-                        
-                            pdf.cell(col_widths[i], row_height, border=1)
-                        
-                            pdf.set_xy(x_row_start + sum(col_widths[:i]), y_row_start + vertical_offset)
-                        
-                            for line in cell_lines:
-                                pdf.cell(col_widths[i], 6, line, 0, 0, 'C')
-                                pdf.set_xy(x_row_start + sum(col_widths[:i]), pdf.get_y() + 6)
-                    
-                        pdf.set_y(y_row_start + row_height)
-                        serial += 1
-
-                summary_data = [
-                    ("Subtotal", f"{total_cost:.2f}"),
-                    ("GST (18%)", f"{gst:.2f}"),
-                    ("Unforeseen (5%)", f"{unforeseen:.2f}"),
-                    ("Grand Total", f"{final_total:.2f}")
-                ]
-            
-                for label, value in summary_data:
-                    x = pdf.get_x()
-                    y = pdf.get_y()
-                
-                    pdf.multi_cell(sum(col_widths[:-1]), 8, label, border=1, align='C')
-                    pdf.set_xy(x + sum(col_widths[:-1]), y)
-                
-                    pdf.multi_cell(col_widths[-1], 8, value, border=1, align='C')
-                
-                    pdf.set_xy(x, y + 8)
-            
-                pdf_file = "estimate.pdf"
-                pdf.output(pdf_file)
-
-                with open(pdf_file, "rb") as f:
-                    st.download_button(
-                        label="⬇️ Download PDF",
-                        data=f,
-                        file_name=pdf_file,
-                        mime="application/pdf"
-                    )
         with col3:
             if st.button("🗑️ Clear All", key="clear_all", 
                         help="Remove all items and start fresh"):
