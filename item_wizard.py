@@ -86,7 +86,7 @@ def show_item_wizard(items_df, add_callback):
         st.markdown("#### Item Selection Wizard")
         
         # Three column layout (filters | items | pagination)
-        filter_col, items_col, pagination_col = st.columns([1, 8, 0.5])
+        filter_col, items_col, pagination_col = st.columns([2, 10, 0.5])
 
         # FILTERS COLUMN (left)
         with filter_col:
