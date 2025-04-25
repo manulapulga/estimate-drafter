@@ -1,8 +1,28 @@
+import pandas as pd
+import streamlit as st
+import math
+
+# 1. DATA LOADING (CACHED FOR PERFORMANCE)
+@st.cache_data
+def load_item_data():
+    """Load your item data here."""
+    # Sample data - REPLACE THIS WITH YOUR ACTUAL DATA LOADING CODE
+    data = {
+        'Item Name': [f'Product {i}' for i in range(1, 5001)],
+        'Main Category': ['Electronics']*2000 + ['Clothing']*2000 + ['Home']*1000,
+        'Sub Category 1': ['Phones']*1000 + ['Laptops']*1000 + ['Men']*1000 + ['Women']*1000 + ['Furniture']*500 + ['Decor']*500,
+        'Sub Category 2': ['Smartphones']*500 + ['Basic']*500 + ['Gaming']*500 + ['Business']*500 + ['T-Shirts']*500 + ['Jeans']*500 + ['Dresses']*500 + ['Skirts']*500 + ['Chairs']*250 + ['Tables']*250 + ['Art']*250 + ['Lamps']*250,
+        'Unit Price': [10 + (i % 500) for i in range(5000)],
+        'Item Unit': ['each']*5000
+    }
+    return pd.DataFrame(data)
+
+# 2. ITEM WIZARD COMPONENT
 def show_item_wizard(items_df, add_callback):
     """Displays the item selection wizard with middle column for pagination"""
     
     # CSS Styling
-    st.markdown(""" 
+    st.markdown("""
     <style>
         .wizard-container {
             border: 1px solid #ddd;
@@ -54,8 +74,8 @@ def show_item_wizard(items_df, add_callback):
         st.markdown("<div class='wizard-container'>", unsafe_allow_html=True)
         st.markdown("#### Item Selection Wizard")
         
-        # Three column layout (filters | items | pagination)
-        filter_col, items_col, pagination_col = st.columns([3, 6, 1])
+        # Three column layout (filters | pagination | items)
+        filter_col, pagination_col, items_col = st.columns([3, 1, 6])
 
         # FILTERS COLUMN
         with filter_col:
@@ -91,7 +111,7 @@ def show_item_wizard(items_df, add_callback):
             st.markdown("<div class='filter-section'>", unsafe_allow_html=True)
             st.markdown("<div class='filter-header'>Sub Categories 1</div>", unsafe_allow_html=True)
             if st.session_state.wizard_filters['main_categories']:
-                sub1_options = items_df[ 
+                sub1_options = items_df[
                     items_df['Main Category'].isin(st.session_state.wizard_filters['main_categories'])
                 ]['Sub Category 1'].dropna().unique().tolist()
             else:
@@ -152,29 +172,7 @@ def show_item_wizard(items_df, add_callback):
                 filtered_items['Item Name'].str.contains(search_term, case=False)
             ]
 
-        # ITEMS COLUMN (middle column)
-        with items_col:
-            for idx in range(start_idx, end_idx):
-                row = filtered_items.iloc[idx]
-                col1, col2 = st.columns([5, 1])
-                with col1:
-                    st.markdown(f"""
-                        <div class='item-card'>
-                            <div class='item-title'>{row['Item Name']}</div>
-                            <div class='item-categories'>
-                                {row['Main Category']} » {row['Sub Category 1']} » {row['Sub Category 2']}
-                            </div>
-                            <div class='item-price'>
-                                ₹{row['Unit Price']:.2f} per {row['Item Unit']}
-                            </div>
-                        </div>
-                    """, unsafe_allow_html=True)
-                with col2:
-                    if st.button("Add", key=f"add_{idx}"):
-                        add_callback(row['Item Name'])
-                        st.rerun()
-
-        # PAGINATION COLUMN (last column)
+        # PAGINATION COLUMN (middle column)
         with pagination_col:
             PAGE_SIZE = 50
             total_items = len(filtered_items)
@@ -187,8 +185,8 @@ def show_item_wizard(items_df, add_callback):
             end_idx = min(start_idx + PAGE_SIZE, total_items)
             
             # Vertical space for alignment
-            st.write(" ")
-            st.write(" ")
+            st.write("")
+            st.write("")
             
             # Pagination controls
             st.markdown("<div class='pagination-container'>", unsafe_allow_html=True)
@@ -235,4 +233,44 @@ def show_item_wizard(items_df, add_callback):
                 unsafe_allow_html=True
             )
 
+        # ITEMS COLUMN
+        with items_col:
+            for idx in range(start_idx, end_idx):
+                row = filtered_items.iloc[idx]
+                col1, col2 = st.columns([5, 1])
+                with col1:
+                    st.markdown(f"""
+                        <div class='item-card'>
+                            <div class='item-title'>{row['Item Name']}</div>
+                            <div class='item-categories'>
+                                {row['Main Category']} » {row['Sub Category 1']} » {row['Sub Category 2']}
+                            </div>
+                            <div class='item-price'>
+                                ₹{row['Unit Price']:.2f} per {row['Item Unit']}
+                            </div>
+                        </div>
+                    """, unsafe_allow_html=True)
+                with col2:
+                    if st.button("Add", key=f"add_{idx}"):
+                        add_callback(row['Item Name'])
+                        st.rerun()
+        
         st.markdown("</div>", unsafe_allow_html=True)
+
+# 3. EXAMPLE USAGE
+if __name__ == "__main__":
+    st.title("Item Selection Demo")
+    
+    def handle_add_item(item_name):
+        st.success(f"Added: {item_name}")
+        if 'selected_items' not in st.session_state:
+            st.session_state.selected_items = []
+        st.session_state.selected_items.append(item_name)
+    
+    items_data = load_item_data()
+    show_item_wizard(items_data, handle_add_item)
+    
+    if 'selected_items' in st.session_state and st.session_state.selected_items:
+        st.subheader("Your Selections")
+        for item in st.session_state.selected_items:
+            st.write(f"- {item}")
