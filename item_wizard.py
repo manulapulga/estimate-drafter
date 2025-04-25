@@ -1,6 +1,5 @@
 import pandas as pd
 import streamlit as st
-import math
 
 # 1. DATA LOADING (CACHED FOR PERFORMANCE)
 @st.cache_data
@@ -83,27 +82,6 @@ def show_item_wizard(items_df, add_callback):
         .pagination-info {
             padding-top: 0.5rem;
         }
-        .pagination-buttons {
-            display: flex;
-            gap: 0.5rem;
-            margin-bottom: 1rem;
-            justify-content: center;
-        }
-        .pagination-btn {
-            padding: 0.25rem 0.5rem;
-            border-radius: 0.25rem;
-            border: 1px solid #ddd;
-            background: white;
-            cursor: pointer;
-        }
-        .pagination-btn:hover {
-            background: #f0f0f0;
-        }
-        .pagination-btn.active {
-            background: #4CAF50;
-            color: white;
-            border-color: #4CAF50;
-        }
     </style>
     """, unsafe_allow_html=True)
 
@@ -115,7 +93,7 @@ def show_item_wizard(items_df, add_callback):
         # Two column layout (filters on left, items on right)
         filter_col, items_col = st.columns([3, 7])
 
-        # FILTERS COLUMN (same as before)
+        # FILTERS COLUMN
         with filter_col:
             # Search box
             search_term = st.text_input("🔍 Search items", key="wizard_search")
@@ -149,7 +127,9 @@ def show_item_wizard(items_df, add_callback):
             st.markdown("<div class='filter-section'>", unsafe_allow_html=True)
             st.markdown("<div class='filter-header'>Sub Categories 1</div>", unsafe_allow_html=True)
             if st.session_state.wizard_filters['main_categories']:
-                sub1_options = items_df[items_df['Main Category'].isin(st.session_state.wizard_filters['main_categories'])]['Sub Category 1'].dropna().unique().tolist()
+                sub1_options = items_df[
+                    items_df['Main Category'].isin(st.session_state.wizard_filters['main_categories'])
+                ]['Sub Category 1'].dropna().unique().tolist()
             else:
                 sub1_options = items_df['Sub Category 1'].dropna().unique().tolist()
             
@@ -170,7 +150,9 @@ def show_item_wizard(items_df, add_callback):
             st.markdown("<div class='filter-section'>", unsafe_allow_html=True)
             st.markdown("<div class='filter-header'>Sub Categories 2</div>", unsafe_allow_html=True)
             if st.session_state.wizard_filters['sub1_categories']:
-                sub2_options = items_df[items_df['Sub Category 1'].isin(st.session_state.wizard_filters['sub1_categories'])]['Sub Category 2'].dropna().unique().tolist()
+                sub2_options = items_df[
+                    items_df['Sub Category 1'].isin(st.session_state.wizard_filters['sub1_categories'])
+                ]['Sub Category 2'].dropna().unique().tolist()
             else:
                 sub2_options = items_df['Sub Category 2'].dropna().unique().tolist()
             
@@ -194,78 +176,52 @@ def show_item_wizard(items_df, add_callback):
             
             # Category filters
             if st.session_state.wizard_filters['main_categories']:
-                filtered_items = filtered_items[filtered_items['Main Category'].isin(st.session_state.wizard_filters['main_categories'])]
+                filtered_items = filtered_items[
+                    filtered_items['Main Category'].isin(st.session_state.wizard_filters['main_categories'])
+                ]
             if st.session_state.wizard_filters['sub1_categories']:
-                filtered_items = filtered_items[filtered_items['Sub Category 1'].isin(st.session_state.wizard_filters['sub1_categories'])]
+                filtered_items = filtered_items[
+                    filtered_items['Sub Category 1'].isin(st.session_state.wizard_filters['sub1_categories'])
+                ]
             if st.session_state.wizard_filters['sub2_categories']:
-                filtered_items = filtered_items[filtered_items['Sub Category 2'].isin(st.session_state.wizard_filters['sub2_categories'])]
+                filtered_items = filtered_items[
+                    filtered_items['Sub Category 2'].isin(st.session_state.wizard_filters['sub2_categories'])
+                ]
             
             # Search filter
             if search_term:
-                filtered_items = filtered_items[filtered_items['Item Name'].str.contains(search_term, case=False)]
+                filtered_items = filtered_items[
+                    filtered_items['Item Name'].str.contains(search_term, case=False)
+                ]
             
-            # PAGINATION CONTROLS - ENHANCED VERSION
+            # PAGINATION CONTROLS
             PAGE_SIZE = 50
             total_items = len(filtered_items)
-            total_pages = max(1, math.ceil(total_items / PAGE_SIZE))
+            total_pages = max(1, (total_items // PAGE_SIZE) + (1 if total_items % PAGE_SIZE else 0))
+            page = 1  # Default page
             
-            # Initialize current page in session state
-            if 'current_page' not in st.session_state:
-                st.session_state.current_page = 1
+            if total_pages > 1:
+                col1, col2, _ = st.columns([1, 1, 6])
+                with col1:
+                    page = st.number_input(
+                        "Page", 
+                        min_value=1, 
+                        max_value=total_pages, 
+                        value=1,
+                        key="wizard_page"
+                    )
+                with col2:
+                    st.markdown(f"<div class='pagination-info'>of {total_pages}</div>", unsafe_allow_html=True)
             
             # Calculate which items to show
-            start_idx = (st.session_state.current_page - 1) * PAGE_SIZE
+            start_idx = (page - 1) * PAGE_SIZE
             end_idx = min(start_idx + PAGE_SIZE, total_items)
             
             # Show results count
-            st.markdown(f"<div class='results-count'>Showing items {start_idx + 1}-{end_idx} of {total_items}</div>", unsafe_allow_html=True)
-            
-            # PAGINATION CONTROLS - BUTTONS
-            st.markdown("<div class='pagination-buttons'>", unsafe_allow_html=True)
-
-            # First page button
-            if st.button("⏮ First", key="first_page"):
-                st.session_state.current_page = 1
-                st.rerun()
-            
-            # Previous page button
-            if st.button("◀ Previous", key="prev_page"):
-                if st.session_state.current_page > 1:
-                    st.session_state.current_page -= 1
-                    st.rerun()
-            
-            # Page number buttons
-            page_buttons = []
-            max_visible_pages = 5
-            half_visible = max_visible_pages // 2
-            start_page = max(1, st.session_state.current_page - half_visible)
-            end_page = min(total_pages, start_page + max_visible_pages - 1)
-            if end_page - start_page + 1 < max_visible_pages:
-                start_page = max(1, end_page - max_visible_pages + 1)
-
-            for p in range(start_page, end_page + 1):
-                page_buttons.append(str(p))
-
-            # Show all buttons in one flat horizontal row
-            btn_cols = st.columns(len(page_buttons))
-            for i, page_num in enumerate(page_buttons):
-                with btn_cols[i]:
-                    if st.button(page_num, key=f"page_{page_num}"):
-                        st.session_state.current_page = int(page_num)
-                        st.rerun()
-            
-            # Next page button
-            if st.button("Next ▶", key="next_page"):
-                if st.session_state.current_page < total_pages:
-                    st.session_state.current_page += 1
-                    st.rerun()
-            
-            # Last page button
-            if st.button("Last ⏭", key="last_page"):
-                st.session_state.current_page = total_pages
-                st.rerun()
-            
-            st.markdown("</div>", unsafe_allow_html=True)  # Close pagination-buttons
+            st.markdown(
+                f"<div class='results-count'>Showing items {start_idx + 1}-{end_idx} of {total_items}</div>", 
+                unsafe_allow_html=True
+            )
             
             # DISPLAY ITEMS
             for idx in range(start_idx, end_idx):
