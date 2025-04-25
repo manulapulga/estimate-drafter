@@ -380,10 +380,10 @@ def main_app():
 
     # Show Subheading section if toggled on
     if st.session_state.get('adding_subheading', False):
-        subheading = st.text_input("Enter Sub Heading", key="new_subheading")
+        subheading = st.text_input("Enter Heading", key="new_subheading")
         col1, col2 = st.columns([1, 1])
         with col1:
-            if st.button("Add Sub Heading to Estimate", key="confirm_subheading"):
+            if st.button("Add Heading to Estimate", key="confirm_subheading"):
                 if subheading.strip():
                     st.session_state.selected_items.append({
                         'Item': subheading.strip(),
