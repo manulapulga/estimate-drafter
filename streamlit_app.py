@@ -243,7 +243,7 @@ def main_app():
                 # Action buttons inside expander
                 col1, col2 = st.columns([1, 1])
                 with col1:
-                    if st.button(f"🔄 Update", key=f"update_{idx}"):
+                    if st.button(f"🔁 Update", key=f"update_{idx}"):
                         if item_name and quantity:
                             try:
                                 quantity = float(quantity)
