@@ -94,7 +94,7 @@ def show_item_wizard(items_df, add_callback):
         st.markdown("#### Item Selection Wizard")
         
         # Two column layout (filters on left, items on right)
-        filter_col, items_col = st.columns([3, 7])
+        filter_col, items_col = st.columns([2, 8])
 
         # FILTERS COLUMN
         with filter_col:
