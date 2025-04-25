@@ -756,4 +756,8 @@ if st.session_state.get('authenticated', False):
     if st.sidebar.button("Logout"):
         st.session_state.authenticated = False
         st.session_state.logged_in_username = None
+<<<<<<< HEAD
         st.rerun()
+=======
+        st.rerun()
+>>>>>>> 7ce34948f0eaf84ddaa59896b8f7fe5e11b331a9
