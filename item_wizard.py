@@ -1,27 +1,3 @@
-import pandas as pd
-import streamlit as st
-
-# 1. DATA LOADING (CACHED FOR PERFORMANCE)
-@st.cache_data
-def load_item_data():
-    """
-    Load your item data here.
-    Replace this with your actual data loading code.
-    For example, if you have a CSV file:
-    return pd.read_csv('your_items.csv')
-    """
-    # Sample data - REPLACE THIS WITH YOUR ACTUAL DATA LOADING CODE
-    data = {
-        'Item Name': [f'Product {i}' for i in range(1, 5001)],
-        'Main Category': ['Electronics']*2000 + ['Clothing']*2000 + ['Home']*1000,
-        'Sub Category 1': ['Phones']*1000 + ['Laptops']*1000 + ['Men']*1000 + ['Women']*1000 + ['Furniture']*500 + ['Decor']*500,
-        'Sub Category 2': ['Smartphones']*500 + ['Basic']*500 + ['Gaming']*500 + ['Business']*500 + ['T-Shirts']*500 + ['Jeans']*500 + ['Dresses']*500 + ['Skirts']*500 + ['Chairs']*250 + ['Tables']*250 + ['Art']*250 + ['Lamps']*250,
-        'Unit Price': [10 + (i % 500) for i in range(5000)],
-        'Item Unit': ['each']*5000
-    }
-    return pd.DataFrame(data)
-
-# 2. ITEM WIZARD COMPONENT
 def show_item_wizard(items_df, add_callback):
     """
     Displays the item selection wizard with filters and pagination
@@ -79,8 +55,37 @@ def show_item_wizard(items_df, add_callback):
             margin-bottom: 0.5rem;
             font-size: 0.85rem;
         }
-        .pagination-info {
-            padding-top: 0.5rem;
+        .pagination-container {
+            display: flex;
+            align-items: center;
+            gap: 0;
+            margin-bottom: 1rem;
+            justify-content: center;
+        }
+        .pagination-btn {
+            padding: 0.25rem 0.5rem;
+            border-radius: 0;
+            border: 1px solid #ddd;
+            background: white;
+            cursor: pointer;
+            min-width: 2rem;
+            text-align: center;
+            margin: 0;
+        }
+        .pagination-btn:hover {
+            background: #f0f0f0;
+        }
+        .pagination-btn.active {
+            background: #4CAF50;
+            color: white;
+            border-color: #4CAF50;
+            font-weight: bold;
+        }
+        .pagination-btn:first-child {
+            border-radius: 0.25rem 0 0 0.25rem;
+        }
+        .pagination-btn:last-child {
+            border-radius: 0 0.25rem 0.25rem 0;
         }
     </style>
     """, unsafe_allow_html=True)
@@ -90,10 +95,10 @@ def show_item_wizard(items_df, add_callback):
         st.markdown("<div class='wizard-container'>", unsafe_allow_html=True)
         st.markdown("#### Item Selection Wizard")
         
-        # Two column layout (filters on left, items on right)
-        filter_col, items_col = st.columns([3, 7])
+        # Three column layout (filters on left, pagination in middle, items on right)
+        filter_col, pagination_col, items_col = st.columns([3, 1, 7])
 
-        # FILTERS COLUMN
+        # FILTERS COLUMN (same as before)
         with filter_col:
             # Search box
             search_term = st.text_input("🔍 Search items", key="wizard_search")
@@ -169,52 +174,19 @@ def show_item_wizard(items_df, add_callback):
                         st.session_state.wizard_filters['sub2_categories'].remove(sub2)
             st.markdown("</div>", unsafe_allow_html=True)
 
-        # ITEMS COLUMN
-        with items_col:
-            # Apply filters
-            filtered_items = items_df.copy()
-            
-            # Category filters
-            if st.session_state.wizard_filters['main_categories']:
-                filtered_items = filtered_items[
-                    filtered_items['Main Category'].isin(st.session_state.wizard_filters['main_categories'])
-                ]
-            if st.session_state.wizard_filters['sub1_categories']:
-                filtered_items = filtered_items[
-                    filtered_items['Sub Category 1'].isin(st.session_state.wizard_filters['sub1_categories'])
-                ]
-            if st.session_state.wizard_filters['sub2_categories']:
-                filtered_items = filtered_items[
-                    filtered_items['Sub Category 2'].isin(st.session_state.wizard_filters['sub2_categories'])
-                ]
-            
-            # Search filter
-            if search_term:
-                filtered_items = filtered_items[
-                    filtered_items['Item Name'].str.contains(search_term, case=False)
-                ]
-            
-            # PAGINATION CONTROLS
+        # PAGINATION COLUMN (middle column)
+        with pagination_col:
+            # PAGINATION CONTROLS - ENHANCED VERSION
             PAGE_SIZE = 50
             total_items = len(filtered_items)
-            total_pages = max(1, (total_items // PAGE_SIZE) + (1 if total_items % PAGE_SIZE else 0))
-            page = 1  # Default page
+            total_pages = max(1, math.ceil(total_items / PAGE_SIZE))
             
-            if total_pages > 1:
-                col1, col2, _ = st.columns([1, 1, 6])
-                with col1:
-                    page = st.number_input(
-                        "Page", 
-                        min_value=1, 
-                        max_value=total_pages, 
-                        value=1,
-                        key="wizard_page"
-                    )
-                with col2:
-                    st.markdown(f"<div class='pagination-info'>of {total_pages}</div>", unsafe_allow_html=True)
+            # Initialize current page in session state
+            if 'current_page' not in st.session_state:
+                st.session_state.current_page = 1
             
             # Calculate which items to show
-            start_idx = (page - 1) * PAGE_SIZE
+            start_idx = (st.session_state.current_page - 1) * PAGE_SIZE
             end_idx = min(start_idx + PAGE_SIZE, total_items)
             
             # Show results count
@@ -223,7 +195,54 @@ def show_item_wizard(items_df, add_callback):
                 unsafe_allow_html=True
             )
             
-            # DISPLAY ITEMS
+            # PAGINATION CONTROLS - HORIZONTAL BUTTONS
+            st.markdown("<div class='pagination-container'>", unsafe_allow_html=True)
+            
+            # First page button
+            if st.button("⏮", key="first_page"):
+                st.session_state.current_page = 1
+                st.rerun()
+            
+            # Previous page button
+            if st.button("◀", key="prev_page"):
+                if st.session_state.current_page > 1:
+                    st.session_state.current_page -= 1
+                    st.rerun()
+            
+            # Page number buttons (show up to 5 pages around current page)
+            max_visible_pages = 5
+            half_visible = max_visible_pages // 2
+            start_page = max(1, st.session_state.current_page - half_visible)
+            end_page = min(total_pages, start_page + max_visible_pages - 1)
+            
+            # Adjust if we're at the end
+            if end_page - start_page + 1 < max_visible_pages:
+                start_page = max(1, end_page - max_visible_pages + 1)
+            
+            for p in range(start_page, end_page + 1):
+                # Highlight current page
+                is_active = p == st.session_state.current_page
+                if st.button(str(p), key=f"page_{p}", 
+                           type="primary" if is_active else "secondary"):
+                    st.session_state.current_page = p
+                    st.rerun()
+            
+            # Next page button
+            if st.button("▶", key="next_page"):
+                if st.session_state.current_page < total_pages:
+                    st.session_state.current_page += 1
+                    st.rerun()
+            
+            # Last page button
+            if st.button("⏭", key="last_page"):
+                st.session_state.current_page = total_pages
+                st.rerun()
+            
+            st.markdown("</div>", unsafe_allow_html=True)  # Close pagination-container
+
+        # ITEMS COLUMN
+        with items_col:
+            # Display Items as before
             for idx in range(start_idx, end_idx):
                 row = filtered_items.iloc[idx]
                 col1, col2 = st.columns([5, 1])
@@ -243,29 +262,5 @@ def show_item_wizard(items_df, add_callback):
                     if st.button("Add", key=f"add_{idx}"):
                         add_callback(row['Item Name'])
                         st.rerun()
-        
-        st.markdown("</div>", unsafe_allow_html=True)  # Close wizard-container
 
-# 3. EXAMPLE USAGE
-if __name__ == "__main__":
-    st.title("Item Selection Demo")
-    
-    # This function will be called when "Add" is clicked
-    def handle_add_item(item_name):
-        st.success(f"Added: {item_name}")
-        # Here you would typically add to a cart or list
-        if 'selected_items' not in st.session_state:
-            st.session_state.selected_items = []
-        st.session_state.selected_items.append(item_name)
-    
-    # Load the data
-    items_data = load_item_data()
-    
-    # Show the wizard
-    show_item_wizard(items_data, handle_add_item)
-    
-    # Display selected items (for demo purposes)
-    if 'selected_items' in st.session_state and st.session_state.selected_items:
-        st.subheader("Your Selections")
-        for item in st.session_state.selected_items:
-            st.write(f"- {item}")
+        st.markdown("</div>", unsafe_allow_html=True)  # Close wizard-container
