@@ -75,7 +75,7 @@ def show_item_wizard(items_df, add_callback):
         st.markdown("#### Item Selection Wizard")
         
         # Three column layout (filters | pagination | items)
-        filter_col, pagination_col, items_col = st.columns([3, 1, 6])
+        filter_col, pagination_col, items_col = st.columns([3, 6, 1])
 
         # FILTERS COLUMN
         with filter_col:
@@ -172,6 +172,29 @@ def show_item_wizard(items_df, add_callback):
                 filtered_items['Item Name'].str.contains(search_term, case=False)
             ]
 
+        # ITEMS COLUMN
+        with items_col:
+            for idx in range(start_idx, end_idx):
+                row = filtered_items.iloc[idx]
+                col1, col2 = st.columns([5, 1])
+                with col1:
+                    st.markdown(f"""
+                        <div class='item-card'>
+                            <div class='item-title'>{row['Item Name']}</div>
+                            <div class='item-categories'>
+                                {row['Main Category']} » {row['Sub Category 1']} » {row['Sub Category 2']}
+                            </div>
+                            <div class='item-price'>
+                                ₹{row['Unit Price']:.2f} per {row['Item Unit']}
+                            </div>
+                        </div>
+                    """, unsafe_allow_html=True)
+                with col2:
+                    if st.button("Add", key=f"add_{idx}"):
+                        add_callback(row['Item Name'])
+                        st.rerun()
+        
+        st.markdown("</div>", unsafe_allow_html=True)
         # PAGINATION COLUMN (middle column)
         with pagination_col:
             PAGE_SIZE = 50
@@ -231,32 +254,7 @@ def show_item_wizard(items_df, add_callback):
                 f"Page {st.session_state.current_page} of {total_pages}<br>"
                 f"{total_items} items</div>", 
                 unsafe_allow_html=True
-            )
-
-        # ITEMS COLUMN
-        with items_col:
-            for idx in range(start_idx, end_idx):
-                row = filtered_items.iloc[idx]
-                col1, col2 = st.columns([5, 1])
-                with col1:
-                    st.markdown(f"""
-                        <div class='item-card'>
-                            <div class='item-title'>{row['Item Name']}</div>
-                            <div class='item-categories'>
-                                {row['Main Category']} » {row['Sub Category 1']} » {row['Sub Category 2']}
-                            </div>
-                            <div class='item-price'>
-                                ₹{row['Unit Price']:.2f} per {row['Item Unit']}
-                            </div>
-                        </div>
-                    """, unsafe_allow_html=True)
-                with col2:
-                    if st.button("Add", key=f"add_{idx}"):
-                        add_callback(row['Item Name'])
-                        st.rerun()
-        
-        st.markdown("</div>", unsafe_allow_html=True)
-
+            ) 
 # 3. EXAMPLE USAGE
 if __name__ == "__main__":
     st.title("Item Selection Demo")
