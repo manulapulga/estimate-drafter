@@ -547,7 +547,7 @@ def main_app():
 
         with col2:
             if st.button("Generate PDF"):
-    		pdf = FPDF()
+    		    pdf = FPDF()
     		pdf.set_auto_page_break(auto=True, margin=15)
     		pdf.add_page()
 
