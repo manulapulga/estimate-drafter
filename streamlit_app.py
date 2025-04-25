@@ -760,4 +760,3 @@ if st.session_state.get('authenticated', False):
         st.rerun()
 =======
         st.rerun()
->>>>>>> 7ce34948f0eaf84ddaa59896b8f7fe5e11b331a9
