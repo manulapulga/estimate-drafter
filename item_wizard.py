@@ -1,6 +1,5 @@
 import pandas as pd
 import streamlit as st
-import math
 
 # 1. DATA LOADING (CACHED FOR PERFORMANCE)
 @st.cache_data
@@ -80,36 +79,8 @@ def show_item_wizard(items_df, add_callback):
             margin-bottom: 0.5rem;
             font-size: 0.85rem;
         }
-        .pagination-container {
-            display: flex;
-            align-items: center;
-            gap: 0;
-            margin-bottom: 1rem;
-        }
-        .pagination-btn {
-            padding: 0.25rem 0.5rem;
-            border-radius: 0;
-            border: 1px solid #ddd;
-            background: white;
-            cursor: pointer;
-            min-width: 2rem;
-            text-align: center;
-            margin: 0;
-        }
-        .pagination-btn:hover {
-            background: #f0f0f0;
-        }
-        .pagination-btn.active {
-            background: #4CAF50;
-            color: white;
-            border-color: #4CAF50;
-            font-weight: bold;
-        }
-        .pagination-btn:first-child {
-            border-radius: 0.25rem 0 0 0.25rem;
-        }
-        .pagination-btn:last-child {
-            border-radius: 0 0.25rem 0.25rem 0;
+        .pagination-info {
+            padding-top: 0.5rem;
         }
     </style>
     """, unsafe_allow_html=True)
@@ -122,7 +93,7 @@ def show_item_wizard(items_df, add_callback):
         # Two column layout (filters on left, items on right)
         filter_col, items_col = st.columns([3, 7])
 
-        # FILTERS COLUMN (same as before)
+        # FILTERS COLUMN
         with filter_col:
             # Search box
             search_term = st.text_input("🔍 Search items", key="wizard_search")
@@ -223,17 +194,27 @@ def show_item_wizard(items_df, add_callback):
                     filtered_items['Item Name'].str.contains(search_term, case=False)
                 ]
             
-            # PAGINATION CONTROLS - ENHANCED VERSION
+            # PAGINATION CONTROLS
             PAGE_SIZE = 50
             total_items = len(filtered_items)
-            total_pages = max(1, math.ceil(total_items / PAGE_SIZE))
+            total_pages = max(1, (total_items // PAGE_SIZE) + (1 if total_items % PAGE_SIZE else 0))
+            page = 1  # Default page
             
-            # Initialize current page in session state
-            if 'current_page' not in st.session_state:
-                st.session_state.current_page = 1
+            if total_pages > 1:
+                col1, col2, _ = st.columns([1, 1, 6])
+                with col1:
+                    page = st.number_input(
+                        "Page", 
+                        min_value=1, 
+                        max_value=total_pages, 
+                        value=1,
+                        key="wizard_page"
+                    )
+                with col2:
+                    st.markdown(f"<div class='pagination-info'>of {total_pages}</div>", unsafe_allow_html=True)
             
             # Calculate which items to show
-            start_idx = (st.session_state.current_page - 1) * PAGE_SIZE
+            start_idx = (page - 1) * PAGE_SIZE
             end_idx = min(start_idx + PAGE_SIZE, total_items)
             
             # Show results count
@@ -241,51 +222,6 @@ def show_item_wizard(items_df, add_callback):
                 f"<div class='results-count'>Showing items {start_idx + 1}-{end_idx} of {total_items}</div>", 
                 unsafe_allow_html=True
             )
-            
-            # PAGINATION CONTROLS - HORIZONTAL BUTTONS
-            st.markdown("<div class='pagination-container'>", unsafe_allow_html=True)
-            
-            # First page button
-            if st.button("⏮", key="first_page"):
-                st.session_state.current_page = 1
-                st.rerun()
-            
-            # Previous page button
-            if st.button("◀", key="prev_page"):
-                if st.session_state.current_page > 1:
-                    st.session_state.current_page -= 1
-                    st.rerun()
-            
-            # Page number buttons (show up to 5 pages around current page)
-            max_visible_pages = 5
-            half_visible = max_visible_pages // 2
-            start_page = max(1, st.session_state.current_page - half_visible)
-            end_page = min(total_pages, start_page + max_visible_pages - 1)
-            
-            # Adjust if we're at the end
-            if end_page - start_page + 1 < max_visible_pages:
-                start_page = max(1, end_page - max_visible_pages + 1)
-            
-            for p in range(start_page, end_page + 1):
-                # Highlight current page
-                is_active = p == st.session_state.current_page
-                if st.button(str(p), key=f"page_{p}", 
-                           type="primary" if is_active else "secondary"):
-                    st.session_state.current_page = p
-                    st.rerun()
-            
-            # Next page button
-            if st.button("▶", key="next_page"):
-                if st.session_state.current_page < total_pages:
-                    st.session_state.current_page += 1
-                    st.rerun()
-            
-            # Last page button
-            if st.button("⏭", key="last_page"):
-                st.session_state.current_page = total_pages
-                st.rerun()
-            
-            st.markdown("</div>", unsafe_allow_html=True)  # Close pagination-container
             
             # DISPLAY ITEMS
             for idx in range(start_idx, end_idx):
