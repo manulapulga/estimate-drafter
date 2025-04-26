@@ -30,7 +30,17 @@ def load_main_items():
     except Exception as e:
         st.error(f"Error loading main items data: {str(e)}")
         st.stop()
-
+        
+# Add this with the other data loading functions
+@st.cache_data
+def load_templates():
+    try:
+        template_data = pd.read_excel("Templates.xlsx", sheet_name=None)
+        return template_data
+    except Exception as e:
+        st.error(f"Error loading template data: {str(e)}")
+        st.stop()
+        
 # Load wizard items data
 @st.cache_data
 def load_wizard_items():
@@ -130,6 +140,8 @@ def main_app():
         st.session_state.show_add_other = False
     if 'wizard_item_added' not in st.session_state:
         st.session_state.wizard_item_added = False
+    if 'show_templates' not in st.session_state:
+        st.session_state.show_templates = False    
 
     # Functions
     def add_item():
@@ -147,8 +159,7 @@ def main_app():
         # Calculate GST only for items where GST is applicable
         taxable_amount = sum(
             item['Cost'] for item in st.session_state.selected_items 
-            if item.get('Type') not in ['Subheading', 'Other'] or 
-               (item.get('Type') == 'Other' and item.get('GST_Applicable', True))
+            if item.get('Type') != 'Subheading' and item.get('GST_Applicable', True)
         )
         gst = round(taxable_amount * 0.18, 2)
         
@@ -201,13 +212,50 @@ def main_app():
         
         with st.expander(item_title, expanded=False):
             if item_type == 'Other':
-                # Display for "Other" type items
-                st.markdown(f"**Custom Item:** {item['Item']}")
-                st.markdown(f"**Total Price:** ₹{item['Cost']:.2f}")
-                st.markdown(f"**GST Applicable:** {'Yes' if item.get('GST_Applicable', False) else 'No'}")
-                
-                if st.button(f"❌ Remove", key=f"remove_{idx}"):
-                    remove_item(idx)
+                # Enhanced display for "Other" type items with editing capability
+                col1, col2 = st.columns([3, 1])
+                with col1:
+                    # Editable item description
+                    new_desc = st.text_input(
+                        "Item Description", 
+                        value=item['Item'],
+                        key=f"other_desc_{idx}"
+                    )
+                with col2:
+                    # Editable total price
+                    new_price = st.text_input(
+                        "Total Price", 
+                        value=f"{item['Cost']:.2f}",
+                        key=f"other_price_{idx}"
+                    )
+                    # Editable GST checkbox
+                    new_gst = st.checkbox(
+                        "GST Applicable?", 
+                        value=item.get('GST_Applicable', False),
+                        key=f"other_gst_{idx}"
+                    )
+
+                # Action buttons
+                col1, col2 = st.columns([1, 1])
+                with col1:
+                    if st.button(f"🔄 Update", key=f"update_other_{idx}"):
+                        if new_desc and new_price:
+                            try:
+                                price = float(new_price)
+                                if price > 0:
+                                    st.session_state.selected_items[idx] = {
+                                        'Item': new_desc,
+                                        'Cost': price,
+                                        'Type': 'Other',
+                                        'GST_Applicable': new_gst
+                                    }
+                                    st.success("Custom item updated successfully!")
+                                    st.rerun()
+                            except ValueError:
+                                st.error("Please enter a valid price")
+                with col2:
+                    if st.button(f"❌ Remove", key=f"remove_{idx}"):
+                        remove_item(idx)
             else:
                 # Display for standard items
                 col1, col2 = st.columns([3, 1])
@@ -225,6 +273,11 @@ def main_app():
                         str(item['Quantity']), 
                         key=f"edit_qty_{idx}", 
                         placeholder="Input Quantity"
+                    )
+                    gst_applicable = st.checkbox(
+                        "GST Applicable?", 
+                        value=item.get('GST_Applicable', True), 
+                        key=f"edit_standard_gst_{idx}"
                     )
                     if item_name != '':
                         item_data = data[data['Item Name'] == item_name].iloc[0]
@@ -259,7 +312,7 @@ def main_app():
                                         'Item Unit': unit,
                                         'Cost': cost,
                                         'Type': 'Standard',
-                                        'GST_Applicable': True
+                                        'GST_Applicable': gst_applicable
                                     }
                                     st.success("Item updated successfully!")
                                     st.rerun()
@@ -270,7 +323,7 @@ def main_app():
                         remove_item(idx)
 
     # Add New Item or Subheading buttons
-    button_col1, button_col2, button_col3, button_col4 = st.columns([1, 2, 1, 1])
+    button_col1, button_col2, button_col3, button_col4, button_col5 = st.columns([2, 2, 2, 2, 2])
     with button_col1:
         if st.button("➕ Add Item", key="add_item_btn"):
             # Toggle add item section and hide others
@@ -304,7 +357,14 @@ def main_app():
             st.session_state.show_wizard = False
             st.session_state.adding_subheading = False
             st.rerun()
-
+    with button_col5:
+        if st.button("📋 Templates", key="show_templates_btn"):
+            st.session_state.show_templates = not st.session_state.get('show_templates', False)
+            st.session_state.show_add_item = False
+            st.session_state.show_wizard = False
+            st.session_state.adding_subheading = False
+            st.session_state.show_add_other = False
+            st.rerun()
     # Show Add Item section if toggled on
     if st.session_state.get('show_add_item', False):
         idx = len([i for i in st.session_state.selected_items if i.get("Type") != "Subheading"])
@@ -324,6 +384,11 @@ def main_app():
                     "1", 
                     key=f"new_qty_{idx}", 
                     placeholder="Input Quantity"
+                )
+                gst_applicable = st.checkbox(
+                    "GST Applicable?", 
+                    value=True, 
+                    key=f"new_item_gst_{idx}"
                 )
                 if item_name != '':
                     item_data = data[data['Item Name'] == item_name].iloc[0]
@@ -357,7 +422,7 @@ def main_app():
                                     'Item Unit': unit,
                                     'Cost': cost,
                                     'Type': 'Standard',
-                                    'GST_Applicable': True
+                                    'GST_Applicable': gst_applicable
                                 })
                                 st.session_state.show_add_item = False
                                 st.success(f"Item '{item_name}' added successfully!")
@@ -377,7 +442,54 @@ def main_app():
         if st.button("✕ Close Wizard", key="close_wizard", type="primary"):
             st.session_state.show_wizard = False
             st.rerun()
-
+        # Show Templates section if toggled on
+    if st.session_state.get('show_templates', False):
+        template_data = load_templates()
+        template_names = list(template_data.keys())
+        
+        selected_template = st.selectbox("Select a Template", template_names, key="template_select")
+        
+        col1, col2 = st.columns([1, 1])
+        with col1:
+            if st.button("Add Template Items", key="add_template_items"):
+                template_df = template_data[selected_template]
+                main_items_data = data  # From your existing load_main_items()
+                
+                for _, row in template_df.iterrows():
+                    item_name = row['Item Name']
+                    quantity = row['Quantity']
+                    
+                    # Find the item in main data
+                    main_item = main_items_data[main_items_data['Item Name'] == item_name]
+                    
+                    if not main_item.empty:
+                        main_item = main_item.iloc[0]
+                        st.session_state.selected_items.append({
+                            'Item': item_name,
+                            'Quantity': quantity,
+                            'Unit Price': main_item['Unit Price'],
+                            'Item Unit': main_item['Item Unit'],
+                            'Cost': quantity * main_item['Unit Price'],
+                            'Type': 'Standard',
+                            'GST_Applicable': True
+                        })
+                    else:
+                        # If item not found in main data, add as "Other"
+                        st.session_state.selected_items.append({
+                            'Item': item_name,
+                            'Cost': 0,  # Or you could prompt for price
+                            'Type': 'Other',
+                            'GST_Applicable': True
+                        })
+                
+                st.success(f"Added {len(template_df)} items from '{selected_template}' template!")
+                st.session_state.show_templates = False
+                st.rerun()
+        
+        with col2:
+            if st.button("✕ Cancel", key="cancel_template", type="primary"):
+                st.session_state.show_templates = False
+                st.rerun()
     # Show Subheading section if toggled on
     if st.session_state.get('adding_subheading', False):
         subheading = st.text_input("Enter Sub Heading", key="new_subheading")
@@ -546,192 +658,183 @@ def main_app():
                     )
 
         with col2:
-            if st.button("Generate PDF"):
-              pdf = FPDF()
-              pdf.set_auto_page_break(auto=True, margin=15)
-              pdf.add_page()
-      
-              # Watermark
-              pdf.set_font("Arial", style='B', size=72)
-              pdf.set_text_color(230, 230, 230)
-              text = "KERALA GROUND WATER DEPARTMENT"
-              text_width = pdf.get_string_width(text)
-              x = (pdf.w - text_width) / 2
-              y = pdf.h / 2 - 20
-              # Remove rotate because basic FPDF doesn't support it
-              pdf.text(x, y, text)
-      
-              # Main content
-              pdf.set_font("Arial", 'B', 16)
-              pdf.set_text_color(0, 0, 0)
-              pdf.cell(200, 10, txt=estimate_heading, ln=True, align='C')
-      
-              # Adjusted column widths and headers
-              col_widths = [10, 70, 20, 20, 20, 30]  # 6 columns now
-      
-              def split_text(text, max_width):
-                  """Split text into multiple lines based on available width"""
-                  if not isinstance(text, str):
-                      text = str(text)
-                  lines = []
-                  words = text.split()
-                  current_line = ""
-      
-                  for word in words:
-                      test_line = current_line + " " + word if current_line else word
-                      if pdf.get_string_width(test_line) < max_width - 2:
-                          current_line = test_line
-                      else:
-                          lines.append(current_line)
-                          current_line = word
-                  if current_line:
-                      lines.append(current_line)
-                  return lines
-      
-              def calculate_max_lines(row_data):
-                  """Calculate maximum lines needed for any cell in the row"""
-                  max_lines = 1
-                  for i, text in enumerate(row_data):
-                      lines = split_text(str(text), col_widths[i])
-                      if len(lines) > max_lines:
-                          max_lines = len(lines)
-                  return max_lines
-      
-              pdf.ln(10)
-              pdf.set_font("Arial", 'B', 10)
-              headers = ["Sl.No", "Item Name", "Rate", "Unit", "Qty", "Total"]  # Updated headers
-      
-              # Draw table header
-              x_start = pdf.get_x()
-              y_start = pdf.get_y()
-              pdf.rect(x_start, y_start, sum(col_widths), 6)  # Header border
-      
-              for i in range(1, len(col_widths)):
-                  pdf.line(
-                      x_start + sum(col_widths[:i]), y_start,
-                      x_start + sum(col_widths[:i]), y_start + 6
-                  )
-      
-              for i, header in enumerate(headers):
-                  pdf.set_xy(x_start + sum(col_widths[:i]), y_start)
-                  pdf.cell(col_widths[i], 6, header, 0, 0, 'C')
-      
-              pdf.set_y(y_start + 6)
-      
-              # Add items to the table
-              serial = 1
-              for item in st.session_state.selected_items:
-                  pdf.set_font("Arial", '', 10)
-      
-                  if item.get("Type") == "Subheading":
-                      pdf.set_xy(x_start, pdf.get_y())
-                      pdf.cell(sum(col_widths), 6, f" {item['Item']}", border=1, align='C')
-                      pdf.ln(6)
-                  elif item.get("Type") == "Other":
-                      # Custom "Other" items
-                      if item.get('GST_Applicable', False):
-                          total_text = f"{item['Cost']:.2f}"
-                      else:
-                          total_text = f"{item['Cost']:.2f} (No GST)"
-      
-                      row_data = [
-                          str(serial),
-                          item['Item'],
-                          "-",
-                          "-",
-                          "-",
-                          total_text
-                      ]
-      
-                      x_row_start = pdf.get_x()
-                      y_row_start = pdf.get_y()
-      
-                      max_lines = calculate_max_lines(row_data)
-                      row_height = 6 * max_lines
-      
-                      for i, text in enumerate(row_data):
-                          pdf.set_xy(x_row_start + sum(col_widths[:i]), y_row_start)
-      
-                          cell_lines = split_text(str(text), col_widths[i])
-      
-                          vertical_offset = (row_height - (6 * len(cell_lines))) / 2
-      
-                          pdf.cell(col_widths[i], row_height, border=1)
-      
-                          pdf.set_xy(x_row_start + sum(col_widths[:i]), y_row_start + vertical_offset)
-      
-                          for line in cell_lines:
-                              pdf.cell(col_widths[i], 6, line, 0, 0, 'C')
-                              pdf.set_xy(x_row_start + sum(col_widths[:i]), pdf.get_y() + 6)
-      
-                      pdf.set_y(y_row_start + row_height)
-                      serial += 1
-                  else:
-                      # Standard items
-                      row_data = [
-                          str(serial),
-                          item['Item'],
-                          f"{item['Unit Price']:.2f}",
-                          item['Item Unit'],
-                          f"{item['Quantity']:.2f}",
-                          f"{item['Cost']:.2f}"  # Always GST applicable for standard items
-                      ]
-      
-                      x_row_start = pdf.get_x()
-                      y_row_start = pdf.get_y()
-      
-                      max_lines = calculate_max_lines(row_data)
-                      row_height = 6 * max_lines
-      
-                      for i, text in enumerate(row_data):
-                          pdf.set_xy(x_row_start + sum(col_widths[:i]), y_row_start)
-      
-                          cell_lines = split_text(str(text), col_widths[i])
-      
-                          vertical_offset = (row_height - (6 * len(cell_lines))) / 2
-      
-                          pdf.cell(col_widths[i], row_height, border=1)
-      
-                          pdf.set_xy(x_row_start + sum(col_widths[:i]), y_row_start + vertical_offset)
-      
-                          for line in cell_lines:
-                              pdf.cell(col_widths[i], 6, line, 0, 0, 'C')
-                              pdf.set_xy(x_row_start + sum(col_widths[:i]), pdf.get_y() + 6)
-      
-                      pdf.set_y(y_row_start + row_height)
-                      serial += 1
-      
-              # Summary section
-              summary_data = [
-                  ("Subtotal", f"{total_cost:.2f}"),
-                  ("GST (18%)", f"{gst:.2f}"),
-                  ("Unforeseen (5%)", f"{unforeseen:.2f}"),
-                  ("Grand Total", f"{final_total:.2f}")
-              ]
-      
-              for label, value in summary_data:
-                  x = pdf.get_x()
-                  y = pdf.get_y()
-      
-                  pdf.multi_cell(sum(col_widths[:-1]), 8, label, border=1, align='C')
-                  pdf.set_xy(x + sum(col_widths[:-1]), y)
-      
-                  pdf.multi_cell(col_widths[-1], 8, value, border=1, align='C')
-      
-                  pdf.set_xy(x, y + 8)
-      
-              # Save and offer download
-              pdf_file = "estimate.pdf"
-              pdf.output(pdf_file)
-      
-              with open(pdf_file, "rb") as f:
-                  st.download_button(
-                      label="⬇️ Download PDF",
-                      data=f,
-                      file_name=pdf_file,
-                      mime="application/pdf"
-                  )
-
+             if st.button("Generate PDF"):
+                from fpdf import FPDF
+            
+                pdf = FPDF()
+                pdf.set_auto_page_break(auto=True, margin=15)
+                pdf.add_page()
+            
+                # Watermark
+                pdf.set_font("Arial", style='B', size=72)
+                pdf.set_text_color(230, 230, 230)
+                text = "KERALA GROUND WATER DEPARTMENT"
+                text_width = pdf.get_string_width(text)
+                x = (pdf.w - text_width) / 2
+                y = pdf.h / 2 - 20
+                pdf.text(x, y, text)
+            
+                # Main content
+                pdf.set_font("Arial", 'B', 16)
+                pdf.set_text_color(0, 0, 0)
+                pdf.cell(200, 10, txt=estimate_heading, ln=True, align='C')
+            
+                col_widths = [10, 70, 20, 20, 20, 30]
+                headers = ["Sl.No", "Item Name", "Rate", "Unit", "Qty", "Total"]
+            
+                def split_text(text, max_width):
+                    """Split text into multiple lines based on available width"""
+                    if not isinstance(text, str):
+                        text = str(text)
+                    lines = []
+                    words = text.split()
+                    current_line = ""
+            
+                    for word in words:
+                        test_line = current_line + " " + word if current_line else word
+                        if pdf.get_string_width(test_line) < max_width - 2:
+                            current_line = test_line
+                        else:
+                            lines.append(current_line)
+                            current_line = word
+                    if current_line:
+                        lines.append(current_line)
+                    return lines
+            
+                def calculate_max_lines(row_data):
+                    """Calculate maximum lines needed for any cell in the row"""
+                    max_lines = 1
+                    for i, text in enumerate(row_data):
+                        lines = split_text(str(text), col_widths[i])
+                        if len(lines) > max_lines:
+                            max_lines = len(lines)
+                    return max_lines
+            
+                def draw_table_header():
+                    """Draw the table header on new pages"""
+                    pdf.set_font("Arial", 'B', 10)
+                    x_start = pdf.get_x()
+                    y_start = pdf.get_y()
+                    pdf.rect(x_start, y_start, sum(col_widths), 6)  # Header border
+            
+                    for i in range(1, len(col_widths)):
+                        pdf.line(
+                            x_start + sum(col_widths[:i]), y_start,
+                            x_start + sum(col_widths[:i]), y_start + 6
+                        )
+            
+                    for i, header in enumerate(headers):
+                        pdf.set_xy(x_start + sum(col_widths[:i]), y_start)
+                        pdf.cell(col_widths[i], 6, header, 0, 0, 'C')
+            
+                    pdf.set_y(y_start + 6)
+            
+                pdf.ln(10)
+                draw_table_header()
+                pdf.set_font("Arial", '', 10)
+            
+                serial = 1
+                for item in st.session_state.selected_items:
+                    # Check if we need a new page
+                    if pdf.get_y() + 10 > pdf.h - 30:
+                        pdf.add_page()
+                        draw_table_header()
+                        pdf.set_font("Arial", '', 10)  # Reset font after header
+            
+                    if item.get("Type") == "Subheading":
+                        pdf.set_font("Arial", 'B', 10)  # Subheading bold
+                        pdf.set_xy(pdf.get_x(), pdf.get_y())
+                        pdf.cell(sum(col_widths), 6, f" {item['Item']}", border=1, align='C')
+                        pdf.ln(6)
+                    else:
+                        pdf.set_font("Arial", '', 10)  # Normal item
+                        gst_applicable = item.get('GST_Applicable', True)
+            
+                        if item.get("Type") == "Other":
+                            rate_text = "-"
+                            unit_text = "-"
+                            qty_text = "-"
+                        else:
+                            rate_text = f"{item['Unit Price']:.2f}"
+                            unit_text = item['Item Unit']
+                            qty_text = f"{item['Quantity']:.2f}"
+            
+                        total_text = f"{item['Cost']:.2f}"
+                        if not gst_applicable:
+                            total_text += " (No GST)"
+            
+                        row_data = [
+                            str(serial),
+                            item['Item'],
+                            rate_text,
+                            unit_text,
+                            qty_text,
+                            total_text
+                        ]
+            
+                        x_row_start = pdf.get_x()
+                        y_row_start = pdf.get_y()
+            
+                        max_lines = calculate_max_lines(row_data)
+                        row_height = 6 * max_lines
+            
+                        for i, text in enumerate(row_data):
+                            pdf.set_xy(x_row_start + sum(col_widths[:i]), y_row_start)
+            
+                            cell_lines = split_text(str(text), col_widths[i])
+            
+                            vertical_offset = (row_height - (6 * len(cell_lines))) / 2
+            
+                            pdf.cell(col_widths[i], row_height, border=1)
+            
+                            pdf.set_xy(x_row_start + sum(col_widths[:i]), y_row_start + vertical_offset)
+            
+                            for line in cell_lines:
+                                pdf.cell(col_widths[i], 6, line, 0, 0, 'C')
+                                pdf.set_xy(x_row_start + sum(col_widths[:i]), pdf.get_y() + 6)
+            
+                        pdf.set_y(y_row_start + row_height)
+                        serial += 1
+            
+                # Summary Section
+                summary_data = [
+                    ("Subtotal", f"{total_cost:.2f}"),
+                    ("GST (18%)", f"{gst:.2f}"),
+                    ("Unforeseen (5%)", f"{unforeseen:.2f}"),
+                    ("Grand Total", f"{final_total:.2f}")
+                ]
+            
+                for label, value in summary_data:
+                    x = pdf.get_x()
+                    y = pdf.get_y()
+            
+                    pdf.multi_cell(sum(col_widths[:-1]), 8, label, border=1, align='C')
+                    pdf.set_xy(x + sum(col_widths[:-1]), y)
+            
+                    pdf.multi_cell(col_widths[-1], 8, value, border=1, align='C')
+                    pdf.set_xy(x, y + 8)
+            
+                # Signature Area
+                if pdf.get_y() + 20 > pdf.h - 30:
+                    pdf.add_page()
+            
+                pdf.set_font("Arial", 'B', 12)
+                pdf.set_xy(pdf.w - 70, pdf.h - 40)
+                pdf.cell(60, 10, "District Officer", ln=True, align='C')
+                pdf.set_xy(pdf.w - 70, pdf.h - 30)
+                pdf.cell(60, 10, "(Seal & Signature)", ln=True, align='C')
+            
+                # Save and offer download
+                pdf_file = "estimate.pdf"
+                pdf.output(pdf_file)
+            
+                with open(pdf_file, "rb") as f:
+                    st.download_button(
+                        label="⬇️ Download PDF",
+                        data=f,
+                        file_name=pdf_file,
+                        mime="application/pdf"
+                    )
         with col3:
             if st.button("🗑️ Clear All", key="clear_all", 
                         help="Remove all items and start fresh"):
