@@ -211,13 +211,13 @@ def show_item_wizard(items_df, add_callback):
                 col1, col2, col3, col4, _ = st.columns([1, 1, 1, 1, 6])
                 
                 with col1:
-                    if st.button("⏮️ First", disabled=st.session_state.current_page == 1, 
+                    if st.button("⏮️", disabled=st.session_state.current_page == 1, 
                                key="first_page", help="Go to first page"):
                         st.session_state.current_page = 1
                         st.rerun()
                 
                 with col2:
-                    if st.button("◀️ Previous", disabled=st.session_state.current_page == 1, 
+                    if st.button("◀️", disabled=st.session_state.current_page == 1, 
                                key="prev_page", help="Previous page"):
                         st.session_state.current_page -= 1
                         st.rerun()
@@ -227,7 +227,7 @@ def show_item_wizard(items_df, add_callback):
                                unsafe_allow_html=True)
                 
                 with col4:
-                    if st.button("Next ▶️", disabled=st.session_state.current_page == total_pages, 
+                    if st.button("▶️", disabled=st.session_state.current_page == total_pages, 
                                key="next_page", help="Next page"):
                         st.session_state.current_page += 1
                         st.rerun()
