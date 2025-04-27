@@ -190,7 +190,8 @@ def main_app():
             'Item Unit': unit,
             'Cost': unit_price,
             'Type': 'Standard',
-            'GST_Applicable': True
+            'GST_Applicable': True,
+            'Quantity_Remarks': ""
         })
         st.session_state.show_wizard = False
         st.success(f"Item '{selected_item}' added successfully!")
@@ -213,7 +214,7 @@ def main_app():
         with st.expander(item_title, expanded=False):
             if item_type == 'Other':
                 # Enhanced display for "Other" type items with editing capability
-                col1, col2 = st.columns([3, 1])
+                col1, col2 = st.columns([1, 1])
                 with col1:
                     # Editable item description
                     new_desc = st.text_input(
@@ -234,9 +235,8 @@ def main_app():
                         value=item.get('GST_Applicable', False),
                         key=f"other_gst_{idx}"
                     )
-
                 # Action buttons
-                col1, col2 = st.columns([1, 1])
+                col1, col2 = st.columns([3, 1])
                 with col1:
                     if st.button(f"🔄 Update", key=f"update_other_{idx}"):
                         if new_desc and new_price:
@@ -279,19 +279,27 @@ def main_app():
                         value=item.get('GST_Applicable', True), 
                         key=f"edit_standard_gst_{idx}"
                     )
-                    if item_name != '':
-                        item_data = data[data['Item Name'] == item_name].iloc[0]
-                        unit_price = item_data['Unit Price']
-                        unit = item_data['Item Unit']
-                        st.text(f"Rate: {unit_price:.2f}/{unit}")
-                        if quantity:
-                            try:
-                                qty = float(quantity)
-                                if qty > 0:
-                                    total = qty * unit_price
-                                    st.text(f"Amount: {total:.2f}")
-                            except ValueError:
-                                st.text("Invalid quantity")
+                    # Quantity Remarks section (for standard items)
+
+                    # Check if a remark already exists
+                    remark = item.get('Quantity_Remarks', '')
+                    
+                    # Change button label based on whether remark exists
+                    button_label = "✏️ Edit Remark" if remark else "➕ Add Remark"                    
+                    if st.button(button_label, key=f"add_qty_remark_{idx}"):
+                        st.session_state.selected_items[idx]['show_remark_input'] = True
+                    
+                    # Show saved remark always (read-only view)
+                    if remark and not item.get('show_remark_input', False):
+                        st.info(f"📋 Quantity Remark: {remark}")
+                    
+                    # Show input box if editing
+                    if item.get('show_remark_input', False):
+                        new_remark = st.text_input("Edit Remark", value=remark, key=f"qty_remark_{idx}")
+                        if st.button("Save Remark", key=f"save_remark_{idx}"):
+                            st.session_state.selected_items[idx]['Quantity_Remarks'] = new_remark
+                            st.session_state.selected_items[idx]['show_remark_input'] = False
+                            st.rerun()
 
                 # Action buttons inside expander
                 col1, col2 = st.columns([1, 1])
@@ -422,7 +430,8 @@ def main_app():
                                     'Item Unit': unit,
                                     'Cost': cost,
                                     'Type': 'Standard',
-                                    'GST_Applicable': gst_applicable
+                                    'GST_Applicable': gst_applicable,
+                                    'Quantity_Remarks': ""
                                 })
                                 st.session_state.show_add_item = False
                                 st.success(f"Item '{item_name}' added successfully!")
@@ -471,7 +480,8 @@ def main_app():
                             'Item Unit': main_item['Item Unit'],
                             'Cost': quantity * main_item['Unit Price'],
                             'Type': 'Standard',
-                            'GST_Applicable': True
+                            'GST_Applicable': True,
+                            'Quantity_Remarks': ""
                         })
                     else:
                         # If item not found in main data, add as "Other"
@@ -662,17 +672,55 @@ def main_app():
                 from fpdf import FPDF
             
                 pdf = FPDF()
+                def add_watermark(pdf):
+                  """Function to add a diagonal watermark to every page"""
+                  pdf.set_font("Arial", style='B', size=72)
+                  pdf.set_text_color(230, 230, 230)  # Light grey color for watermark
+              
+                  text = "GROUND WATER DEPARTMENT"
+                  text_width = pdf.get_string_width(text)
+                  text_height = 72  # Approximate height of the text
+              
+                  # Set the rotation angle for the watermark (diagonal, bottom-left to top-right)
+                  pdf.rotate(54.8, x=0, y=pdf.h)  # Rotate around the bottom-left corner
+              
+                  # Position the text starting from the bottom-left corner with a little padding
+                  x = 0  # Padding from the left
+                  y = pdf.h  # Padding from the bottom
+              
+                  # Print the watermark diagonally
+                  pdf.text(x, y, text)
+              
+                  # Reset rotation to avoid affecting other content
+                  pdf.rotate(0)
+                  
+                  pdf.set_text_color(0, 0, 0)  # Black color for the main content
+                    
                 pdf.set_auto_page_break(auto=True, margin=15)
                 pdf.add_page()
+                add_watermark(pdf)
             
                 # Watermark
                 pdf.set_font("Arial", style='B', size=72)
-                pdf.set_text_color(230, 230, 230)
+                pdf.set_text_color(230, 230, 230)  # Light grey color for watermark
+                
                 text = "KERALA GROUND WATER DEPARTMENT"
                 text_width = pdf.get_string_width(text)
-                x = (pdf.w - text_width) / 2
-                y = pdf.h / 2 - 20
+                
+                # Set the rotation angle for the watermark (diagonal, bottom-left to top-right)
+                pdf.rotate(45, x=0, y=pdf.h)  # Rotate around the bottom-left corner
+                
+                # Position the text starting from the bottom-left corner
+                x = 10  # Small padding from the left
+                y = pdf.h - 10  # Small padding from the bottom
+                
+                # Print the watermark diagonally
                 pdf.text(x, y, text)
+                
+                # Reset rotation to avoid affecting other content
+                pdf.rotate(0)
+
+
             
                 # Main content
                 pdf.set_font("Arial", 'B', 16)
@@ -738,6 +786,7 @@ def main_app():
                     # Check if we need a new page
                     if pdf.get_y() + 10 > pdf.h - 30:
                         pdf.add_page()
+                        add_watermark(pdf)
                         draw_table_header()
                         pdf.set_font("Arial", '', 10)  # Reset font after header
             
@@ -757,7 +806,11 @@ def main_app():
                         else:
                             rate_text = f"{item['Unit Price']:.2f}"
                             unit_text = item['Item Unit']
-                            qty_text = f"{item['Quantity']:.2f}"
+                            remark = item.get('Quantity_Remarks', '')
+                            if remark:
+                                qty_text = f"{item['Quantity']:.2f} ({remark})"
+                            else:
+                                qty_text = f"{item['Quantity']:.2f}"
             
                         total_text = f"{item['Cost']:.2f}"
                         if not gst_applicable:
@@ -777,6 +830,21 @@ def main_app():
             
                         max_lines = calculate_max_lines(row_data)
                         row_height = 6 * max_lines
+                        
+                        # If the item type is "Other", round the serial number
+                        if item.get("Type") == "Other":
+                            # Draw a circle for serial number
+                            x = pdf.get_x() + col_widths[0] / 2
+                            y = pdf.get_y() + row_height / 2
+                            r = 4  # radius
+                            pdf.ellipse(x - r, y - r, r * 2, r * 2)
+                
+                            # Set the serial number for the first column and round it
+                            pdf.set_xy(x_row_start, y_row_start)
+                            pdf.cell(col_widths[0], row_height, str(round(serial)), 0, 0, 'C')
+                        else:
+                            pdf.set_xy(x_row_start, y_row_start)
+                            pdf.cell(col_widths[0], row_height, str(serial), 1, 0, 'C')  # Normal serial number
             
                         for i, text in enumerate(row_data):
                             pdf.set_xy(x_row_start + sum(col_widths[:i]), y_row_start)
