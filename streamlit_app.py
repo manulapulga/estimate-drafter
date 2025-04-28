@@ -52,20 +52,26 @@ def load_wizard_items():
         st.stop()
 
 # Login screen
+import streamlit as st
+
 def login_page(credentials_df):
     st.markdown("<h1 style='text-align: center; color: #154c79;'>ESTIMATE DRAFTER LOGIN</h1>", unsafe_allow_html=True)
     
-    username_input = st.text_input("Username", key="username_input")
-    password_input = st.text_input("Password", type="password", key="password_input")
-    
-    if st.button("Login"):
-        if authenticate(username_input, password_input, credentials_df):
-            st.session_state.logged_in_username = username_input
-            st.session_state.authenticated = True
-            st.rerun()
-        else:
-            st.error("Invalid username or password")
+    # Create columns to control the width of the input fields
+    col1, col2, col3 = st.columns([2, 1, 2])  # 50% width for each input field
 
+    with col2:
+        username_input = st.text_input("Username", key="username_input")
+        password_input = st.text_input("Password", type="password", key="password_input")
+    
+    # Login button logic
+        if st.button("Login"):
+            if authenticate(username_input, password_input, credentials_df):
+                st.session_state.logged_in_username = username_input
+                st.session_state.authenticated = True
+                st.rerun()
+            else:
+                st.error("Invalid username or password")
 # Main app
 def main_app():
     # Load data
