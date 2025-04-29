@@ -23,12 +23,12 @@ def authenticate(username, password, credentials_df):
 
 # Load main items data
 @st.cache_data
-def load_main_items():
+def load_main_items(username):
     try:
-        data = pd.read_excel("items.xlsx", sheet_name=0)  # Sheet 1 is index 0
+        data = pd.read_excel("items.xlsx", sheet_name=username)
         return data['Item Name'].tolist(), data['Unit Price'].tolist(), data['Item Unit'].tolist(), data
     except Exception as e:
-        st.error(f"Error loading main items data: {str(e)}")
+        st.error(f"Error loading main items data for {username}: {str(e)}")
         st.stop()
         
 # Add this with the other data loading functions
@@ -43,12 +43,12 @@ def load_templates():
         
 # Load wizard items data
 @st.cache_data
-def load_wizard_items():
+def load_wizard_items(username):
     try:
-        wizard_data = pd.read_excel("items.xlsx", sheet_name=0)
+        wizard_data = pd.read_excel("items.xlsx", sheet_name=username)
         return wizard_data
     except Exception as e:
-        st.error(f"Error loading wizard items data: {str(e)}")
+        st.error(f"Error loading wizard items data for {username}: {str(e)}")
         st.stop()
 
 # Login screen
@@ -75,8 +75,9 @@ def login_page(credentials_df):
 # Main app
 def main_app():
     # Load data
-    item_names, unit_prices, item_units, data = load_main_items()
-    wizard_data = load_wizard_items()
+    username = st.session_state.logged_in_username
+    item_names, unit_prices, item_units, data = load_main_items(username)
+    wizard_data = load_wizard_items(username)
     
     # UI for Estimate Drafting with updated styles
     st.markdown("<h1 style='text-align: center; color: #154c79;'>ESTIMATE DRAFTER</h1>", unsafe_allow_html=True)
