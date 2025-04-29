@@ -709,8 +709,6 @@ def main_app():
                 pdf.set_auto_page_break(auto=True, margin=15)
                 pdf.add_page()
                 add_watermark(pdf)
-            
-            
                 # Main content
                 pdf.set_font("Arial", 'B', 16)
                 pdf.set_text_color(0, 0, 0)
