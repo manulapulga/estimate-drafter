@@ -710,27 +710,6 @@ def main_app():
                 pdf.add_page()
                 add_watermark(pdf)
             
-                # Watermark
-                pdf.set_font("Arial", style='B', size=72)
-                pdf.set_text_color(230, 230, 230)  # Light grey color for watermark
-                
-                text = "KERALA GROUND WATER DEPARTMENT"
-                text_width = pdf.get_string_width(text)
-                
-                # Set the rotation angle for the watermark (diagonal, bottom-left to top-right)
-                pdf.rotate(45, x=0, y=pdf.h)  # Rotate around the bottom-left corner
-                
-                # Position the text starting from the bottom-left corner
-                x = 10  # Small padding from the left
-                y = pdf.h - 10  # Small padding from the bottom
-                
-                # Print the watermark diagonally
-                pdf.text(x, y, text)
-                
-                # Reset rotation to avoid affecting other content
-                pdf.rotate(0)
-
-
             
                 # Main content
                 pdf.set_font("Arial", 'B', 16)
@@ -883,14 +862,24 @@ def main_app():
                 ]
             
                 for label, value in summary_data:
+                    row_height = 8
+                    if pdf.get_y() + row_height > pdf.h - 30:
+                        pdf.add_page()
+                        add_watermark(pdf)
+                        pdf.set_font("Arial", '', 10)  # Reset the correct font and size
+                
                     x = pdf.get_x()
                     y = pdf.get_y()
-            
-                    pdf.multi_cell(sum(col_widths[:-1]), 8, label, border=1, align='C')
+                
+                    # Draw both label and value in the same row
+                    pdf.set_xy(x, y)
+                    pdf.cell(sum(col_widths[:-1]), row_height, label, border=1, align='C')
+                
                     pdf.set_xy(x + sum(col_widths[:-1]), y)
-            
-                    pdf.multi_cell(col_widths[-1], 8, value, border=1, align='C')
-                    pdf.set_xy(x, y + 8)
+                    pdf.cell(col_widths[-1], row_height, value, border=1, align='C')
+                
+                    # Move to next line
+                    pdf.set_y(y + row_height)
             
                 # Signature Area
                 if pdf.get_y() + 20 > pdf.h - 30:
