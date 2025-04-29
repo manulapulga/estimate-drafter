@@ -81,7 +81,17 @@ def main_app():
     
     # UI for Estimate Drafting with updated styles
     st.markdown("<h1 style='text-align: center; color: #154c79;'>ESTIMATE DRAFTER</h1>", unsafe_allow_html=True)
-    st.markdown(f"<p style='text-align: right; color: #666;'>Logged in as: {st.session_state.logged_in_username}</p>", unsafe_allow_html=True)
+    username = st.session_state.logged_in_username
+    # Get the index value for the logged-in user
+    user_row = credentials_df[credentials_df['username'] == username]
+    cost_index = user_row.iloc[0]['index'] + 1 if not user_row.empty and 'index' in user_row.columns else "N/A"
+    
+    st.markdown(f"""
+        <div style='text-align: right; color: #666;'>
+            <p>Logged in as: {username}</p>
+            <p>Cost Index: {cost_index}</p>
+        </div>
+    """, unsafe_allow_html=True)
     
     st.markdown("""
         <style>
@@ -149,7 +159,8 @@ def main_app():
         st.session_state.wizard_item_added = False
     if 'show_templates' not in st.session_state:
         st.session_state.show_templates = False    
-
+    if 'show_upload' not in st.session_state:
+        st.session_state.show_upload = False
     # Functions
     def add_item():
         st.session_state.item_count += 1
@@ -214,7 +225,7 @@ def main_app():
             continue
 
         item_type = item.get('Type', 'Standard')
-        item_title = f"📦 Item {idx + 1}: {item['Item']} (₹{item['Cost']:.2f})"
+        item_title = f"💧 Item {idx + 1}: {item['Item']} (₹{item['Cost']:.2f})"
         if item_type == 'Other':
             item_title += " [Other" + (" +GST" if item.get('GST_Applicable', False) else "") + "]"
         
@@ -245,7 +256,7 @@ def main_app():
                 # Action buttons
                 col1, col2 = st.columns([3, 1])
                 with col1:
-                    if st.button(f"🔄 Update", key=f"update_other_{idx}"):
+                    if st.button(f"🔁 Update", key=f"update_other_{idx}"):
                         if new_desc and new_price:
                             try:
                                 price = float(new_price)
@@ -295,7 +306,7 @@ def main_app():
                     remark = item.get('Quantity_Remarks', '')
                     
                     # Change button label based on whether remark exists
-                    button_label = "✏️ Edit Remark" if remark else "➕ Add Remark"                    
+                    button_label = "✏️ Edit Remark" if remark else "🆕 Add Remark"                    
                     if st.button(button_label, key=f"add_qty_remark_{idx}"):
                         st.session_state.selected_items[idx]['show_remark_input'] = True
                     
@@ -341,9 +352,9 @@ def main_app():
                         remove_item(idx)
 
     # Add New Item or Subheading buttons
-    button_col1, button_col2, button_col3, button_col4, button_col5 = st.columns([2, 2, 2, 2, 2])
+    button_col1, button_col2, button_col3, button_col4, button_col5, button_col6 = st.columns([2, 2, 2, 2, 2, 2])
     with button_col1:
-        if st.button("➕ Add Item", key="add_item_btn"):
+        if st.button("🆕 Add Item", key="add_item_btn"):
             # Toggle add item section and hide others
             st.session_state.show_add_item = not st.session_state.get('show_add_item', False)
             st.session_state.show_wizard = False
@@ -359,7 +370,7 @@ def main_app():
             st.session_state.show_add_other = False
             st.rerun()
     with button_col3:
-        if st.button("➕ Add Heading", key="add_subheading_btn"):
+        if st.button("🆕 Add Heading", key="add_subheading_btn"):
             # Toggle subheading and hide others
             st.session_state.adding_subheading = not st.session_state.get('adding_subheading', False)
             st.session_state.show_add_item = False
@@ -367,7 +378,7 @@ def main_app():
             st.session_state.show_add_other = False
             st.rerun()
     with button_col4:
-        if st.button("➕ Add Other", key="add_other_btn", type="secondary", 
+        if st.button("🆕 Add Other", key="add_other_btn", type="secondary", 
                     help="Add custom items not in database"):
             # Toggle other items section and hide others
             st.session_state.show_add_other = not st.session_state.get('show_add_other', False)
@@ -376,13 +387,22 @@ def main_app():
             st.session_state.adding_subheading = False
             st.rerun()
     with button_col5:
-        if st.button("📋 Templates", key="show_templates_btn"):
+        if st.button("📘 Templates", key="show_templates_btn"):
             st.session_state.show_templates = not st.session_state.get('show_templates', False)
             st.session_state.show_add_item = False
             st.session_state.show_wizard = False
             st.session_state.adding_subheading = False
             st.session_state.show_add_other = False
             st.rerun()
+    with button_col6:
+        if st.button("⬆️ Upload Excel", key="show_upload_btn"):
+            st.session_state.show_upload = not st.session_state.get('show_upload', False)
+            st.session_state.show_templates = False
+            st.session_state.show_add_item = False
+            st.session_state.show_wizard = False
+            st.session_state.adding_subheading = False
+            st.session_state.show_add_other = False
+            st.rerun()        
     # Show Add Item section if toggled on
     if st.session_state.get('show_add_item', False):
         idx = len([i for i in st.session_state.selected_items if i.get("Type") != "Subheading"])
@@ -510,6 +530,75 @@ def main_app():
             if st.button("✕ Cancel", key="cancel_template", type="primary"):
                 st.session_state.show_templates = False
                 st.rerun()
+    #excel upload section            
+    if st.session_state.get('show_upload', False):
+        st.markdown("### Upload Excel File")
+        uploaded_file = st.file_uploader("Choose an Excel file", type=['xlsx'], key="excel_uploader")
+        
+        if uploaded_file is not None:
+            try:
+                # Read the uploaded file
+                uploaded_df = pd.read_excel(uploaded_file)
+                
+                # Check if the file has at least 2 columns
+                if len(uploaded_df.columns) < 2:
+                    st.error("The Excel file must have at least 2 columns (Item Name and Quantity)")
+                else:
+                    # Get the first two columns
+                    item_col = uploaded_df.columns[0]
+                    qty_col = uploaded_df.columns[1]
+                    
+                    # Display preview
+                    st.markdown("**Preview of uploaded items:**")
+                    st.dataframe(uploaded_df[[item_col, qty_col]].head())
+                    
+                    col1, col2 = st.columns([1, 1])
+                    with col1:
+                        if st.button("Add Uploaded Items", key="add_uploaded_items"):
+                            main_items_data = data  # From your existing load_main_items()
+                            
+                            for _, row in uploaded_df.iterrows():
+                                item_name = row[item_col]
+                                quantity = row[qty_col]
+                                
+                                # Find the item in main data
+                                main_item = main_items_data[main_items_data['Item Name'] == item_name]
+                                
+                                if not main_item.empty:
+                                    main_item = main_item.iloc[0]
+                                    st.session_state.selected_items.append({
+                                        'Item': item_name,
+                                        'Quantity': quantity,
+                                        'Unit Price': main_item['Unit Price'],
+                                        'Item Unit': main_item['Item Unit'],
+                                        'Cost': quantity * main_item['Unit Price'],
+                                        'Type': 'Standard',
+                                        'GST_Applicable': True,
+                                        'Quantity_Remarks': ""
+                                    })
+                                else:
+                                    # If item not found in main data, add as "Other"
+                                    st.session_state.selected_items.append({
+                                        'Item': item_name,
+                                        'Cost': 0,  # Or you could prompt for price
+                                        'Type': 'Other',
+                                        'GST_Applicable': True
+                                    })
+                            
+                            st.success(f"Added {len(uploaded_df)} items from uploaded file!")
+                            st.session_state.show_upload = False
+                            st.rerun()
+                    
+                    with col2:
+                        if st.button("✕ Cancel", key="cancel_upload", type="primary"):
+                            st.session_state.show_upload = False
+                            st.rerun()
+            except Exception as e:
+                st.error(f"Error reading Excel file: {str(e)}")
+        else:
+            if st.button("✕ Cancel", key="cancel_upload_no_file", type="primary"):
+                st.session_state.show_upload = False
+                st.rerun()            
     # Show Subheading section if toggled on
     if st.session_state.get('adding_subheading', False):
         subheading = st.text_input("Enter Sub Heading", key="new_subheading")
