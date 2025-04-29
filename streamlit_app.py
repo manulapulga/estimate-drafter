@@ -286,6 +286,9 @@ def main_app():
                         value=item.get('GST_Applicable', True), 
                         key=f"edit_standard_gst_{idx}"
                     )
+                    
+                    # Show unit rate below quantity
+                    st.markdown(f"**Rate:** ₹{item['Unit Price']:.2f} per {item['Item Unit']}")
                     # Quantity Remarks section (for standard items)
 
                     # Check if a remark already exists
