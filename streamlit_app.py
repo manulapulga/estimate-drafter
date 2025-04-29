@@ -45,7 +45,7 @@ def load_templates():
 @st.cache_data
 def load_wizard_items():
     try:
-        wizard_data = pd.read_excel("items_wizard.xlsx", sheet_name=0)
+        wizard_data = pd.read_excel("items.xlsx", sheet_name=0)
         return wizard_data
     except Exception as e:
         st.error(f"Error loading wizard items data: {str(e)}")
