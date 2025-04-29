@@ -1,5 +1,5 @@
 @echo off
-cd "C:\Users\Core i5 GAMING\Desktop\estimate-drafter"
+cd "C:\Users\hp\Desktop\estimate-drafter"
 git add .
 git commit -m "Updated app"
 git push
