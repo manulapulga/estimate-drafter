@@ -169,19 +169,7 @@ def main_app():
         st.session_state.selected_items.pop(index)
         st.session_state.item_count = max(0, st.session_state.item_count - 1)
         st.rerun()
-    def validate_rate_quantity_total(rate_str, quantity_str, total):
-        """Validate that rate × quantity = total with tolerance for rounding"""
-        if rate_str and quantity_str:
-            try:
-                rate = float(rate_str)
-                qty = float(quantity_str)
-                calculated = round(rate * qty, 2)
-                if abs(calculated - total) > 0.01:  # Allow 1 paisa difference
-                    return False, f"Calculation mismatch: {rate} × {qty} = {calculated} but total is {total}"
-                return True, ""
-            except ValueError:
-                return False, "Invalid rate or quantity values"
-        return True, ""  # No validation needed if both aren't provided
+
     def calculate_totals():
         # Calculate total cost (including all items)
         total_cost = sum(item['Cost'] for item in st.session_state.selected_items if item.get('Type') != 'Subheading')
@@ -241,9 +229,7 @@ def main_app():
         if item_type == 'Other':
             item_title += " [Other" + (" +GST" if item.get('GST_Applicable', False) else "") + "]"
         
-        # Modified expander with state control
-        expander_state = st.session_state.get(f"expander_{idx}_state", False)  # Default to True to maintain current behavior
-        with st.expander(item_title, expanded=expander_state):
+        with st.expander(item_title, expanded=False):
             if item_type == 'Other':
                 # Enhanced display for "Other" type items with editing capability
                 col1, col2 = st.columns([1, 1])
@@ -267,28 +253,6 @@ def main_app():
                         value=item.get('GST_Applicable', False),
                         key=f"other_gst_{idx}"
                     )
-                
-                # NEW: Add fields for editing rate, unit, quantity
-                col1, col2, col3 = st.columns([1, 1, 1])
-                with col1:
-                    new_rate = st.text_input(
-                        "Rate", 
-                        value=f"{item.get('Unit Price', '')}",
-                        key=f"other_rate_{idx}"
-                    )
-                with col2:
-                    new_unit = st.text_input(
-                        "Unit", 
-                        value=item.get('Item Unit', ''),
-                        key=f"other_unit_{idx}"
-                    )
-                with col3:
-                    new_quantity = st.text_input(
-                        "Quantity", 
-                        value=f"{item.get('Quantity', '')}",
-                        key=f"other_quantity_{idx}"
-                    )
-                
                 # Action buttons
                 col1, col2 = st.columns([3, 1])
                 with col1:
@@ -296,30 +260,17 @@ def main_app():
                         if new_desc and new_price:
                             try:
                                 price = float(new_price)
-                                if price <= 0:
-                                    st.error("Total price must be greater than zero")
-                                else:
-                                    # ADD VALIDATION HERE
-                                    valid, msg = validate_rate_quantity_total(new_rate, new_quantity, price)
-                                    if not valid:
-                                        st.error(msg)
-                                        return
-                                    
-                                    # Update the item
+                                if price > 0:
                                     st.session_state.selected_items[idx] = {
                                         'Item': new_desc,
                                         'Cost': price,
                                         'Type': 'Other',
-                                        'GST_Applicable': new_gst,
-                                        'Unit Price': float(new_rate) if new_rate else None,
-                                        'Item Unit': new_unit if new_unit else None,
-                                        'Quantity': float(new_quantity) if new_quantity else None
+                                        'GST_Applicable': new_gst
                                     }
-                                    st.session_state[f"expander_{idx}_state"] = False
                                     st.success("Custom item updated successfully!")
                                     st.rerun()
                             except ValueError:
-                                st.error("Please enter a valid numeric total price")
+                                st.error("Please enter a valid price")
                 with col2:
                     if st.button(f"❌ Remove", key=f"remove_{idx}"):
                         remove_item(idx)
@@ -355,7 +306,7 @@ def main_app():
                     remark = item.get('Quantity_Remarks', '')
                     
                     # Change button label based on whether remark exists
-                    button_label = "✏️ Edit Remark" if remark else "➕ Add Remark"                    
+                    button_label = "✏️ Edit Remark" if remark else "🆕 Add Remark"                    
                     if st.button(button_label, key=f"add_qty_remark_{idx}"):
                         st.session_state.selected_items[idx]['show_remark_input'] = True
                     
@@ -403,12 +354,14 @@ def main_app():
     # Add New Item or Subheading buttons
     button_col1, button_col2, button_col3, button_col4, button_col5, button_col6 = st.columns([2, 2, 2, 2, 2, 2])
     with button_col1:
-        if st.button("➕ Add Item", key="add_item_btn"):
+        if st.button("🆕 Add Item", key="add_item_btn"):
             # Toggle add item section and hide others
             st.session_state.show_add_item = not st.session_state.get('show_add_item', False)
             st.session_state.show_wizard = False
             st.session_state.adding_subheading = False
             st.session_state.show_add_other = False
+            st.session_state.show_templates = False  # Add this line
+            st.session_state.show_upload = False    # Add this line
             st.rerun()
     with button_col2:
         if st.button("🔍 Smart Filter", key="open_wizard"):
@@ -417,23 +370,29 @@ def main_app():
             st.session_state.show_add_item = False
             st.session_state.adding_subheading = False
             st.session_state.show_add_other = False
+            st.session_state.show_templates = False  # Add this line
+            st.session_state.show_upload = False    # Add this line
             st.rerun()
     with button_col3:
-        if st.button("➕ Add Heading", key="add_subheading_btn"):
+        if st.button("🆕 Add Heading", key="add_subheading_btn"):
             # Toggle subheading and hide others
             st.session_state.adding_subheading = not st.session_state.get('adding_subheading', False)
             st.session_state.show_add_item = False
             st.session_state.show_wizard = False
             st.session_state.show_add_other = False
+            st.session_state.show_templates = False  # Add this line
+            st.session_state.show_upload = False    # Add this line
             st.rerun()
     with button_col4:
-        if st.button("➕ Add Other", key="add_other_btn", type="secondary", 
+        if st.button("🆕 Add Other", key="add_other_btn", type="secondary", 
                     help="Add custom items not in database"):
             # Toggle other items section and hide others
             st.session_state.show_add_other = not st.session_state.get('show_add_other', False)
             st.session_state.show_add_item = False
             st.session_state.show_wizard = False
             st.session_state.adding_subheading = False
+            st.session_state.show_templates = False  # Add this line
+            st.session_state.show_upload = False    # Add this line
             st.rerun()
     with button_col5:
         if st.button("📘 Templates", key="show_templates_btn"):
@@ -442,6 +401,7 @@ def main_app():
             st.session_state.show_wizard = False
             st.session_state.adding_subheading = False
             st.session_state.show_add_other = False
+            st.session_state.show_upload = False    # Add this line
             st.rerun()
     with button_col6:
         if st.button("⬆️ Upload Excel", key="show_upload_btn"):
@@ -670,7 +630,6 @@ def main_app():
                 st.rerun()
 
     # Show Add Other section if toggled on
-    # Show Add Other section if toggled on
     if st.session_state.get('show_add_other', False):
         with st.container():
             st.markdown(f"<div class='estimate-item'>", unsafe_allow_html=True)
@@ -692,59 +651,25 @@ def main_app():
                     value=True,
                     key=f"other_item_gst"
                 )
-            
-            # NEW: Add fields for Rate, Unit, and Quantity
-            col1, col2, col3 = st.columns([1, 1, 1])
-            with col1:
-                other_rate = st.text_input(
-                    "Rate (optional)", 
-                    key=f"other_item_rate",
-                    placeholder="Enter rate if applicable"
-                )
-            with col2:
-                other_unit = st.text_input(
-                    "Unit (optional)", 
-                    key=f"other_item_unit",
-                    placeholder="Enter unit if applicable"
-                )
-            with col3:
-                other_quantity = st.text_input(
-                    "Quantity (optional)", 
-                    key=f"other_item_quantity",
-                    placeholder="Enter quantity if applicable"
-                )
-    
+
             col1, col2 = st.columns([1, 1])
             with col1:
                 if st.button(f"Add Custom Item", key=f"add_other_item"):
                     if item_name and total_price:
                         try:
                             price = float(total_price)
-                            if price <= 0:
-                                st.error("Total price must be greater than zero")
-                            else:
-                                # ADD VALIDATION HERE
-                                valid, msg = validate_rate_quantity_total(other_rate, other_quantity, price)
-                                if not valid:
-                                    st.error(msg)
-                                    return
-                                
-                                # Create the item with all fields
-                                new_item = {
+                            if price > 0:
+                                st.session_state.selected_items.append({
                                     'Item': item_name,
                                     'Cost': price,
                                     'Type': 'Other',
-                                    'GST_Applicable': gst_applicable,
-                                    'Unit Price': float(other_rate) if other_rate else None,
-                                    'Item Unit': other_unit if other_unit else None,
-                                    'Quantity': float(other_quantity) if other_quantity else None
-                                }
-                                st.session_state.selected_items.append(new_item)
+                                    'GST_Applicable': gst_applicable
+                                })
                                 st.session_state.show_add_other = False
                                 st.success(f"Custom item '{item_name}' added successfully!")
                                 st.rerun()
                         except ValueError:
-                            st.error("Please enter a valid numeric total price")
+                            st.error("Please enter a valid price")
             with col2:
                 if st.button("✕ Cancel", key=f"cancel_other_item", type="primary", 
                             help="Close without adding item"):
@@ -791,9 +716,9 @@ def main_app():
                         ws.append([
                             serial,
                             item['Item'],
-                            item.get('Unit Price', '-'),
-                            item.get('Item Unit', '-'),
-                            item.get('Quantity', '-'),
+                            "-",
+                            "-",
+                            "-",
                             item['Cost'],
                             "Yes" if item.get('GST_Applicable', False) else "No"
                         ])
@@ -960,12 +885,9 @@ def main_app():
                         gst_applicable = item.get('GST_Applicable', True)
             
                         if item.get("Type") == "Other":
-                            rate_text = f"{item.get('Unit Price', '-'):.2f}" if item.get('Unit Price') is not None else "-"
-                            unit_text = item.get('Item Unit', "-")
-                            qty_text = f"{item.get('Quantity', '-'):.2f}" if item.get('Quantity') is not None else "-"
-                            total_text = f"{item['Cost']:.2f}"
-                            if not gst_applicable:
-                                total_text += " (No GST)"
+                            rate_text = "-"
+                            unit_text = "-"
+                            qty_text = "-"
                         else:
                             rate_text = f"{item['Unit Price']:.2f}"
                             unit_text = item['Item Unit']
