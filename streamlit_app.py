@@ -306,7 +306,7 @@ def main_app():
                     remark = item.get('Quantity_Remarks', '')
                     
                     # Change button label based on whether remark exists
-                    button_label = "✏️ Edit Remark" if remark else "🆕 Add Remark"                    
+                    button_label = "✏️ Edit Remark" if remark else "➕ Add Remark"                    
                     if st.button(button_label, key=f"add_qty_remark_{idx}"):
                         st.session_state.selected_items[idx]['show_remark_input'] = True
                     
@@ -354,7 +354,7 @@ def main_app():
     # Add New Item or Subheading buttons
     button_col1, button_col2, button_col3, button_col4, button_col5, button_col6 = st.columns([2, 2, 2, 2, 2, 2])
     with button_col1:
-        if st.button("🆕 Add Item", key="add_item_btn"):
+        if st.button("➕ Add Item", key="add_item_btn"):
             # Toggle add item section and hide others
             st.session_state.show_add_item = not st.session_state.get('show_add_item', False)
             st.session_state.show_wizard = False
@@ -374,7 +374,7 @@ def main_app():
             st.session_state.show_upload = False    # Add this line
             st.rerun()
     with button_col3:
-        if st.button("🆕 Add Heading", key="add_subheading_btn"):
+        if st.button("➕ Add Heading", key="add_subheading_btn"):
             # Toggle subheading and hide others
             st.session_state.adding_subheading = not st.session_state.get('adding_subheading', False)
             st.session_state.show_add_item = False
@@ -384,7 +384,7 @@ def main_app():
             st.session_state.show_upload = False    # Add this line
             st.rerun()
     with button_col4:
-        if st.button("🆕 Add Other", key="add_other_btn", type="secondary", 
+        if st.button("➕ Add Other", key="add_other_btn", type="secondary", 
                     help="Add custom items not in database"):
             # Toggle other items section and hide others
             st.session_state.show_add_other = not st.session_state.get('show_add_other', False)
