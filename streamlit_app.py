@@ -774,230 +774,245 @@ def main_app():
                         mime="application/vnd.ms-excel",
                         key="download_excel"
                     )
-
         with col2:
-             if st.button("Generate PDF"):
-                from fpdf import FPDF
-            
-                pdf = FPDF()
-                def add_watermark(pdf):
-                  """Function to add a diagonal watermark to every page"""
-                  pdf.set_font("Arial", style='B', size=72)
-                  pdf.set_text_color(230, 230, 230)  # Light grey color for watermark
+              if st.button("Generate PDF"):
+                  from fpdf import FPDF
               
-                  text = "GROUND WATER DEPARTMENT"
-                  text_width = pdf.get_string_width(text)
-                  text_height = 72  # Approximate height of the text
-              
-                  # Set the rotation angle for the watermark (diagonal, bottom-left to top-right)
-                  pdf.rotate(54.8, x=0, y=pdf.h)  # Rotate around the bottom-left corner
-              
-                  # Position the text starting from the bottom-left corner with a little padding
-                  x = 0  # Padding from the left
-                  y = pdf.h  # Padding from the bottom
-              
-                  # Print the watermark diagonally
-                  pdf.text(x, y, text)
-              
-                  # Reset rotation to avoid affecting other content
-                  pdf.rotate(0)
+                  pdf = FPDF()
+                  def add_watermark(pdf):
+                      """Function to add a diagonal watermark to every page"""
+                      pdf.set_font("Arial", style='B', size=72)
+                      pdf.set_text_color(230, 230, 230)  # Light grey color for watermark
                   
-                  pdf.set_text_color(0, 0, 0)  # Black color for the main content
-                    
-                pdf.set_auto_page_break(auto=True, margin=15)
-                pdf.add_page()
-                add_watermark(pdf)
-                # Main content
-                pdf.set_font("Arial", 'B', 16)
-                pdf.set_text_color(0, 0, 0)
-                pdf.cell(200, 10, txt=estimate_heading, ln=True, align='C')
-            
-                col_widths = [10, 70, 20, 20, 20, 30]
-                headers = ["Sl.No", "Item Name", "Rate", "Unit", "Qty", "Total"]
-            
-                def split_text(text, max_width):
-                    """Split text into multiple lines based on available width"""
-                    if not isinstance(text, str):
-                        text = str(text)
-                    lines = []
-                    words = text.split()
-                    current_line = ""
-            
-                    for word in words:
-                        test_line = current_line + " " + word if current_line else word
-                        if pdf.get_string_width(test_line) < max_width - 2:
-                            current_line = test_line
-                        else:
-                            lines.append(current_line)
-                            current_line = word
-                    if current_line:
-                        lines.append(current_line)
-                    return lines
-            
-                def calculate_max_lines(row_data):
-                    """Calculate maximum lines needed for any cell in the row"""
-                    max_lines = 1
-                    for i, text in enumerate(row_data):
-                        lines = split_text(str(text), col_widths[i])
-                        if len(lines) > max_lines:
-                            max_lines = len(lines)
-                    return max_lines
-            
-                def draw_table_header():
-                    """Draw the table header on new pages"""
-                    pdf.set_font("Arial", 'B', 10)
-                    x_start = pdf.get_x()
-                    y_start = pdf.get_y()
-                    pdf.rect(x_start, y_start, sum(col_widths), 6)  # Header border
-            
-                    for i in range(1, len(col_widths)):
-                        pdf.line(
-                            x_start + sum(col_widths[:i]), y_start,
-                            x_start + sum(col_widths[:i]), y_start + 6
-                        )
-            
-                    for i, header in enumerate(headers):
-                        pdf.set_xy(x_start + sum(col_widths[:i]), y_start)
-                        pdf.cell(col_widths[i], 6, header, 0, 0, 'C')
-            
-                    pdf.set_y(y_start + 6)
-            
-                pdf.ln(10)
-                draw_table_header()
-                pdf.set_font("Arial", '', 10)
-            
-                serial = 1
-                for item in st.session_state.selected_items:
-                    # Check if we need a new page
-                    if pdf.get_y() + 10 > pdf.h - 30:
-                        pdf.add_page()
-                        add_watermark(pdf)
-                        draw_table_header()
-                        pdf.set_font("Arial", '', 10)  # Reset font after header
-            
-                    if item.get("Type") == "Subheading":
-                        pdf.set_font("Arial", 'B', 10)  # Subheading bold
-                        pdf.set_xy(pdf.get_x(), pdf.get_y())
-                        pdf.cell(sum(col_widths), 6, f" {item['Item']}", border=1, align='C')
-                        pdf.ln(6)
-                    else:
-                        pdf.set_font("Arial", '', 10)  # Normal item
-                        gst_applicable = item.get('GST_Applicable', True)
-            
-                        if item.get("Type") == "Other":
-                            rate_text = "-"
-                            unit_text = "-"
-                            qty_text = "-"
-                        else:
-                            rate_text = f"{item['Unit Price']:.2f}"
-                            unit_text = item['Item Unit']
-                            remark = item.get('Quantity_Remarks', '')
-                            if remark:
-                                qty_text = f"{item['Quantity']:.2f} ({remark})"
-                            else:
-                                qty_text = f"{item['Quantity']:.2f}"
-            
-                        total_text = f"{item['Cost']:.2f}"
-                        if not gst_applicable:
-                            total_text += " (No GST)"
-            
-                        row_data = [
-                            str(serial),
-                            item['Item'],
-                            rate_text,
-                            unit_text,
-                            qty_text,
-                            total_text
-                        ]
-            
-                        x_row_start = pdf.get_x()
-                        y_row_start = pdf.get_y()
-            
-                        max_lines = calculate_max_lines(row_data)
-                        row_height = 6 * max_lines
+                      text = "GROUND WATER DEPARTMENT"
+                      text_width = pdf.get_string_width(text)
+                      text_height = 72  # Approximate height of the text
+                  
+                      # Set the rotation angle for the watermark (diagonal, bottom-left to top-right)
+                      pdf.rotate(54.8, x=0, y=pdf.h)  # Rotate around the bottom-left corner
+                  
+                      # Position the text starting from the bottom-left corner with a little padding
+                      x = 0  # Padding from the left
+                      y = pdf.h  # Padding from the bottom
+                  
+                      # Print the watermark diagonally
+                      pdf.text(x, y, text)
+                  
+                      # Reset rotation to avoid affecting other content
+                      pdf.rotate(0)
+                      
+                      pdf.set_text_color(0, 0, 0)  # Black color for the main content
                         
-                        # If the item type is "Other", round the serial number
-                        if item.get("Type") == "Other":
-                            # Draw a circle for serial number
-                            x = pdf.get_x() + col_widths[0] / 2
-                            y = pdf.get_y() + row_height / 2
-                            r = 4  # radius
-                            pdf.ellipse(x - r, y - r, r * 2, r * 2)
-                
-                            # Set the serial number for the first column and round it
-                            pdf.set_xy(x_row_start, y_row_start)
-                            pdf.cell(col_widths[0], row_height, str(round(serial)), 0, 0, 'C')
-                        else:
-                            pdf.set_xy(x_row_start, y_row_start)
-                            pdf.cell(col_widths[0], row_height, str(serial), 1, 0, 'C')  # Normal serial number
-            
-                        for i, text in enumerate(row_data):
-                            pdf.set_xy(x_row_start + sum(col_widths[:i]), y_row_start)
-            
-                            cell_lines = split_text(str(text), col_widths[i])
-            
-                            vertical_offset = (row_height - (6 * len(cell_lines))) / 2
-            
-                            pdf.cell(col_widths[i], row_height, border=1)
-            
-                            pdf.set_xy(x_row_start + sum(col_widths[:i]), y_row_start + vertical_offset)
-            
-                            for line in cell_lines:
-                                pdf.cell(col_widths[i], 6, line, 0, 0, 'C')
-                                pdf.set_xy(x_row_start + sum(col_widths[:i]), pdf.get_y() + 6)
-            
-                        pdf.set_y(y_row_start + row_height)
-                        serial += 1
-            
-                # Summary Section
-                summary_data = [
-                    ("Subtotal", f"{total_cost:.2f}"),
-                    ("GST (18%)", f"{gst:.2f}"),
-                    ("Unforeseen (5%)", f"{unforeseen:.2f}"),
-                    ("Grand Total", f"{final_total:.2f}")
-                ]
-            
-                for label, value in summary_data:
-                    row_height = 8
-                    if pdf.get_y() + row_height > pdf.h - 30:
-                        pdf.add_page()
-                        add_watermark(pdf)
-                        pdf.set_font("Arial", '', 10)  # Reset the correct font and size
-                
-                    x = pdf.get_x()
-                    y = pdf.get_y()
-                
-                    # Draw both label and value in the same row
-                    pdf.set_xy(x, y)
-                    pdf.cell(sum(col_widths[:-1]), row_height, label, border=1, align='C')
-                
-                    pdf.set_xy(x + sum(col_widths[:-1]), y)
-                    pdf.cell(col_widths[-1], row_height, value, border=1, align='C')
-                
-                    # Move to next line
-                    pdf.set_y(y + row_height)
-            
-                # Signature Area
-                if pdf.get_y() + 20 > pdf.h - 30:
-                    pdf.add_page()
-            
-                pdf.set_font("Arial", 'B', 12)
-                pdf.set_xy(pdf.w - 70, pdf.h - 40)
-                pdf.cell(60, 10, "District Officer", ln=True, align='C')
-                pdf.set_xy(pdf.w - 70, pdf.h - 30)
-                pdf.cell(60, 10, "(Seal & Signature)", ln=True, align='C')
-            
-                # Save and offer download
-                pdf_file = "estimate.pdf"
-                pdf.output(pdf_file)
-            
-                with open(pdf_file, "rb") as f:
-                    st.download_button(
-                        label="⬇️ Download PDF",
-                        data=f,
-                        file_name=pdf_file,
-                        mime="application/pdf"
-                    )
+                  pdf.set_auto_page_break(auto=True, margin=15)
+                  pdf.add_page()
+                  add_watermark(pdf)
+                  # Main content
+                  pdf.set_font("Arial", 'B', 16)
+                  pdf.set_text_color(0, 0, 0)
+                  pdf.cell(200, 10, txt=estimate_heading, ln=True, align='C')
+              
+                  col_widths = [10, 70, 20, 20, 20, 30]
+                  headers = ["Sl.No", "Item Name", "Rate", "Unit", "Qty", "Total"]
+              
+                  def split_text(text, max_width):
+                      """Split text into multiple lines based on available width"""
+                      if not isinstance(text, str):
+                          text = str(text)
+                      lines = []
+                      words = text.split()
+                      current_line = ""
+              
+                      for word in words:
+                          test_line = current_line + " " + word if current_line else word
+                          if pdf.get_string_width(test_line) < max_width - 2:
+                              current_line = test_line
+                          else:
+                              lines.append(current_line)
+                              current_line = word
+                      if current_line:
+                          lines.append(current_line)
+                      return lines
+              
+                  def calculate_max_lines(row_data):
+                      """Calculate maximum lines needed for any cell in the row"""
+                      max_lines = 1
+                      for i, text in enumerate(row_data):
+                          lines = split_text(str(text), col_widths[i])
+                          if len(lines) > max_lines:
+                              max_lines = len(lines)
+                      return max_lines
+              
+                  def draw_table_header():
+                      """Draw the table header on new pages"""
+                      pdf.set_font("Arial", 'B', 10)
+                      x_start = pdf.get_x()
+                      y_start = pdf.get_y()
+                      pdf.rect(x_start, y_start, sum(col_widths), 6)  # Header border
+              
+                      for i in range(1, len(col_widths)):
+                          pdf.line(
+                              x_start + sum(col_widths[:i]), y_start,
+                              x_start + sum(col_widths[:i]), y_start + 6
+                          )
+              
+                      for i, header in enumerate(headers):
+                          pdf.set_xy(x_start + sum(col_widths[:i]), y_start)
+                          pdf.cell(col_widths[i], 6, header, 0, 0, 'C')
+              
+                      pdf.set_y(y_start + 6)
+              
+                  pdf.ln(10)
+                  draw_table_header()
+                  pdf.set_font("Arial", '', 10)
+              
+                  serial = 1
+                  for item in st.session_state.selected_items:
+                      # Check if we need a new page (with buffer for row height)
+                      if pdf.get_y() + 20 > pdf.h - 30:  # Increased buffer to 20
+                          pdf.add_page()
+                          add_watermark(pdf)
+                          draw_table_header()
+                          pdf.set_font("Arial", '', 10)  # Reset font after header
+              
+                      if item.get("Type") == "Subheading":
+                          pdf.set_font("Arial", 'B', 10)  # Subheading bold
+                          pdf.set_xy(pdf.get_x(), pdf.get_y())
+                          pdf.cell(sum(col_widths), 6, f" {item['Item']}", border=1, align='C')
+                          pdf.ln(6)
+                          continue  # Skip to next item after subheading
+                      
+                      gst_applicable = item.get('GST_Applicable', True)
+              
+                      if item.get("Type") == "Other":
+                          rate_text = "-"
+                          unit_text = "-"
+                          qty_text = "-"
+                      else:
+                          rate_text = f"{item['Unit Price']:.2f}"
+                          unit_text = item['Item Unit']
+                          remark = item.get('Quantity_Remarks', '')
+                          if remark:
+                              qty_text = f"{item['Quantity']:.2f} ({remark})"
+                          else:
+                              qty_text = f"{item['Quantity']:.2f}"
+              
+                      total_text = f"{item['Cost']:.2f}"
+                      if not gst_applicable:
+                          total_text += " (No GST)"
+              
+                      row_data = [
+                          str(serial),
+                          item['Item'],
+                          rate_text,
+                          unit_text,
+                          qty_text,
+                          total_text
+                      ]
+              
+                      x_row_start = pdf.get_x()
+                      y_row_start = pdf.get_y()
+              
+                      max_lines = calculate_max_lines(row_data)
+                      row_height = 6 * max_lines
+                      
+                      # Ensure we have space for this row
+                      if pdf.get_y() + row_height > pdf.h - 30:
+                          pdf.add_page()
+                          add_watermark(pdf)
+                          draw_table_header()
+                          pdf.set_font("Arial", '', 10)
+                          x_row_start = pdf.get_x()
+                          y_row_start = pdf.get_y()
+              
+                      # Draw the row border
+                      pdf.rect(x_row_start, y_row_start, sum(col_widths), row_height)
+                      
+                      # Draw vertical lines
+                      for i in range(1, len(col_widths)):
+                          pdf.line(
+                              x_row_start + sum(col_widths[:i]), y_row_start,
+                              x_row_start + sum(col_widths[:i]), y_row_start + row_height
+                          )
+              
+                      # If the item type is "Other", round the serial number
+                      if item.get("Type") == "Other":
+                          # Draw a circle for serial number
+                          x = x_row_start + col_widths[0] / 2
+                          y = y_row_start + row_height / 2
+                          r = 4  # radius
+                          pdf.ellipse(x - r, y - r, r * 2, r * 2)
+                  
+                          # Set the serial number for the first column and round it
+                          pdf.set_xy(x_row_start, y_row_start)
+                          pdf.cell(col_widths[0], row_height, str(round(serial)), 0, 0, 'C')
+                      else:
+                          pdf.set_xy(x_row_start, y_row_start)
+                          pdf.cell(col_widths[0], row_height, str(serial), 0, 0, 'C')  # Normal serial number
+              
+                      for i, text in enumerate(row_data[1:], 1):  # Start from index 1 (skip serial number)
+                          pdf.set_xy(x_row_start + sum(col_widths[:i]), y_row_start)
+              
+                          cell_lines = split_text(str(text), col_widths[i])
+              
+                          vertical_offset = (row_height - (6 * len(cell_lines))) / 2
+              
+                          for line in cell_lines:
+                              pdf.set_xy(x_row_start + sum(col_widths[:i]), y_row_start + vertical_offset)
+                              pdf.cell(col_widths[i], 6, line, 0, 0, 'C')
+                              vertical_offset += 6
+              
+                      pdf.set_y(y_row_start + row_height)
+                      serial += 1
+              
+                  # Summary Section
+                  summary_data = [
+                      ("Subtotal", f"{total_cost:.2f}"),
+                      ("GST (18%)", f"{gst:.2f}"),
+                      ("Unforeseen (5%)", f"{unforeseen:.2f}"),
+                      ("Grand Total", f"{final_total:.2f}")
+                  ]
+              
+                  for label, value in summary_data:
+                      row_height = 8
+                      if pdf.get_y() + row_height > pdf.h - 30:
+                          pdf.add_page()
+                          add_watermark(pdf)
+                          pdf.set_font("Arial", '', 10)  # Reset the correct font and size
+                  
+                      x = pdf.get_x()
+                      y = pdf.get_y()
+                  
+                      # Draw both label and value in the same row
+                      pdf.set_xy(x, y)
+                      pdf.cell(sum(col_widths[:-1]), row_height, label, border=1, align='C')
+                  
+                      pdf.set_xy(x + sum(col_widths[:-1]), y)
+                      pdf.cell(col_widths[-1], row_height, value, border=1, align='C')
+                  
+                      # Move to next line
+                      pdf.set_y(y + row_height)
+              
+                  # Signature Area
+                  if pdf.get_y() + 20 > pdf.h - 30:
+                      pdf.add_page()
+              
+                  pdf.set_font("Arial", 'B', 12)
+                  pdf.set_xy(pdf.w - 70, pdf.h - 40)
+                  pdf.cell(60, 10, "District Officer", ln=True, align='C')
+                  pdf.set_xy(pdf.w - 70, pdf.h - 30)
+                  pdf.cell(60, 10, "(Seal & Signature)", ln=True, align='C')
+              
+                  # Save and offer download
+                  pdf_file = "estimate.pdf"
+                  pdf.output(pdf_file)
+              
+                  with open(pdf_file, "rb") as f:
+                      st.download_button(
+                          label="⬇️ Download PDF",
+                          data=f,
+                          file_name=pdf_file,
+                          mime="application/pdf"
+                      )
         with col3:
             if st.button("🗑️ Clear All", key="clear_all", 
                         help="Remove all items and start fresh"):
@@ -1034,3 +1049,18 @@ if st.session_state.get('authenticated', False):
         st.session_state.authenticated = False
         st.session_state.logged_in_username = None
         st.rerun()
+    # Add the new sample download button
+    if st.sidebar.button("Sample Excel"):
+        try:
+            # Read the sample file
+            with open("Sample.xlsx", "rb") as file:
+                st.sidebar.download_button(
+                    label="⬇️ Download Sample Excel Now",
+                    data=file,
+                    file_name="Sample.xlsx",
+                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                )
+        except FileNotFoundError:
+            st.sidebar.error("Sample Excel file not found")
+        except Exception as e:
+            st.sidebar.error(f"Error downloading sample: {str(e)}")
