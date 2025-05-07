@@ -1152,4 +1152,28 @@ if st.session_state.get('authenticated', False):
         except FileNotFoundError:
             st.sidebar.error("Requested file not found")
         except Exception as e:
-            st.sidebar.error(f"Error downloading file: {str(e)}")        
+            st.sidebar.error(f"Error downloading file: {str(e)}")
+    # Add to your session state initialization (if not already present)
+    if 'show_pump_selector' not in st.session_state:
+        st.session_state.show_pump_selector = False
+    
+    # In your sidebar section:
+    if st.sidebar.button("Pump Selector"):
+        st.session_state.show_pump_selector = not st.session_state.show_pump_selector
+    
+    if st.session_state.show_pump_selector:
+        st.sidebar.markdown("""
+        <div style="background-color:#f0f2f6; padding:10px; border-radius:5px; margin-top:10px;">
+            <p style="margin-bottom:10px;">Pump Selector will open in a new tab</p>
+            <a href="https://gwdpumpdesign.streamlit.app/" target="_blank" style="text-decoration:none;">
+                <button style="background-color:#4CAF50; color:white; border:none; padding:8px 16px; 
+                            text-align:center; display:inline-block; font-size:14px; margin:4px 2px; 
+                            cursor:pointer; border-radius:4px;">
+                    Open Pump Selector
+                </button>
+            </a>
+            <p style="font-size:12px; color:#666; margin-top:10px;">
+                If blocked, right-click → "Open in new tab"
+            </p>
+        </div>
+        """, unsafe_allow_html=True)
