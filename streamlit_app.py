@@ -56,7 +56,7 @@ def load_wizard_items(username):
 import streamlit as st
 
 def login_page(credentials_df):
-    st.markdown("<h1 style='text-align: center; color: #154c79;'>ESTIMATE DRAFTER LOGIN</h1>", unsafe_allow_html=True)
+    st.markdown("<h1 style='text-align: center; color: #154c79;'>DSR 2021 ESTIMATE DRAFTER LOGIN</h1>", unsafe_allow_html=True)
     
     # Create columns to control the width of the input fields
     col1, col2, col3 = st.columns([2, 1, 2])  # 50% width for each input field
