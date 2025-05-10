@@ -56,8 +56,23 @@ def load_wizard_items(username):
 import streamlit as st
 
 def login_page(credentials_df):
-    st.markdown("<h1 style='text-align: center; color: #154c79;'>DSR 2021 ESTIMATE DRAFTER LOGIN</h1>", unsafe_allow_html=True)
-    
+    st.markdown("""
+    <div style='text-align: center; margin-top: 30px; margin-bottom: 40px;'>
+        <h1 style='color: #103f66; font-size: 36px; font-weight: 700; margin-bottom: 6px;'>
+            Ground Water Department
+        </h1>
+        <h2 style='color: #1a6fa3; font-size: 24px; font-weight: 600; margin-bottom: 4px;'>
+            Civil Works Estimate Drafter
+        </h2>
+        <h3 style='color: #3b7ca5; font-size: 18px; font-weight: 500; margin-bottom: 16px;'>
+            Powered by DSR 2021
+        </h3>
+        <p style='color: #555; font-size: 15px;'>
+            Sign in to create, preview, and download professional estimates in Excel and PDF format.
+        </p>
+    </div>
+    """, unsafe_allow_html=True)
+
     # Create columns to control the width of the input fields
     col1, col2, col3 = st.columns([2, 1, 2])  # 50% width for each input field
 
