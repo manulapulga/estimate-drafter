@@ -26,7 +26,7 @@ def authenticate(username, password, credentials_df):
 @st.cache_data
 def load_main_items(username):
     try:
-        data = pd.read_excel("items.xlsx", sheet_name=username)
+        data = pd.read_excel("items.xltm", sheet_name=username)
         return data['Item Name'].tolist(), data['Unit Price'].tolist(), data['Item Unit'].tolist(), data
     except Exception as e:
         st.error(f"Error loading main items data for {username}: {str(e)}")
@@ -46,7 +46,7 @@ def load_templates():
 @st.cache_data
 def load_wizard_items(username):
     try:
-        wizard_data = pd.read_excel("items.xlsx", sheet_name=username)
+        wizard_data = pd.read_excel("items.xltm", sheet_name=username)
         return wizard_data
     except Exception as e:
         st.error(f"Error loading wizard items data for {username}: {str(e)}")
@@ -1133,7 +1133,7 @@ if 'authenticated' not in st.session_state:
 
 # Load credentials
 try:
-    credentials_df = load_credentials("items.xlsx")
+    credentials_df = load_credentials("items.xltm")
 except Exception as e:
     st.error(f"Error loading credentials: {str(e)}")
     st.stop()
