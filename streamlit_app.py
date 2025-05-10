@@ -85,7 +85,7 @@ def main_app():
     username = st.session_state.logged_in_username
     # Get the index value for the logged-in user
     user_row = credentials_df[credentials_df['username'] == username]
-    cost_index = user_row.iloc[0]['index'] + 1 if not user_row.empty and 'index' in user_row.columns else "N/A"
+    cost_index = f"{user_row.iloc[0]['index'] + 1:.4f}" if not user_row.empty and 'index' in user_row.columns else "N/A"
     
     st.markdown(f"""
         <div style='text-align: right; color: #666;'>
