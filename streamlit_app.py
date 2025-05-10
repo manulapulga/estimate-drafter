@@ -842,7 +842,7 @@ def main_app():
                     ("Subtotal", total_cost),
                     ("GST (18%)", gst),
                     ("Unforeseen (5%)", unforeseen),
-                    ("Grand Total Rounded", final_total)
+                    ("Grand Total Rounded To Next 1000", final_total)
                 ]:
                     ws.merge_cells(f'A{row_num}:E{row_num}')
                     ws[f'A{row_num}'] = label
@@ -1069,7 +1069,7 @@ def main_app():
                       ("Subtotal", f"{total_cost:.2f}"),
                       ("GST (18%)", f"{gst:.2f}"),
                       ("Unforeseen (5%)", f"{unforeseen:.2f}"),
-                      ("Grand Total Rounded", f"{final_total:.2f}")
+                      ("Grand Total Rounded To Next 1000", f"{final_total:.2f}")
                   ]
               
                   for label, value in summary_data:
