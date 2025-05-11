@@ -200,6 +200,18 @@ def main_app():
         unforeseen = round(total_cost * 0.05, 2)
         final_total = math.ceil((total_cost + gst + unforeseen) / 1000) * 1000
         return total_cost, gst, unforeseen, final_total
+    
+    def move_item_up(index):
+        if index > 0:
+            st.session_state.selected_items[index], st.session_state.selected_items[index - 1] = \
+                st.session_state.selected_items[index - 1], st.session_state.selected_items[index]
+            st.rerun()
+    
+    def move_item_down(index):
+        if index < len(st.session_state.selected_items) - 1:
+            st.session_state.selected_items[index], st.session_state.selected_items[index + 1] = \
+                st.session_state.selected_items[index + 1], st.session_state.selected_items[index]
+            st.rerun()
 
     def handle_item_selection(selected_item):
         # Find the item in wizard data first
@@ -235,10 +247,28 @@ def main_app():
     for idx, item in enumerate(st.session_state.selected_items):
         if item.get('Type') == 'Subheading':
             with st.expander(f"📌 {item['Item']}", expanded=False):
-                st.markdown(f"**{item['Item']}**")
-                if st.button(f"❌ Remove Subheading", key=f"remove_sub_{idx}"):
-                    remove_item(idx)
+                # Editable text input for subheading
+                new_heading = st.text_input("Edit Heading", value=item['Item'], key=f"edit_subheading_{idx}")
+        
+                # Update and Remove buttons
+                col1, col2, col3, col4, col5 = st.columns([2, 2, 2, 2, 6])
+                with col1:
+                    if st.button("🔁 Update", key=f"update_sub_{idx}"):
+                        if new_heading.strip():
+                            st.session_state.selected_items[idx]['Item'] = new_heading.strip()
+                            st.success("Subheading updated successfully!")
+                            st.rerun()
+                with col2:
+                    if st.button(f"❌ Remove", key=f"remove_sub_{idx}"):
+                        remove_item(idx)
+                with col3:    
+                    if st.button("⬆️ Move Up", key=f"move_up_sub_{idx}"):
+                        move_item_up(idx)
+                with col4:
+                    if st.button("⬇️ Move Down", key=f"move_down_sub_{idx}"):
+                        move_item_down(idx)
             continue
+
 
         item_type = item.get('Type', 'Standard')
         item_title = f"💧 Item {idx + 1}: {item['Item']} (₹{item['Cost']:.2f})"
@@ -246,9 +276,10 @@ def main_app():
             item_title += " [Other" + (" +GST" if item.get('GST_Applicable', False) else "") + "]"
         
         with st.expander(item_title, expanded=False):
+                    
             if item_type == 'Other':
                 # Enhanced display for "Other" type items with editing capability
-                col1, col2 = st.columns([1, 1])
+                col1, col2 = st.columns([3, 1])
                 with col1:
                     # Editable item description
                     new_desc = st.text_input(
@@ -269,8 +300,26 @@ def main_app():
                         value=item.get('GST_Applicable', False),
                         key=f"other_gst_{idx}"
                     )
+                    # Remark Section for 'Other' Items
+                    remark = item.get('Quantity_Remarks', '')
+                    button_label = "✏️ Edit Remark" if remark else "➕ Add Remark"
+                    
+                    if st.button(button_label, key=f"edit_remark_other_{idx}"):
+                        st.session_state.selected_items[idx]['show_remark_input'] = True
+                    
+                    if remark and not item.get('show_remark_input', False):
+                        st.info(f"📋 Quantity Remark: {remark}")
+                    
+                    if item.get('show_remark_input', False):
+                        new_remark = st.text_input("Edit Remark", value=remark, key=f"remark_input_other_{idx}", max_chars=100)
+                        if st.button("Save Remark", key=f"save_remark_other_{idx}"):
+                            st.session_state.selected_items[idx]['Quantity_Remarks'] = new_remark
+                            st.session_state.selected_items[idx]['show_remark_input'] = False
+                            st.rerun()
+
+                    
                 # Action buttons
-                col1, col2 = st.columns([3, 1])
+                col1, col2, col3, col4, col5 = st.columns([2, 2, 2, 2, 6])
                 with col1:
                     if st.button(f"🔁 Update", key=f"update_other_{idx}"):
                         if new_desc and new_price:
@@ -281,7 +330,8 @@ def main_app():
                                         'Item': new_desc,
                                         'Cost': price,
                                         'Type': 'Other',
-                                        'GST_Applicable': new_gst
+                                        'GST_Applicable': new_gst,
+                                        'Quantity_Remarks': item.get('Quantity_Remarks', '')
                                     }
                                     st.success("Custom item updated successfully!")
                                     st.rerun()
@@ -290,6 +340,13 @@ def main_app():
                 with col2:
                     if st.button(f"❌ Remove", key=f"remove_{idx}"):
                         remove_item(idx)
+                        
+                with col3:
+                    if st.button("⬆️ Move Up", key=f"move_up_sub_{idx}"):
+                        move_item_up(idx)
+                with col4:
+                    if st.button("⬇️ Move Down", key=f"move_down_sub_{idx}"):
+                        move_item_down(idx)
             else:
                 # Display for standard items
                 col1, col2 = st.columns([3, 1])
@@ -332,14 +389,14 @@ def main_app():
                     
                     # Show input box if editing
                     if item.get('show_remark_input', False):
-                        new_remark = st.text_input("Edit Remark", value=remark, key=f"qty_remark_{idx}")
+                        new_remark = st.text_input("Edit Remark", value=remark, key=f"qty_remark_{idx}", max_chars=100)
                         if st.button("Save Remark", key=f"save_remark_{idx}"):
                             st.session_state.selected_items[idx]['Quantity_Remarks'] = new_remark
                             st.session_state.selected_items[idx]['show_remark_input'] = False
                             st.rerun()
 
                 # Action buttons inside expander
-                col1, col2 = st.columns([1, 1])
+                col1, col2, col3, col4, col5 = st.columns([2, 2, 2, 2, 6])
                 with col1:
                     if st.button(f"🔁 Update", key=f"update_{idx}"):
                         if item_name and quantity:
@@ -366,7 +423,12 @@ def main_app():
                 with col2:
                     if st.button(f"❌ Remove", key=f"remove_{idx}"):
                         remove_item(idx)
-
+                with col3:
+                    if st.button("⬆️ Move Up", key=f"move_up_sub_{idx}"):
+                        move_item_up(idx)
+                with col4:
+                    if st.button("⬇️ Move Down", key=f"move_down_sub_{idx}"):
+                        move_item_down(idx)
     # Add New Item or Subheading buttons
     button_col1, button_col2, button_col3, button_col4, button_col5, button_col6 = st.columns([2, 2, 2, 2, 2, 2])
     with button_col1:
@@ -813,12 +875,14 @@ def main_app():
                         ws[f'A{row_num}'] = f" {item['Item']}"
                         row_num += 1
                     elif item.get("Type") == "Other":
+                        remark = item.get('Quantity_Remarks', '')
+                        qty_field = f"- ({remark})" if remark else "-"
                         ws.append([
                             serial,
                             item['Item'],
                             "-",
                             "-",
-                            "-",
+                            qty_field,
                             item['Cost'],
                             "Yes" if item.get('GST_Applicable', False) else "No"
                         ])
@@ -986,7 +1050,8 @@ def main_app():
                       if item.get("Type") == "Other":
                           rate_text = "-"
                           unit_text = "-"
-                          qty_text = "-"
+                          remark = item.get('Quantity_Remarks', '')
+                          qty_text = f"- ({remark})" if remark else "-"
                       else:
                           rate_text = f"{item['Unit Price']:.2f}"
                           unit_text = item['Item Unit']
