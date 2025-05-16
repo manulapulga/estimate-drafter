@@ -1247,14 +1247,14 @@ if st.session_state.get('authenticated', False):
     if 'show_price_options' not in st.session_state:
         st.session_state.show_price_options = False
     # Add PRICE Rates download button
-    if st.sidebar.button("Download PRICE Data"):
+    if st.sidebar.button("Download PRICE Rates"):
         st.session_state.show_price_options = not st.session_state.get('show_price_options', False)
     
     if st.session_state.get('show_price_options', False):
         try:
             with open("PRICE Rates (DSR 21).xlsx", "rb") as file:
                 st.sidebar.download_button(
-                    label="⬇️ Download PRICE Data (DSR 21) Excel",
+                    label="⬇️ Download PRICE Rates (DSR 21) Excel",
                     data=file,
                     file_name="PRICE Rates (DSR 21).xlsx",
                     mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
