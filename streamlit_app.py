@@ -1244,6 +1244,8 @@ if st.session_state.get('authenticated', False):
             st.sidebar.error("Requested file not found")
         except Exception as e:
             st.sidebar.error(f"Error downloading file: {str(e)}")
+    if 'show_price_options' not in st.session_state:
+        st.session_state.show_price_options = False
     # Add PRICE Rates download button
     if st.sidebar.button("Download PRICE Data"):
         st.session_state.show_price_options = not st.session_state.get('show_price_options', False)
@@ -1261,6 +1263,61 @@ if st.session_state.get('authenticated', False):
             st.sidebar.error("PRICE Rates file not found")
         except Exception as e:
             st.sidebar.error(f"Error downloading PRICE Rates: {str(e)}")
+    if 'show_gwd_options' not in st.session_state:
+        st.session_state.show_gwd_options = False
+    # Add GWD Data download button - similar to DSR download
+    if st.sidebar.button("Download GWD Data"):
+        st.session_state.show_gwd_options = not st.session_state.get('show_gwd_options', False)
+    
+    if st.session_state.get('show_gwd_options', False):
+        try:
+            # List files in the GWD Data directory
+            import os
+            gwd_files = []
+            gwd_dir = "GWD Data"
+            
+            if os.path.exists(gwd_dir) and os.path.isdir(gwd_dir):
+                gwd_files = [f for f in os.listdir(gwd_dir) if os.path.isfile(os.path.join(gwd_dir, f))]
+            
+            if not gwd_files:
+                st.sidebar.warning("No files found in GWD Data directory")
+            else:
+                # Sort files alphabetically
+                gwd_files.sort()
+                
+                # Create dropdown to select file
+                selected_file = st.sidebar.selectbox(
+                    "Select GWD Data File",
+                    gwd_files,
+                    key="gwd_file_select"
+                )
+                
+                # Create download button for selected file
+                file_path = os.path.join(gwd_dir, selected_file)
+                
+                # Determine MIME type based on file extension
+                file_ext = os.path.splitext(selected_file)[1].lower()
+                mime_types = {
+                    '.pdf': 'application/pdf',
+                    '.xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                    '.xls': 'application/vnd.ms-excel',
+                    '.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                    '.doc': 'application/msword',
+                    '.txt': 'text/plain',
+                    '.csv': 'text/csv'
+                }
+                mime_type = mime_types.get(file_ext, 'application/octet-stream')
+                
+                with open(file_path, "rb") as file:
+                    st.sidebar.download_button(
+                        label=f"⬇️ Download {selected_file}",
+                        data=file,
+                        file_name=selected_file,
+                        mime=mime_type
+                    )
+                    
+        except Exception as e:
+            st.sidebar.error(f"Error accessing GWD Data: {str(e)}")    
     # Add to your session state initialization (if not already present)
     if 'show_pump_selector' not in st.session_state:
         st.session_state.show_pump_selector = False
