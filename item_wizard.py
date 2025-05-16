@@ -96,8 +96,12 @@ def show_item_wizard(items_df, add_callback):
         # Two column layout (filters on left, items on right)
         filter_col, items_col = st.columns([2, 8])
 
+        # In the show_item_wizard function, modify the FILTERS COLUMN section as follows:
+        
         # FILTERS COLUMN
         with filter_col:
+            
+            
             # Search box
             search_term = st.text_input("🔍 Search items", key="wizard_search")
             
@@ -108,27 +112,66 @@ def show_item_wizard(items_df, add_callback):
                     'sub1_categories': [],
                     'sub2_categories': []
                 }
-
+            # Clear All Filters button
+            if st.button("🧹 Clear All Filters", key="clear_filters", use_container_width=True,
+                        help="Reset all filters to their default state"):
+                # Reset all filter selections
+                st.session_state.wizard_filters = {
+                    'main_categories': [],
+                    'sub1_categories': [],
+                    'sub2_categories': []
+                }
+                
+                # Clear all checkbox states
+                main_categories = sorted(items_df['Main Category'].dropna().unique().tolist())
+                for category in main_categories:
+                    st.session_state[f"main_{category}"] = False
+                
+                sub1_options = items_df['Sub Category 1'].dropna().unique().tolist()
+                for sub1 in sub1_options:
+                    st.session_state[f"sub1_{sub1}"] = False
+                    
+                sub2_options = items_df['Sub Category 2'].dropna().unique().tolist()
+                for sub2 in sub2_options:
+                    st.session_state[f"sub2_{sub2}"] = False
+                    
+                st.session_state.current_page = 1
+                st.rerun()
+            # Replace the checkbox sections in your code with these versions:
             # MAIN CATEGORY FILTER
             st.markdown("<div class='filter-section'>", unsafe_allow_html=True)
             st.markdown("<div class='filter-header'>Main Categories</div>", unsafe_allow_html=True)
             main_categories = sorted(items_df['Main Category'].dropna().unique().tolist())
-            for category in main_categories:
-                if st.checkbox(
-                    category, 
-                    key=f"main_{category}",
-                    value=category in st.session_state.wizard_filters['main_categories']
-                ):
-                    if category not in st.session_state.wizard_filters['main_categories']:
-                        st.session_state.wizard_filters['main_categories'].append(category)
+            
+            def update_main_category(category):
+                if category not in st.session_state.wizard_filters['main_categories']:
+                    st.session_state.wizard_filters['main_categories'].append(category)
                 else:
-                    if category in st.session_state.wizard_filters['main_categories']:
-                        st.session_state.wizard_filters['main_categories'].remove(category)
+                    st.session_state.wizard_filters['main_categories'].remove(category)
+                st.session_state.current_page = 1  # Reset to first page when filters change
+            
+            for category in main_categories:
+                st.checkbox(
+                    category,
+                    key=f"main_{category}",
+                    value=category in st.session_state.wizard_filters['main_categories'],
+                    on_change=update_main_category,
+                    args=(category,),
+                    kwargs=None
+                )
             st.markdown("</div>", unsafe_allow_html=True)
-
+            
             # SUB CATEGORY 1 FILTER
             st.markdown("<div class='filter-section'>", unsafe_allow_html=True)
             st.markdown("<div class='filter-header'>Sub Categories 1</div>", unsafe_allow_html=True)
+            
+            def update_sub1_category(sub1):
+                if sub1 not in st.session_state.wizard_filters['sub1_categories']:
+                    st.session_state.wizard_filters['sub1_categories'].append(sub1)
+                else:
+                    st.session_state.wizard_filters['sub1_categories'].remove(sub1)
+                st.session_state.current_page = 1
+            
             if st.session_state.wizard_filters['main_categories']:
                 sub1_options = items_df[
                     items_df['Main Category'].isin(st.session_state.wizard_filters['main_categories'])
@@ -137,21 +180,26 @@ def show_item_wizard(items_df, add_callback):
                 sub1_options = items_df['Sub Category 1'].dropna().unique().tolist()
             
             for sub1 in sorted(sub1_options):
-                if st.checkbox(
-                    sub1, 
+                st.checkbox(
+                    sub1,
                     key=f"sub1_{sub1}",
-                    value=sub1 in st.session_state.wizard_filters['sub1_categories']
-                ):
-                    if sub1 not in st.session_state.wizard_filters['sub1_categories']:
-                        st.session_state.wizard_filters['sub1_categories'].append(sub1)
-                else:
-                    if sub1 in st.session_state.wizard_filters['sub1_categories']:
-                        st.session_state.wizard_filters['sub1_categories'].remove(sub1)
+                    value=sub1 in st.session_state.wizard_filters['sub1_categories'],
+                    on_change=update_sub1_category,
+                    args=(sub1,)
+                )
             st.markdown("</div>", unsafe_allow_html=True)
-
+            
             # SUB CATEGORY 2 FILTER
             st.markdown("<div class='filter-section'>", unsafe_allow_html=True)
             st.markdown("<div class='filter-header'>Sub Categories 2</div>", unsafe_allow_html=True)
+            
+            def update_sub2_category(sub2):
+                if sub2 not in st.session_state.wizard_filters['sub2_categories']:
+                    st.session_state.wizard_filters['sub2_categories'].append(sub2)
+                else:
+                    st.session_state.wizard_filters['sub2_categories'].remove(sub2)
+                st.session_state.current_page = 1
+            
             if st.session_state.wizard_filters['sub1_categories']:
                 sub2_options = items_df[
                     items_df['Sub Category 1'].isin(st.session_state.wizard_filters['sub1_categories'])
@@ -160,16 +208,13 @@ def show_item_wizard(items_df, add_callback):
                 sub2_options = items_df['Sub Category 2'].dropna().unique().tolist()
             
             for sub2 in sorted(sub2_options):
-                if st.checkbox(
-                    sub2, 
+                st.checkbox(
+                    sub2,
                     key=f"sub2_{sub2}",
-                    value=sub2 in st.session_state.wizard_filters['sub2_categories']
-                ):
-                    if sub2 not in st.session_state.wizard_filters['sub2_categories']:
-                        st.session_state.wizard_filters['sub2_categories'].append(sub2)
-                else:
-                    if sub2 in st.session_state.wizard_filters['sub2_categories']:
-                        st.session_state.wizard_filters['sub2_categories'].remove(sub2)
+                    value=sub2 in st.session_state.wizard_filters['sub2_categories'],
+                    on_change=update_sub2_category,
+                    args=(sub2,)
+                )
             st.markdown("</div>", unsafe_allow_html=True)
 
         # ITEMS COLUMN
@@ -193,9 +238,21 @@ def show_item_wizard(items_df, add_callback):
             
             # Search filter
             if search_term:
-                filtered_items = filtered_items[
-                    filtered_items['Item Name'].str.contains(search_term, case=False)
-                ]
+                search_terms = search_term.lower().split()
+                
+                def search_match(row):
+                    # Combine all relevant fields into one searchable string
+                    search_text = ' '.join([
+                        str(row['Item Name']).lower(),
+                        str(row['Main Category']).lower(),
+                        str(row['Sub Category 1']).lower(),
+                        str(row['Sub Category 2']).lower()
+                    ])
+                    
+                    # Check if all search terms appear in any order
+                    return all(term in search_text for term in search_terms)
+                
+                filtered_items = filtered_items[filtered_items.apply(search_match, axis=1)]
             
             # PAGINATION CONTROLS
             PAGE_SIZE = 50
