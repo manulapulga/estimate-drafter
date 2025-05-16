@@ -1246,6 +1246,9 @@ if st.session_state.get('authenticated', False):
             st.sidebar.error(f"Error downloading file: {str(e)}")
     # Add PRICE Rates download button
     if st.sidebar.button("Download PRICE Data"):
+        st.session_state.show_price_options = not st.session_state.get('show_price_options', False)
+    
+    if st.session_state.get('show_price_options', False):
         try:
             with open("PRICE Rates (DSR 21).xlsx", "rb") as file:
                 st.sidebar.download_button(
