@@ -57,19 +57,13 @@ import streamlit as st
 
 def login_page(credentials_df):
     st.markdown("""
-    <div style='text-align: center; margin-top: 30px; margin-bottom: 40px;'>
-        <h1 style='color: #103f66; font-size: 36px; font-weight: 700; margin-bottom: 6px;'>
+    <div style='text-align: center; margin-top: 0px; margin-bottom: 0px;'>
+        <h1 style='color: #103f66; font-size: 36px; font-weight: 700; margin-top: 0px; margin-bottom: 0px;'>
             Ground Water Department
         </h1>
-        <h2 style='color: #1a6fa3; font-size: 24px; font-weight: 600; margin-bottom: 4px;'>
+        <h2 style='color: #1a6fa3; font-size: 24px; font-weight: 600; margin-top: 0px; margin-bottom: 0px;'>
             Civil Works Estimate Drafter
         </h2>
-        <h3 style='color: #3b7ca5; font-size: 18px; font-weight: 500; margin-bottom: 16px;'>
-            Powered by DSR 2021
-        </h3>
-        <p style='color: #555; font-size: 15px;'>
-            Sign in to create, preview, and download professional estimates in Excel and PDF format.
-        </p>
     </div>
     """, unsafe_allow_html=True)
 
@@ -88,6 +82,16 @@ def login_page(credentials_df):
                 st.rerun()
             else:
                 st.error("Invalid username or password")
+    
+    # Add the "Powered by DSR 2021" at the bottom
+    st.markdown("""
+    <div style='text-align: center; margin-top: 0px; margin-bottom: 0px; color: #3b7ca5; font-size: 14px;'>
+        Powered by DSR 2021
+        <p style='color: #555; font-size: 15px; margin-top: 0px; margin-bottom: 0px;'>
+            Sign in to create, preview, and download professional estimates in Excel and PDF format.
+        </p>
+    </div>
+    """, unsafe_allow_html=True)
 # Main app
 def main_app():
     # Load data
@@ -246,9 +250,11 @@ def main_app():
     # Display added items and subheadings
     for idx, item in enumerate(st.session_state.selected_items):
         if item.get('Type') == 'Subheading':
-            with st.expander(f"📌 {item['Item']}", expanded=False):
+            # Modified expander with controlled state
+            expanded = st.session_state.get(f"expander_{idx}", False)
+            with st.expander(f"📌 {item['Item']}", expanded=expanded):
                 # Editable text input for subheading
-                new_heading = st.text_input("Edit Heading", value=item['Item'], key=f"edit_subheading_{idx}")
+                new_heading = st.text_input("Edit Subheading", value=item['Item'], key=f"edit_subheading_{idx}")
         
                 # Update and Remove buttons
                 col1, col2, col3, col4, col5 = st.columns([2, 2, 2, 2, 6])
@@ -256,6 +262,7 @@ def main_app():
                     if st.button("🔁 Update", key=f"update_sub_{idx}"):
                         if new_heading.strip():
                             st.session_state.selected_items[idx]['Item'] = new_heading.strip()
+                            st.session_state[f"expander_{idx}"] = False  # Collapse the expander
                             st.success("Subheading updated successfully!")
                             st.rerun()
                 with col2:
@@ -275,7 +282,9 @@ def main_app():
         if item_type == 'Other':
             item_title += " [Other" + (" +GST" if item.get('GST_Applicable', False) else "") + "]"
         
-        with st.expander(item_title, expanded=False):
+        # Modified expander with controlled state
+        expanded = st.session_state.get(f"expander_{idx}", False)
+        with st.expander(item_title, expanded=expanded):
                     
             if item_type == 'Other':
                 # Enhanced display for "Other" type items with editing capability
@@ -331,8 +340,10 @@ def main_app():
                                         'Cost': price,
                                         'Type': 'Other',
                                         'GST_Applicable': new_gst,
-                                        'Quantity_Remarks': item.get('Quantity_Remarks', '')
+                                        'Quantity_Remarks': item.get('Quantity_Remarks', ''),
+                                        'show_remark_input': False  # Add this line
                                     }
+                                    st.session_state[f"expander_{idx}"] = False  # Add this line to collapse
                                     st.success("Custom item updated successfully!")
                                     st.rerun()
                             except ValueError:
@@ -393,6 +404,7 @@ def main_app():
                         if st.button("Save Remark", key=f"save_remark_{idx}"):
                             st.session_state.selected_items[idx]['Quantity_Remarks'] = new_remark
                             st.session_state.selected_items[idx]['show_remark_input'] = False
+                            st.session_state[f"expander_{idx}"] = False  # Collapse after saving remark
                             st.rerun()
 
                 # Action buttons inside expander
@@ -414,8 +426,11 @@ def main_app():
                                         'Item Unit': unit,
                                         'Cost': cost,
                                         'Type': 'Standard',
-                                        'GST_Applicable': gst_applicable
+                                        'GST_Applicable': gst_applicable,
+                                        'Quantity_Remarks': item.get('Quantity_Remarks', ''),  # Preserve existing remarks
+                                        'show_remark_input': False  # Add this line
                                     }
+                                    st.session_state[f"expander_{idx}"] = False  # Add this line to collapse
                                     st.success("Item updated successfully!")
                                     st.rerun()
                             except ValueError:
@@ -452,7 +467,7 @@ def main_app():
             st.session_state.show_upload = False    # Add this line
             st.rerun()
     with button_col3:
-        if st.button("➕ Add Heading", key="add_subheading_btn"):
+        if st.button("➕ Add Subheading", key="add_subheading_btn"):
             # Toggle subheading and hide others
             st.session_state.adding_subheading = not st.session_state.get('adding_subheading', False)
             st.session_state.show_add_item = False
@@ -618,7 +633,7 @@ def main_app():
             if st.button("✕ Cancel", key="cancel_template", type="primary"):
                 st.session_state.show_templates = False
                 st.rerun()
-    #excel upload section            
+    # Excel upload section            
     if st.session_state.get('show_upload', False):
         # Add this error handling block FIRST
         try:
@@ -680,17 +695,65 @@ def main_app():
                     
                     # Collect items between row 3 (first item) and subtotal_row
                     items = []
+                    current_subheading = None
+                    
                     for row in range(3, subtotal_row):
-                        item_name = ws.cell(row=row, column=2).value  # Column B
-                        quantity = ws.cell(row=row, column=5).value  # Column E
+                        # Check if this row has any horizontal merged cells (subheading)
+                        is_subheading = False
+                        for merge in ws.merged_cells.ranges:
+                            if merge.min_row == row and merge.max_row == row:  # Horizontal merge only
+                                if merge.min_col <= 2 and merge.max_col >= 2:  # Merge includes column B
+                                    current_subheading = ws.cell(row=row, column=merge.min_col).value
+                                    is_subheading = True
+                                    break
                         
-                        # Skip empty rows or subheadings (quantity is None or "-")
-                        if item_name and quantity and quantity != "-":
+                        if is_subheading:
+                            # Add the subheading to our items list
+                            items.append({
+                                'Item Name': current_subheading,
+                                'Type': 'Subheading',
+                                'Merged': True
+                            })
+                            continue
+                        
+                        # Process regular items
+                        item_name = ws.cell(row=row, column=2).value  # Column B
+                        quantity_cell = ws.cell(row=row, column=5).value  # Column E
+                        total_price_cell = ws.cell(row=row, column=6).value  # Column F (Total)
+                        
+                        # Skip empty rows
+                        if not item_name:
+                            continue
+                        
+                        # Process quantity cell to extract remarks
+                        quantity_str = str(quantity_cell).strip() if quantity_cell is not None else ""
+                        remarks = ""
+                        
+                        if "(" in quantity_str and ")" in quantity_str:
+                            parts = quantity_str.split("(", 1)
+                            remarks = parts[1].split(")", 1)[0].strip()
+                        
+                        quantity = None
+                        if quantity_str and quantity_str != "-":
                             try:
-                                quantity = float(quantity)
-                                items.append({'Item Name': item_name, 'Quantity': quantity})
+                                quantity = float(quantity_str.split("(")[0].strip())
+                            except ValueError:
+                                pass
+                        
+                        total_price = 0.0
+                        if total_price_cell is not None:
+                            try:
+                                total_price = float(total_price_cell)
                             except (ValueError, TypeError):
-                                continue
+                                pass
+                        
+                        items.append({
+                            'Item Name': item_name, 
+                            'Quantity': quantity,
+                            'Remarks': remarks,
+                            'Total Price': total_price,
+                            'Subheading': current_subheading  # Track which subheading this item belongs to
+                        })
                     
                     items_df = pd.DataFrame(items)
                 else:
@@ -700,13 +763,45 @@ def main_app():
                         st.error("The Excel file must have at least 2 columns (Item Name and Quantity)")
                         return
                     
-                    # Get the first two columns
-                    items_df = uploaded_df.iloc[:, [0, 1]]
-                    items_df.columns = ['Item Name', 'Quantity']
+                    # Get the first two columns plus the third column if available (for total price)
+                    if len(uploaded_df.columns) >= 3:
+                        items_df = uploaded_df.iloc[:, [0, 1, 2]]
+                        items_df.columns = ['Item Name', 'Quantity', 'Total Price']
+                    else:
+                        items_df = uploaded_df.iloc[:, [0, 1]]
+                        items_df.columns = ['Item Name', 'Quantity']
+                        items_df['Total Price'] = 0.0  # Add default total price column
                     
-                    # Convert quantities to numeric, coercing errors to NaN
-                    items_df['Quantity'] = pd.to_numeric(items_df['Quantity'], errors='coerce')
-                    items_df = items_df.dropna(subset=['Quantity'])
+                    # Process quantity column to extract remarks
+                    def process_quantity(qty):
+                        if pd.isna(qty):
+                            return None, ""
+                        
+                        qty_str = str(qty).strip()
+                        remarks = ""
+                        
+                        if "(" in qty_str and ")" in qty_str:
+                            parts = qty_str.split("(", 1)
+                            remarks = parts[1].split(")", 1)[0].strip()
+                        
+                        quantity = None
+                        if qty_str and qty_str != "-":
+                            try:
+                                quantity = float(qty_str.split("(")[0].strip())
+                            except ValueError:
+                                pass
+                        
+                        return quantity, remarks
+                    
+                    # Apply processing to quantity column
+                    processed = items_df['Quantity'].apply(process_quantity)
+                    items_df['Quantity'] = [x[0] for x in processed]
+                    items_df['Remarks'] = [x[1] for x in processed]
+                    
+                    # Process total price column
+                    items_df['Total Price'] = items_df['Total Price'].apply(
+                        lambda x: float(x) if pd.notna(x) and str(x).replace('.','',1).isdigit() else 0.0
+                    )
                 
                 if items_df.empty:
                     st.error("No valid items found in the uploaded file")
@@ -719,21 +814,28 @@ def main_app():
                 col1, col2 = st.columns([1, 1])
                 with col1:
                     if st.button("Add Uploaded Items", key="add_uploaded_items"):
-                        main_items_data = data  # From your existing load_main_items()
+                        main_items_data = data
                         added_count = 0
                         
                         for _, row in items_df.iterrows():
+                            if row.get('Type') == 'Subheading':
+                                # Add subheading to the estimate
+                                st.session_state.selected_items.append({
+                                    'Item': row['Item Name'],
+                                    'Type': 'Subheading'
+                                })
+                                continue
+                                
                             item_name = row['Item Name']
                             quantity = row['Quantity']
-                            
-                            # Skip if quantity is not numeric
-                            if pd.isna(quantity):
-                                continue
+                            remarks = row.get('Remarks', '')
+                            total_price = row.get('Total Price', 0.0)
                             
                             # Find the item in main data
                             main_item = main_items_data[main_items_data['Item Name'] == item_name]
                             
-                            if not main_item.empty:
+                            if not main_item.empty and quantity is not None:
+                                # Standard item
                                 main_item = main_item.iloc[0]
                                 st.session_state.selected_items.append({
                                     'Item': item_name,
@@ -743,16 +845,17 @@ def main_app():
                                     'Cost': float(quantity) * main_item['Unit Price'],
                                     'Type': 'Standard',
                                     'GST_Applicable': True,
-                                    'Quantity_Remarks': ""
+                                    'Quantity_Remarks': remarks
                                 })
                                 added_count += 1
                             else:
-                                # If item not found in main data, add as "Other"
+                                # Other item
                                 st.session_state.selected_items.append({
                                     'Item': item_name,
-                                    'Cost': 0,  # Or you could prompt for price
+                                    'Cost': float(total_price),
                                     'Type': 'Other',
-                                    'GST_Applicable': True
+                                    'GST_Applicable': True,
+                                    'Quantity_Remarks': remarks
                                 })
                                 added_count += 1
                         
@@ -769,13 +872,13 @@ def main_app():
         else:
             if st.button("✕ Cancel", key="cancel_upload_no_file", type="primary"):
                 st.session_state.show_upload = False
-                st.rerun()           
+                st.rerun()         
     # Show Subheading section if toggled on
     if st.session_state.get('adding_subheading', False):
-        subheading = st.text_input("Enter Sub Heading", key="new_subheading")
+        subheading = st.text_input("Enter Subheading", key="new_subheading")
         col1, col2 = st.columns([1, 1])
         with col1:
-            if st.button("Add Sub Heading to Estimate", key="confirm_subheading"):
+            if st.button("Add Subheading to Estimate", key="confirm_subheading"):
                 if subheading.strip():
                     st.session_state.selected_items.append({
                         'Item': subheading.strip(),
@@ -894,9 +997,9 @@ def main_app():
                             item['Item'],
                             item['Unit Price'],
                             item['Item Unit'],
-                            item['Quantity'],
+                            f"{item['Quantity']} ({item['Quantity_Remarks']})" if item.get('Quantity_Remarks') else item['Quantity'],
                             item['Cost'],
-                            "Yes"
+                            "Yes" if item.get('GST_Applicable', True) else "No"
                         ])
                         serial += 1
                         row_num += 1
@@ -1043,6 +1146,7 @@ def main_app():
                           pdf.set_xy(pdf.get_x(), pdf.get_y())
                           pdf.cell(sum(col_widths), 6, f" {item['Item']}", border=1, align='C')
                           pdf.ln(6)
+                          pdf.set_font("Arial", '', 10)
                           continue  # Skip to next item after subheading
                       
                       gst_applicable = item.get('GST_Applicable', True)
@@ -1059,7 +1163,11 @@ def main_app():
                           if remark:
                               qty_text = f"{item['Quantity']:.2f} ({remark})"
                           else:
-                              qty_text = f"{item['Quantity']:.2f}"
+                              remark = item.get('Quantity_Remarks', '')
+                              if remark:
+                                  qty_text = f"{item['Quantity']:.2f} ({remark})"
+                              else:
+                                  qty_text = f"{item['Quantity']:.2f}"
               
                       total_text = f"{item['Cost']:.2f}"
                       if not gst_applicable:
@@ -1146,7 +1254,10 @@ def main_app():
                   
                       x = pdf.get_x()
                       y = pdf.get_y()
-                  
+                      
+                      # Set bold font for summary items
+                      pdf.set_font("Arial", 'B', 10)  # Changed to bold
+
                       # Draw both label and value in the same row
                       pdf.set_xy(x, y)
                       pdf.cell(sum(col_widths[:-1]), row_height, label, border=1, align='C')
@@ -1190,7 +1301,6 @@ def main_app():
                 st.rerun()        
     else:
         st.info("No items added to the estimate yet.")
-
 # Check authentication
 if 'authenticated' not in st.session_state:
     st.session_state.authenticated = False
