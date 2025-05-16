@@ -1215,7 +1215,7 @@ if st.session_state.get('authenticated', False):
         st.session_state.logged_in_username = None
         st.rerun()
     # Add the DSR download button and dropdowns
-    if st.sidebar.button("Download DSR/DAR pdf"):
+    if st.sidebar.button("Download DSR/DAR"):
         st.session_state.show_dsr_options = not st.session_state.get('show_dsr_options', False)
 
     if st.session_state.get('show_dsr_options', False):
@@ -1244,6 +1244,20 @@ if st.session_state.get('authenticated', False):
             st.sidebar.error("Requested file not found")
         except Exception as e:
             st.sidebar.error(f"Error downloading file: {str(e)}")
+    # Add PRICE Rates download button
+    if st.sidebar.button("Download PRICE Rates (DSR 21)"):
+        try:
+            with open("PRICE Rates (DSR 21).xlsx", "rb") as file:
+                st.sidebar.download_button(
+                    label="⬇️ Download PRICE Rates (DSR 21)",
+                    data=file,
+                    file_name="PRICE Rates (DSR 21).xlsx",
+                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                )
+        except FileNotFoundError:
+            st.sidebar.error("PRICE Rates file not found")
+        except Exception as e:
+            st.sidebar.error(f"Error downloading PRICE Rates: {str(e)}")
     # Add to your session state initialization (if not already present)
     if 'show_pump_selector' not in st.session_state:
         st.session_state.show_pump_selector = False
