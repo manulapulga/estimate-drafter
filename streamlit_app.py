@@ -1245,11 +1245,11 @@ if st.session_state.get('authenticated', False):
         except Exception as e:
             st.sidebar.error(f"Error downloading file: {str(e)}")
     # Add PRICE Rates download button
-    if st.sidebar.button("Download PRICE Rates (DSR 21)"):
+    if st.sidebar.button("Download PRICE Data (DSR 21) Excel"):
         try:
             with open("PRICE Rates (DSR 21).xlsx", "rb") as file:
                 st.sidebar.download_button(
-                    label="⬇️ Download PRICE Rates (DSR 21)",
+                    label="⬇️ Download PRICE Data (DSR 21) Excel",
                     data=file,
                     file_name="PRICE Rates (DSR 21).xlsx",
                     mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
