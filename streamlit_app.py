@@ -1215,7 +1215,7 @@ if st.session_state.get('authenticated', False):
         st.session_state.logged_in_username = None
         st.rerun()
     # Add the DSR download button and dropdowns
-    if st.sidebar.button("Download DSR"):
+    if st.sidebar.button("Download DSR/DAR pdf"):
         st.session_state.show_dsr_options = not st.session_state.get('show_dsr_options', False)
 
     if st.session_state.get('show_dsr_options', False):
