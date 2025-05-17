@@ -1373,8 +1373,29 @@ if st.session_state.get('authenticated', False):
             st.sidebar.error("PRICE Rates file not found")
         except Exception as e:
             st.sidebar.error(f"Error downloading PRICE Rates: {str(e)}")
+            
+    if 'show_dsr21basicrates_options' not in st.session_state:
+        st.session_state.show_dsr21basicrates_options = False
+    # Add DSR 21 Basic Rates download button
+    if st.sidebar.button("Download Basic Rates"):
+        st.session_state.show_dsr21basicrates_options = not st.session_state.get('show_dsr21basicrates_options', False)
+    
+    if st.session_state.get('show_dsr21basicrates_options', False):
+        try:
+            with open("DSR 21 Basic Rates.xlsx", "rb") as file:
+                st.sidebar.download_button(
+                    label="⬇️ Download Basic Rates (DSR 21) Excel",
+                    data=file,
+                    file_name="DSR 21 Basic Rates.xlsx",
+                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                )
+        except FileNotFoundError:
+            st.sidebar.error("DSR 21 Basic Rates file not found")
+        except Exception as e:
+            st.sidebar.error(f"Error downloading DSR 21 Basic Rates: {str(e)}")        
     if 'show_gwd_options' not in st.session_state:
         st.session_state.show_gwd_options = False
+        
     # Add GWD Data download button - similar to DSR download
     if st.sidebar.button("Download GWD Data"):
         st.session_state.show_gwd_options = not st.session_state.get('show_gwd_options', False)
