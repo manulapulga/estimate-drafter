@@ -179,14 +179,25 @@ def show_item_wizard(items_df, add_callback):
             else:
                 sub1_options = items_df['Sub Category 1'].dropna().unique().tolist()
             
-            for sub1 in sorted(sub1_options):
+            import re
+
+            def extract_prefix_number(s):
+                match = re.match(r"^\s*(\d+)\.", s)
+                return int(match.group(1)) if match else float('inf')  # Non-numbered items go last
+            
+            # Sort using the numeric prefix
+            sorted_sub1 = sorted(sub1_options, key=extract_prefix_number)
+            
+            for sub1 in sorted_sub1:
+                label = f"{sub1}".replace(" ", "\u00A0")  # Preserve spacing in UI
                 st.checkbox(
-                    sub1,
+                    label,
                     key=f"sub1_{sub1}",
                     value=sub1 in st.session_state.wizard_filters['sub1_categories'],
                     on_change=update_sub1_category,
                     args=(sub1,)
                 )
+            
             st.markdown("</div>", unsafe_allow_html=True)
             
             # SUB CATEGORY 2 FILTER
