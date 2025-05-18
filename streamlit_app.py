@@ -1084,7 +1084,7 @@ def main_app():
                   pdf.multi_cell(50, 5, user_info, 0, 'R')  # Right-aligned multi-cell for multiple lines
                   
                   # Center the main heading below the user info
-                  pdf.set_y(40)  # Move down a bit from top
+                  pdf.set_y(25)  # Move down a bit from top
                   pdf.set_font("Arial", 'B', 16)
                   pdf.cell(200, 10, txt=estimate_heading, ln=True, align='C')
 
