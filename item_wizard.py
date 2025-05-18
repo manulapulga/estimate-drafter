@@ -211,12 +211,19 @@ def show_item_wizard(items_df, add_callback):
                     st.session_state.wizard_filters['sub2_categories'].remove(sub2)
                 st.session_state.current_page = 1
             
+            # Create a base query for Sub Category 2 filtering
+            base_query = items_df.copy()
+            
+            # Apply Main Category filter if any are selected
+            if st.session_state.wizard_filters['main_categories']:
+                base_query = base_query[base_query['Main Category'].isin(st.session_state.wizard_filters['main_categories'])]
+            
+            # Apply Sub Category 1 filter if any are selected
             if st.session_state.wizard_filters['sub1_categories']:
-                sub2_options = items_df[
-                    items_df['Sub Category 1'].isin(st.session_state.wizard_filters['sub1_categories'])
-                ]['Sub Category 2'].dropna().unique().tolist()
-            else:
-                sub2_options = items_df['Sub Category 2'].dropna().unique().tolist()
+                base_query = base_query[base_query['Sub Category 1'].isin(st.session_state.wizard_filters['sub1_categories'])]
+            
+            # Get the filtered Sub Category 2 options
+            sub2_options = base_query['Sub Category 2'].dropna().unique().tolist()
             
             for sub2 in sorted(sub2_options):
                 st.checkbox(
