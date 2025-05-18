@@ -7,6 +7,7 @@ from openpyxl.styles import Alignment, Border, Side
 from item_wizard import show_item_wizard
 import base64
 
+
 # Set page config
 st.set_page_config(layout="wide")
 
@@ -15,6 +16,31 @@ st.set_page_config(layout="wide")
 def load_credentials(file_path):
     return pd.read_excel(file_path, sheet_name=1)  # Sheet 2 is index 1
 
+def toggle_section(section_key):
+    """Toggle a section and properly collapse all others"""
+    # Get current state of the clicked section
+    current_state = st.session_state.get(section_key, False)
+    
+    # List of all expandable section keys
+    all_sections = [
+        'show_dsr_options',
+        'show_price_options',
+        'show_dsr21basicrates_options',
+        'show_priceapprovedmr_options',
+        'show_gwd_options',
+        'show_pump_selector'
+    ]
+    
+    # If we're opening this section (it was previously closed)
+    if not current_state:
+        # Close all other sections
+        for key in all_sections:
+            if key != section_key:
+                st.session_state[key] = False
+    
+    # Toggle the current section
+    st.session_state[section_key] = not current_state           
+            
 # Authentication function
 def authenticate(username, password, credentials_df):
     user_row = credentials_df[credentials_df['username'] == username]
@@ -1357,8 +1383,8 @@ else:
     
 st.sidebar.markdown("""
 <style>
-    /* Targeting all buttons inside the sidebar */
-    section[data-testid="stSidebar"] button {
+    /* Main buttons - keep existing style */
+    section[data-testid="stSidebar"] button:not(.stDownloadButton button, .pump-selector-btn button) {
         width: 100% !important;
         margin: 5px 0 !important;
         padding: 10px !important;
@@ -1369,27 +1395,54 @@ st.sidebar.markdown("""
         color: black !important;
         transition: all 0.3s !important;
     }
-    section[data-testid="stSidebar"] button:hover {
+    
+    /* Download/secondary buttons - green style */
+    section[data-testid="stSidebar"] .stDownloadButton button,
+    section[data-testid="stSidebar"] .pump-selector-btn button {
+        background-color: #4CAF50 !important;
+        color: white !important;
+        border: 1px solid #2E7D32 !important;
+        width: 100% !important;
+        margin: 5px 0 !important;
+        padding: 10px !important;
+        font-size: 14px !important;
+        border-radius: 5px !important;
+        transition: all 0.3s !important;
+    }
+    
+    /* Hover states */
+    section[data-testid="stSidebar"] button:not(.stDownloadButton button, .pump-selector-btn button):hover {
         color: white !important;
         background-color: #154c79 !important;
         border-color: #154c79 !important;
     }
-    section[data-testid="stSidebar"] button:active {
+    
+    section[data-testid="stSidebar"] .stDownloadButton button:hover,
+    section[data-testid="stSidebar"] .pump-selector-btn button:hover {
+        background-color: #388E3C !important;
+        border-color: #1B5E20 !important;
+    }
+    
+    /* Active states */
+    section[data-testid="stSidebar"] button:not(.stDownloadButton button, .pump-selector-btn button):active {
         background-color: #103f66 !important;
         border-color: #103f66 !important;
+    }
+    
+    section[data-testid="stSidebar"] .stDownloadButton button:active,
+    section[data-testid="stSidebar"] .pump-selector-btn button:active {
+        background-color: #2E7D32 !important;
     }
 </style>
 """, unsafe_allow_html=True)
 
-# Add logout button if authenticated
+
 if st.session_state.get('authenticated', False):
-    if st.sidebar.button("Logout"):
-        st.session_state.authenticated = False
-        st.session_state.logged_in_username = None
-        st.rerun()
     # Add the DSR download button and dropdowns
+    # DSR/DAR button
     if st.sidebar.button("Download DSR/DAR"):
-        st.session_state.show_dsr_options = not st.session_state.get('show_dsr_options', False)
+        toggle_section('show_dsr_options')
+        st.rerun()  # Force immediate update
 
     if st.session_state.get('show_dsr_options', False):
         # Year selection
@@ -1420,9 +1473,11 @@ if st.session_state.get('authenticated', False):
     if 'show_price_options' not in st.session_state:
         st.session_state.show_price_options = False
     # Add PRICE Rates download button
+    # PRICE Rates button
     if st.sidebar.button("Download PRICE Rates"):
-        st.session_state.show_price_options = not st.session_state.get('show_price_options', False)
-    
+        toggle_section('show_price_options')
+        st.rerun()
+
     if st.session_state.get('show_price_options', False):
         try:
             with open("PRICE Rates (DSR 21).xlsx", "rb") as file:
@@ -1440,8 +1495,11 @@ if st.session_state.get('authenticated', False):
     if 'show_dsr21basicrates_options' not in st.session_state:
         st.session_state.show_dsr21basicrates_options = False
     # Add DSR 21 Basic Rates download button
+    # Basic Rates button
     if st.sidebar.button("Download Basic Rates"):
-        st.session_state.show_dsr21basicrates_options = not st.session_state.get('show_dsr21basicrates_options', False)
+        toggle_section('show_dsr21basicrates_options')
+        st.rerun()
+
     
     if st.session_state.get('show_dsr21basicrates_options', False):
         try:
@@ -1471,30 +1529,34 @@ if st.session_state.get('authenticated', False):
     if 'show_priceapprovedmr_options' not in st.session_state:
         st.session_state.show_priceapprovedmr_options = False
     
-    # Add PRICE Approoved MR download button
-    if st.sidebar.button("PRICE Approoved MR"):
-        st.session_state.show_priceapprovedmr_options = not st.session_state.get('show_priceapprovedmr_options', False)
+    # Add PRICE Approved MR download button
+    # PRICE Approved MR button
+    if st.sidebar.button("PRICE Approved MR"):
+        toggle_section('show_priceapprovedmr_options')
+        st.rerun()
     
     if st.session_state.get('show_priceapprovedmr_options', False):
         try:
-            with open("PRICE Approoved MR.pdf", "rb") as file:
+            with open("PRICE Approved MR.pdf", "rb") as file:
                 st.sidebar.download_button(
-                    label="⬇️ Download PRICE Approoved MR PDF",
+                    label="⬇️ Download PRICE Approved MR PDF",
                     data=file,
-                    file_name="PRICE Approoved MR.pdf",
+                    file_name="PRICE Approved MR.pdf",
                     mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
                 )
         except FileNotFoundError:
-            st.sidebar.error("PRICE Approoved MR file not found")
+            st.sidebar.error("PRICE Approved MR file not found")
         except Exception as e:
-            st.sidebar.error(f"Error downloading PRICE Approoved MR: {str(e)}")
+            st.sidebar.error(f"Error downloading PRICE Approved MR: {str(e)}")
     if 'show_gwd_options' not in st.session_state:
         st.session_state.show_gwd_options = False
         
     # Add GWD Data download button - similar to DSR download
+    # GWD Data button
     if st.sidebar.button("Download GWD Data"):
-        st.session_state.show_gwd_options = not st.session_state.get('show_gwd_options', False)
-    
+        toggle_section('show_gwd_options')
+        st.rerun()
+
     if st.session_state.get('show_gwd_options', False):
         try:
             # List files in the GWD Data directory
@@ -1549,14 +1611,17 @@ if st.session_state.get('authenticated', False):
         st.session_state.show_pump_selector = False
     
     # In your sidebar section:
+    # Pump Selector button
     if st.sidebar.button("Pump Selector"):
-        st.session_state.show_pump_selector = not st.session_state.show_pump_selector
+        toggle_section('show_pump_selector')
+        st.rerun()
     
     if st.session_state.show_pump_selector:
+        # In your Pump Selector section, change the button HTML to:
         st.sidebar.markdown("""
         <div style="background-color:#f0f2f6; padding:10px; border-radius:5px; margin-top:10px;">
             <p style="margin-bottom:10px;">Pump Selector will open in a new tab</p>
-            <a href="https://gwdpumpdesign.streamlit.app/" target="_blank" style="text-decoration:none;">
+            <a href="https://gwdpumpdesign.streamlit.app/" target="_blank" class="pump-selector-btn" style="text-decoration:none;">
                 <button style="background-color:#4CAF50; color:white; border:none; padding:8px 16px; 
                             text-align:center; display:inline-block; font-size:14px; margin:4px 2px; 
                             cursor:pointer; border-radius:4px;">
@@ -1568,3 +1633,8 @@ if st.session_state.get('authenticated', False):
             </p>
         </div>
         """, unsafe_allow_html=True)
+    # Add logout button if authenticated  
+    if st.sidebar.button("Logout"):
+        st.session_state.authenticated = False
+        st.session_state.logged_in_username = None
+        st.rerun()        
