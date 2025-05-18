@@ -1084,10 +1084,19 @@ def main_app():
                   pdf.multi_cell(50, 5, user_info, 0, 'R')  # Right-aligned multi-cell for multiple lines
                   
                   # Center the main heading below the user info
-                  pdf.set_y(25)  # Move down a bit from top
+                  pdf.set_y(40)  # Move down a bit from top
                   pdf.set_font("Arial", 'B', 16)
-                  pdf.cell(200, 10, txt=estimate_heading, ln=True, align='C')
-
+                    
+                  # Calculate center alignment for MultiCell
+                  pdf.set_x((210 - 180) / 2)  # Assuming A4 width (210mm), 180mm is the cell width
+                    
+                  pdf.multi_cell(
+                      180,  # width of the cell
+                      10,   # height of each line
+                      txt=estimate_heading,
+                      border=0,
+                      align='C'
+                  )
               
                   col_widths = [10, 70, 20, 20, 20, 30]
                   headers = ["Sl.No", "Item Name", "Rate", "Unit", "Qty", "Total"]
