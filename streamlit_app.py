@@ -27,6 +27,7 @@ def toggle_section(section_key):
         'show_price_options',
         'show_dsr21basicrates_options',
         'show_priceapprovedmr_options',
+        'show_costindex_options',
         'show_gwd_options',
         'show_pump_selector'
     ]
@@ -1548,6 +1549,30 @@ if st.session_state.get('authenticated', False):
             st.sidebar.error("PRICE Approved MR file not found")
         except Exception as e:
             st.sidebar.error(f"Error downloading PRICE Approved MR: {str(e)}")
+    if 'show_gwd_options' not in st.session_state:
+        st.session_state.show_gwd_options = False
+    if 'show_costindex_options' not in st.session_state:
+        st.session_state.show_costindex_options = False
+    
+    # Add Cost Index 2021 download button
+    # Cost Index 2021 button
+    if st.sidebar.button("Cost Index 2021"):
+        toggle_section('show_costindex_options')
+        st.rerun()
+    
+    if st.session_state.get('show_costindex_options', False):
+        try:
+            with open("Cost Index 2021.pdf", "rb") as file:
+                st.sidebar.download_button(
+                    label="⬇️ Download Cost Index 2021 PDF",
+                    data=file,
+                    file_name="Cost Index 2021.pdf",
+                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                )
+        except FileNotFoundError:
+            st.sidebar.error("Cost Index 2021 file not found")
+        except Exception as e:
+            st.sidebar.error(f"Error downloading Cost Index 2021: {str(e)}")
     if 'show_gwd_options' not in st.session_state:
         st.session_state.show_gwd_options = False
         
