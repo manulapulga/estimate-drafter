@@ -1086,17 +1086,8 @@ def main_app():
                   # Center the main heading below the user info
                   pdf.set_y(40)  # Move down a bit from top
                   pdf.set_font("Arial", 'B', 16)
-                    
-                  # Calculate center alignment for MultiCell
-                  pdf.set_x((210 - 180) / 2)  # Assuming A4 width (210mm), 180mm is the cell width
-                    
-                  pdf.multi_cell(
-                      180,  # width of the cell
-                      10,   # height of each line
-                      txt=estimate_heading,
-                      border=0,
-                      align='C'
-                  )
+                  pdf.cell(200, 10, txt=estimate_heading, ln=True, align='C')
+
               
                   col_widths = [10, 70, 20, 20, 20, 30]
                   headers = ["Sl.No", "Item Name", "Rate", "Unit", "Qty", "Total"]
