@@ -1076,7 +1076,18 @@ def main_app():
                   # Main content
                   pdf.set_font("Arial", 'B', 16)
                   pdf.set_text_color(0, 0, 0)
+                  
+                  # Add user info at top right
+                  pdf.set_font("Arial", '', 10)
+                  user_info = f"User: {username}\nCost Index: {cost_index}"
+                  pdf.set_xy(pdf.w - 60, 15)  # Position at top right with some margin
+                  pdf.multi_cell(50, 5, user_info, 0, 'R')  # Right-aligned multi-cell for multiple lines
+                  
+                  # Center the main heading below the user info
+                  pdf.set_y(20)  # Move down a bit from top
+                  pdf.set_font("Arial", 'B', 16)
                   pdf.cell(200, 10, txt=estimate_heading, ln=True, align='C')
+
               
                   col_widths = [10, 70, 20, 20, 20, 30]
                   headers = ["Sl.No", "Item Name", "Rate", "Unit", "Qty", "Total"]
@@ -1318,6 +1329,32 @@ if st.session_state.authenticated:
 else:
     login_page(credentials_df)
     
+st.sidebar.markdown("""
+<style>
+    /* Targeting all buttons inside the sidebar */
+    section[data-testid="stSidebar"] button {
+        width: 100% !important;
+        margin: 5px 0 !important;
+        padding: 10px !important;
+        font-size: 14px !important;
+        border-radius: 5px !important;
+        border: 1px solid #2387eb !important;
+        background-color: #e8f2fc !important;
+        color: black !important;
+        transition: all 0.3s !important;
+    }
+    section[data-testid="stSidebar"] button:hover {
+        color: white !important;
+        background-color: #154c79 !important;
+        border-color: #154c79 !important;
+    }
+    section[data-testid="stSidebar"] button:active {
+        background-color: #103f66 !important;
+        border-color: #103f66 !important;
+    }
+</style>
+""", unsafe_allow_html=True)
+
 # Add logout button if authenticated
 if st.session_state.get('authenticated', False):
     if st.sidebar.button("Logout"):
@@ -1392,7 +1429,39 @@ if st.session_state.get('authenticated', False):
         except FileNotFoundError:
             st.sidebar.error("DSR 21 Basic Rates file not found")
         except Exception as e:
-            st.sidebar.error(f"Error downloading DSR 21 Basic Rates: {str(e)}")        
+            st.sidebar.error(f"Error downloading DSR 21 Basic Rates: {str(e)}")
+        try:
+            with open("DSR 21 Basic Rates.pdf", "rb") as file:
+                st.sidebar.download_button(
+                    label="⬇️ Download Basic Rates (DSR 21) PDF",
+                    data=file,
+                    file_name="DSR 21 Basic Rates.pdf",
+                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                )
+        except FileNotFoundError:
+            st.sidebar.error("DSR 21 Basic Rates file not found")
+        except Exception as e:
+            st.sidebar.error(f"Error downloading DSR 21 Basic Rates: {str(e)}")    
+    if 'show_priceapprovedmr_options' not in st.session_state:
+        st.session_state.show_priceapprovedmr_options = False
+    
+    # Add PRICE Approoved MR download button
+    if st.sidebar.button("PRICE Approoved MR"):
+        st.session_state.show_priceapprovedmr_options = not st.session_state.get('show_priceapprovedmr_options', False)
+    
+    if st.session_state.get('show_priceapprovedmr_options', False):
+        try:
+            with open("PRICE Approoved MR.pdf", "rb") as file:
+                st.sidebar.download_button(
+                    label="⬇️ Download PRICE Approoved MR PDF",
+                    data=file,
+                    file_name="PRICE Approoved MR.pdf",
+                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                )
+        except FileNotFoundError:
+            st.sidebar.error("PRICE Approoved MR file not found")
+        except Exception as e:
+            st.sidebar.error(f"Error downloading PRICE Approoved MR: {str(e)}")
     if 'show_gwd_options' not in st.session_state:
         st.session_state.show_gwd_options = False
         
