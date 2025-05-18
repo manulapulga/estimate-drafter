@@ -1086,7 +1086,33 @@ def main_app():
                   # Center the main heading below the user info
                   pdf.set_y(40)  # Move down a bit from top
                   pdf.set_font("Arial", 'B', 16)
-                  pdf.cell(200, 10, txt=estimate_heading, ln=True, align='C')
+                  
+                  # Calculate width of heading text
+                  heading_width = pdf.get_string_width(estimate_heading)
+                  
+                  # If heading is too wide for page (with 20mm margins on each side)
+                  if heading_width > (pdf.w - 40):
+                      # Split heading into multiple lines
+                      words = estimate_heading.split()
+                      lines = []
+                      current_line = ""
+                      
+                      for word in words:
+                          test_line = f"{current_line} {word}" if current_line else word
+                          if pdf.get_string_width(test_line) < (pdf.w - 40):
+                              current_line = test_line
+                          else:
+                              lines.append(current_line)
+                              current_line = word
+                      if current_line:
+                          lines.append(current_line)
+                      
+                      # Write each line centered
+                      for line in lines:
+                          pdf.cell(200, 10, txt=line, ln=True, align='C')
+                  else:
+                      # Single line if it fits
+                      pdf.cell(200, 10, txt=estimate_heading, ln=True, align='C')
 
               
                   col_widths = [10, 70, 20, 20, 20, 30]
