@@ -1,6 +1,6 @@
 import pandas as pd
 import streamlit as st
-import streamlit.components.v1 as components
+from streamlit.components.v1 import html
 
 # 1. DATA LOADING (CACHED FOR PERFORMANCE)
 @st.cache_data
@@ -85,6 +85,30 @@ def show_item_wizard(items_df, add_callback):
         }
         .pagination-button {
             margin: 0 0.2rem;
+        }
+        .copy-btn {
+            background: none;
+            border: none;
+            color: #666;
+            cursor: pointer;
+            font-size: 0.8rem;
+            margin-left: 0.5rem;
+            padding: 0;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 20px;
+            height: 20px;
+        }
+        .copy-btn:hover {
+            color: #333;
+            background-color: #f0f0f0;
+            border-radius: 3px;
+        }
+        .item-title-container {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
         }
     </style>
     """, unsafe_allow_html=True)
@@ -317,61 +341,27 @@ def show_item_wizard(items_df, add_callback):
                 f"<div class='results-count'>Showing items {start_idx + 1}-{end_idx} of {total_items}</div>", 
                 unsafe_allow_html=True
             )
-            
+            def copy_button(text):
+                html(f"""
+                <script>
+                function copyToClipboard(text) {{
+                    navigator.clipboard.writeText(text);
+                    return false;
+                }}
+                </script>
+                <button onclick="copyToClipboard('{text.replace("'", "\\'")}')" 
+                        class="copy-btn"
+                        title="Copy to clipboard">⧉</button>
+                """, height=30)
             # DISPLAY ITEMS
             for idx in range(start_idx, end_idx):
                 row = filtered_items.iloc[idx]
                 col1, col2 = st.columns([5, 1])
-                from streamlit.components.v1 import html
-
                 with col1:
-                    item_name = row['Item Name']
-                    uid = f"copy_{idx}"
-                    html(f"""
-                        <style>
-                            body {{
-                                font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-                            }}
-                            .item-card {{
-                                padding: 0.7rem;
-                                margin: 0.3rem 0;
-                                border: 1px solid #ddd;
-                                border-radius: 0.3rem;
-                                background-color: white;
-                            }}
-                            .item-title {{
-                                font-weight: 600;
-                                font-size: 0.95rem;
-                                margin-bottom: 0.2rem;
-                            }}
-                            .item-categories {{
-                                color: #666;
-                                font-size: 0.8rem;
-                                margin-bottom: 0.3rem;
-                            }}
-                            .item-price {{
-                                font-weight: 500;
-                                color: #2e7d32;
-                                font-size: 0.85rem;
-                            }}
-                            .copy-btn {{
-                                margin-left: 8px;
-                                background-color: transparent;
-                                border: none;
-                                cursor: pointer;
-                                font-size: 1rem;
-                            }}
-                        </style>
+                    st.markdown(f"""
                         <div class='item-card'>
-                            <div class='item-title'>
-                                {item_name}
-                                <button class='copy-btn' onclick="navigator.clipboard.writeText('{item_name.replace("'", "\\'")}');
-                                        let msg = document.getElementById('{uid}_msg');
-                                        msg.style.display='inline';
-                                        setTimeout(() => msg.style.display='none', 1500);">
-                                    📋
-                                </button>
-                                <span id="{uid}_msg" style="color: green; font-size: 0.8rem; display: none;">Copied!</span>
+                            <div class='item-title-container'>
+                                <div class='item-title'>{row['Item Name']}</div>
                             </div>
                             <div class='item-categories'>
                                 {row['Main Category']} » {row['Sub Category 1']} » {row['Sub Category 2']}
@@ -380,8 +370,14 @@ def show_item_wizard(items_df, add_callback):
                                 ₹{row['Unit Price']:.2f} per {row['Item Unit']}
                             </div>
                         </div>
-                    """, height=120)
-
+                        <script>
+                        function copyToClipboard(text) {{
+                            navigator.clipboard.writeText(text);
+                            return false;
+                        }}
+                        </script>
+                    """, unsafe_allow_html=True)
+                    copy_button(row['Item Name'])
                 with col2:
                     if st.button("Add", key=f"add_{idx}"):
                         add_callback(row['Item Name'])
