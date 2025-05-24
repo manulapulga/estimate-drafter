@@ -342,6 +342,8 @@ def show_item_wizard(items_df, add_callback):
                 unsafe_allow_html=True
             )
             def copy_button(text):
+                escaped_text = text.replace('"', '\\"').replace("'", "\\'")
+                
                 html(f"""
                 <script>
                 function copyToClipboard(text) {{
@@ -349,7 +351,7 @@ def show_item_wizard(items_df, add_callback):
                     return false;
                 }}
                 </script>
-                <button onclick="copyToClipboard('{text.replace("'", "\\'")}')" 
+                <button onclick='copyToClipboard("{escaped_text}")' 
                         class="copy-btn"
                         title="Copy to clipboard">⧉</button>
                 """, height=30)
