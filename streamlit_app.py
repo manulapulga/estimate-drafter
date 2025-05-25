@@ -1076,7 +1076,7 @@ def main_app():
                   def add_watermark(pdf):
                       """Function to add a diagonal watermark to every page"""
                       pdf.set_font("Arial", style='B', size=72)
-                      pdf.set_text_color(230, 230, 230)  # Light grey color for watermark
+                      pdf.set_text_color(180, 240, 230)  # Light magenta color for watermark
                   
                       text = "GROUND WATER DEPARTMENT"
                       text_width = pdf.get_string_width(text)
