@@ -706,6 +706,9 @@ def main_app():
                 except:
                     pass
                 
+                items = []
+                current_subheading = None
+                
                 if is_app_estimate:
                     # Find the "Subtotal" row by checking merged cells
                     subtotal_row = None
@@ -720,115 +723,77 @@ def main_app():
                         st.error("Could not find 'Subtotal' row in the uploaded estimate")
                         return
                     
-                    # Collect items between row 3 (first item) and subtotal_row
-                    items = []
-                    current_subheading = None
+                    # Set the range to process (rows 3 to subtotal_row)
+                    row_range = range(3, subtotal_row)
+                else:
+                    # For regular Excel files, process all rows (skip header if needed)
+                    row_range = range(1, ws.max_row + 1)
+                
+                # Process all rows in the determined range
+                for row in row_range:
+                    # Check if this row has any horizontal merged cells (subheading)
+                    is_subheading = False
+                    for merge in ws.merged_cells.ranges:
+                        if merge.min_row == row and merge.max_row == row:  # Horizontal merge only
+                            if merge.min_col <= 2 and merge.max_col >= 2:  # Merge includes column B (or first column)
+                                current_subheading = ws.cell(row=row, column=merge.min_col).value
+                                is_subheading = True
+                                break
                     
-                    for row in range(3, subtotal_row):
-                        # Check if this row has any horizontal merged cells (subheading)
-                        is_subheading = False
-                        for merge in ws.merged_cells.ranges:
-                            if merge.min_row == row and merge.max_row == row:  # Horizontal merge only
-                                if merge.min_col <= 2 and merge.max_col >= 2:  # Merge includes column B
-                                    current_subheading = ws.cell(row=row, column=merge.min_col).value
-                                    is_subheading = True
-                                    break
-                        
-                        if is_subheading:
-                            # Add the subheading to our items list
-                            items.append({
-                                'Item Name': current_subheading,
-                                'Type': 'Subheading',
-                                'Merged': True
-                            })
-                            continue
-                        
-                        # Process regular items
+                    if is_subheading:
+                        # Add the subheading to our items list
+                        items.append({
+                            'Item Name': current_subheading,
+                            'Type': 'Subheading',
+                            'Merged': True
+                        })
+                        continue
+                    
+                    # Get cell values - different columns for app estimate vs regular file
+                    if is_app_estimate:
                         item_name = ws.cell(row=row, column=2).value  # Column B
                         quantity_cell = ws.cell(row=row, column=5).value  # Column E
                         total_price_cell = ws.cell(row=row, column=6).value  # Column F (Total)
-                        
-                        # Skip empty rows
-                        if not item_name:
-                            continue
-                        
-                        # Process quantity cell to extract remarks
-                        quantity_str = str(quantity_cell).strip() if quantity_cell is not None else ""
-                        remarks = ""
-                        
-                        if "(" in quantity_str and ")" in quantity_str:
-                            parts = quantity_str.split("(", 1)
-                            remarks = parts[1].split(")", 1)[0].strip()
-                        
-                        quantity = None
-                        if quantity_str and quantity_str != "-":
-                            try:
-                                quantity = float(quantity_str.split("(")[0].strip())
-                            except ValueError:
-                                pass
-                        
-                        total_price = 0.0
-                        if total_price_cell is not None:
-                            try:
-                                total_price = float(total_price_cell)
-                            except (ValueError, TypeError):
-                                pass
-                        
-                        items.append({
-                            'Item Name': item_name, 
-                            'Quantity': quantity,
-                            'Remarks': remarks,
-                            'Total Price': total_price,
-                            'Subheading': current_subheading  # Track which subheading this item belongs to
-                        })
-                    
-                    items_df = pd.DataFrame(items)
-                else:
-                    # Original behavior for regular Excel files using pandas
-                    uploaded_df = pd.read_excel(uploaded_file)
-                    if len(uploaded_df.columns) < 2:
-                        st.error("The Excel file must have at least 2 columns (Item Name and Quantity)")
-                        return
-                    
-                    # Get the first two columns plus the third column if available (for total price)
-                    if len(uploaded_df.columns) >= 3:
-                        items_df = uploaded_df.iloc[:, [0, 1, 2]]
-                        items_df.columns = ['Item Name', 'Quantity', 'Total Price']
                     else:
-                        items_df = uploaded_df.iloc[:, [0, 1]]
-                        items_df.columns = ['Item Name', 'Quantity']
-                        items_df['Total Price'] = 0.0  # Add default total price column
+                        item_name = ws.cell(row=row, column=1).value  # First column
+                        quantity_cell = ws.cell(row=row, column=2).value  # Second column
+                        total_price_cell = ws.cell(row=row, column=3).value if ws.max_column >= 3 else None  # Third column if exists
                     
-                    # Process quantity column to extract remarks
-                    def process_quantity(qty):
-                        if pd.isna(qty):
-                            return None, ""
-                        
-                        qty_str = str(qty).strip()
-                        remarks = ""
-                        
-                        if "(" in qty_str and ")" in qty_str:
-                            parts = qty_str.split("(", 1)
-                            remarks = parts[1].split(")", 1)[0].strip()
-                        
-                        quantity = None
-                        if qty_str and qty_str != "-":
-                            try:
-                                quantity = float(qty_str.split("(")[0].strip())
-                            except ValueError:
-                                pass
-                        
-                        return quantity, remarks
+                    # Skip empty rows
+                    if not item_name:
+                        continue
                     
-                    # Apply processing to quantity column
-                    processed = items_df['Quantity'].apply(process_quantity)
-                    items_df['Quantity'] = [x[0] for x in processed]
-                    items_df['Remarks'] = [x[1] for x in processed]
+                    # Process quantity cell to extract remarks
+                    quantity_str = str(quantity_cell).strip() if quantity_cell is not None else ""
+                    remarks = ""
                     
-                    # Process total price column
-                    items_df['Total Price'] = items_df['Total Price'].apply(
-                        lambda x: float(x) if pd.notna(x) and str(x).replace('.','',1).isdigit() else 0.0
-                    )
+                    if "(" in quantity_str and ")" in quantity_str:
+                        parts = quantity_str.split("(", 1)
+                        remarks = parts[1].split(")", 1)[0].strip()
+                    
+                    quantity = None
+                    if quantity_str and quantity_str != "-":
+                        try:
+                            quantity = float(quantity_str.split("(")[0].strip())
+                        except ValueError:
+                            pass
+                    
+                    total_price = 0.0
+                    if total_price_cell is not None:
+                        try:
+                            total_price = float(total_price_cell)
+                        except (ValueError, TypeError):
+                            pass
+                    
+                    items.append({
+                        'Item Name': item_name, 
+                        'Quantity': quantity,
+                        'Remarks': remarks,
+                        'Total Price': total_price,
+                        'Subheading': current_subheading  # Track which subheading this item belongs to
+                    })
+                
+                items_df = pd.DataFrame(items)
                 
                 if items_df.empty:
                     st.error("No valid items found in the uploaded file")
