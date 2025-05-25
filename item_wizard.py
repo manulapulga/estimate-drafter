@@ -87,7 +87,8 @@ def show_item_wizard(items_df, add_callback):
             margin: 0 0.2rem;
         }
         .copy-btn {
-            background: none;
+            background: white;
+            border-radius: 0.5rem;
             border: none;
             color: #666;
             cursor: pointer;
@@ -353,8 +354,24 @@ def show_item_wizard(items_df, add_callback):
                 </script>
                 <button onclick='copyToClipboard("{escaped_text}")' 
                         class="copy-btn"
-                        title="Copy to clipboard">⧉</button>
+                        title="Copy Item Name">⧉</button>
                 """, height=30)
+            def copy_button2(item_name, unit_price, item_unit):
+                # Format as tab-separated values for Excel
+                text_to_copy = f"{item_name}\t{unit_price}\t{item_unit}"
+                escaped_text = text_to_copy.replace('"', '\\"').replace("'", "\\'")
+                
+                html(f"""
+                <script>
+                function copyToClipboard(text) {{
+                    navigator.clipboard.writeText(text);
+                    return false;
+                }}
+                </script>
+                <button onclick='copyToClipboard("{escaped_text}")' 
+                        class="copy-btn"
+                        title="Copy All Details">📋</button>
+                """, height=40)
             # DISPLAY ITEMS
             for idx in range(start_idx, end_idx):
                 row = filtered_items.iloc[idx]
@@ -379,11 +396,13 @@ def show_item_wizard(items_df, add_callback):
                         }}
                         </script>
                     """, unsafe_allow_html=True)
-                    copy_button(row['Item Name'])
                 with col2:
                     if st.button("Add", key=f"add_{idx}"):
                         add_callback(row['Item Name'])
                         st.rerun()
+                    copy_button(row['Item Name'])
+                    copy_button2(row['Item Name'], row['Unit Price'], row['Item Unit'])
+
         
         st.markdown("</div>", unsafe_allow_html=True)  # Close wizard-container
 
