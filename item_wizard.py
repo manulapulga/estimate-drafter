@@ -87,24 +87,21 @@ def show_item_wizard(items_df, add_callback):
             margin: 0 0.2rem;
         }
         .copy-btn {
-            background: white;
-            border-radius: 0.5rem;
+            background-color: #f0f2f6;
             border: none;
-            color: #666;
+            color: #262730;
+            padding: 0.5rem 1rem;
+            margin-top: 0.25rem;
+            margin-bottom: 0.25rem;
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
             cursor: pointer;
-            font-size: 0.8rem;
-            margin-left: 0.5rem;
-            padding: 0;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            width: 20px;
-            height: 20px;
+            width: 100%;
+            text-align: center;
+            transition: background-color 0.2s ease;
         }
         .copy-btn:hover {
-            color: #333;
-            background-color: #f0f0f0;
-            border-radius: 3px;
+            background-color: #e4e8ef;
         }
         .item-title-container {
             display: flex;
@@ -342,36 +339,50 @@ def show_item_wizard(items_df, add_callback):
                 f"<div class='results-count'>Showing items {start_idx + 1}-{end_idx} of {total_items}</div>", 
                 unsafe_allow_html=True
             )
-            def copy_button(text):
-                escaped_text = text.replace('"', '\\"').replace("'", "\\'")
-                
-                html(f"""
-                <script>
-                function copyToClipboard(text) {{
-                    navigator.clipboard.writeText(text);
-                    return false;
-                }}
-                </script>
-                <button onclick='copyToClipboard("{escaped_text}")' 
-                        class="copy-btn"
-                        title="Copy Item Name">⧉</button>
-                """, height=30)
-            def copy_button2(item_name, unit_price, item_unit):
-                # Format as tab-separated values for Excel
-                text_to_copy = f"{item_name}\t{unit_price}\t{item_unit}"
-                escaped_text = text_to_copy.replace('"', '\\"').replace("'", "\\'")
-                
-                html(f"""
-                <script>
-                function copyToClipboard(text) {{
-                    navigator.clipboard.writeText(text);
-                    return false;
-                }}
-                </script>
-                <button onclick='copyToClipboard("{escaped_text}")' 
-                        class="copy-btn"
-                        title="Copy All Details">📋</button>
-                """, height=40)
+            def copy_buttons(item_name, unit_price, item_unit):
+                # Prepare the texts
+                text1 = item_name
+                text2 = f"{item_name}\t{unit_price}\t{item_unit}"
+            
+                # Escape quotes
+                escaped_text1 = text1.replace('"', '\\"').replace("'", "\\'")
+                escaped_text2 = text2.replace('"', '\\"').replace("'", "\\'")
+            
+                # Inject both buttons in a flex container
+                st.components.v1.html(f"""
+                    <style>
+                    .copy-btn {{
+                        background-color: #f0f2f6;
+                        border: none;
+                        color: #262730;
+                        padding: 0.5rem 1rem;
+                        margin-top: 0.25rem;
+                        margin-bottom: 0.25rem;
+                        border-radius: 0.5rem;
+                        font-size: 0.875rem;
+                        cursor: pointer;
+                        width: 100%;
+                        text-align: center;
+                        transition: background-color 0.2s ease;
+                    }}
+                    .copy-btn:hover {{
+                        background-color: #e4e8ef;
+                    }}
+                    </style>
+                    <script>
+                    function copyToClipboard(text) {{
+                        navigator.clipboard.writeText(text);
+                    }}
+                    </script>
+                    <div style="display: flex; gap: 8px; margin-top: 5px;">
+                        <button onclick='copyToClipboard("{escaped_text1}")'
+                                class="copy-btn"
+                                title="Copy Item Name">⧉ Copy Item Name</button>
+                        <button onclick='copyToClipboard("{escaped_text2}")'
+                                class="copy-btn"
+                                title="Copy All Details">📋 Copy Item Details</button>
+                    </div>
+                """, height=50)
             # DISPLAY ITEMS
             for idx in range(start_idx, end_idx):
                 row = filtered_items.iloc[idx]
@@ -396,14 +407,12 @@ def show_item_wizard(items_df, add_callback):
                         }}
                         </script>
                     """, unsafe_allow_html=True)
+                    copy_buttons(row['Item Name'], row['Unit Price'], row['Item Unit'])
                 with col2:
                     if st.button("Add", key=f"add_{idx}"):
                         add_callback(row['Item Name'])
                         st.rerun()
-                    copy_button(row['Item Name'])
-                    copy_button2(row['Item Name'], row['Unit Price'], row['Item Unit'])
 
-        
         st.markdown("</div>", unsafe_allow_html=True)  # Close wizard-container
 
 # 3. EXAMPLE USAGE
