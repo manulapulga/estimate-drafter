@@ -615,51 +615,67 @@ def main_app():
     if st.session_state.get('show_templates', False):
         template_data = load_templates()
         template_names = list(template_data.keys())
-        
-        selected_template = st.selectbox("Select a Template", template_names, key="template_select")
-        
-        col1, col2 = st.columns([1, 1])
-        with col1:
-            if st.button("Add Template Items", key="add_template_items"):
-                template_df = template_data[selected_template]
-                main_items_data = data  # From your existing load_main_items()
-                
-                for _, row in template_df.iterrows():
-                    item_name = row['Item Name']
-                    quantity = row['Quantity']
-                    
-                    # Find the item in main data
-                    main_item = main_items_data[main_items_data['Item Name'] == item_name]
-                    
-                    if not main_item.empty:
-                        main_item = main_item.iloc[0]
-                        st.session_state.selected_items.append({
-                            'Item': item_name,
-                            'Quantity': quantity,
-                            'Unit Price': main_item['Unit Price'],
-                            'Item Unit': main_item['Item Unit'],
-                            'Cost': quantity * main_item['Unit Price'],
-                            'Type': 'Standard',
-                            'GST_Applicable': True,
-                            'Quantity_Remarks': ""
-                        })
-                    else:
-                        # If item not found in main data, add as "Other"
-                        st.session_state.selected_items.append({
-                            'Item': item_name,
-                            'Cost': 0,  # Or you could prompt for price
-                            'Type': 'Other',
-                            'GST_Applicable': True
-                        })
-                
-                st.success(f"Added {len(template_df)} items from '{selected_template}' template!")
-                st.session_state.show_templates = False
-                st.rerun()
-        
-        with col2:
-            if st.button("✕ Cancel", key="cancel_template", type="primary"):
-                st.session_state.show_templates = False
-                st.rerun()
+    
+        st.markdown("### 📄 Available Templates")
+    
+        # Ensure selected_items list is initialized
+        if 'selected_items' not in st.session_state:
+            st.session_state.selected_items = []
+    
+        # Display templates as buttons (3 per row)
+        num_columns = 3
+        for i in range(0, len(template_names), num_columns):
+            cols = st.columns(num_columns)
+            for j in range(num_columns):
+                if i + j < len(template_names):
+                    template_name = template_names[i + j]
+                    with cols[j]:
+                        if st.button(f"📌 {template_name}", key=f"template_btn_{template_name}"):
+                            template_df = template_data[template_name]
+                            main_items_data = data  # From your existing load_main_items()
+    
+                            added_count = 0
+                            for _, row in template_df.iterrows():
+                                item_name = row['Item Name']
+                                quantity = row.get('Quantity', 0)
+    
+                                main_item = main_items_data[main_items_data['Item Name'] == item_name]
+    
+                                if not main_item.empty:
+                                    main_item = main_item.iloc[0]
+                                    st.session_state.selected_items.append({
+                                        'Item': item_name,
+                                        'Quantity': quantity,
+                                        'Unit Price': main_item['Unit Price'],
+                                        'Item Unit': main_item['Item Unit'],
+                                        'Cost': quantity * main_item['Unit Price'],
+                                        'Type': 'Standard',
+                                        'GST_Applicable': True,
+                                        'Quantity_Remarks': ""
+                                    })
+                                else:
+                                    st.session_state.selected_items.append({
+                                        'Item': item_name,
+                                        'Quantity': quantity,
+                                        'Unit Price': 0,
+                                        'Item Unit': '',
+                                        'Cost': 0,
+                                        'Type': 'Other',
+                                        'GST_Applicable': True,
+                                        'Quantity_Remarks': ""
+                                    })
+                                added_count += 1
+    
+                            st.success(f"✅ Added {added_count} items from '{template_name}' template!")
+                            st.session_state.show_templates = False
+                            st.rerun()
+    
+        # Cancel Button
+        st.divider()
+        if st.button("✕ Cancel", key="cancel_template", type="primary"):
+            st.session_state.show_templates = False
+            st.rerun()
+
     # Excel upload section            
     if st.session_state.get('show_upload', False):
         # Add this error handling block FIRST
