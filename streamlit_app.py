@@ -1391,14 +1391,7 @@ def main_app():
         st.dataframe(
             preview_df,
             use_container_width=True,
-            hide_index=True,
-            column_config={
-                "Item": "Item Description",
-                "Quantity": st.column_config.NumberColumn("Quantity"),
-                "Unit": "Unit",
-                "Rate": st.column_config.NumberColumn("Rate (₹)"),
-                "Amount": st.column_config.NumberColumn("Amount (₹)")
-            }
+            hide_index=True
         )
         
         # Add totals to the preview
