@@ -959,7 +959,7 @@ def main_app():
         st.subheader("Estimate Breakdown")
         st.write(f"Subtotal: ₹{total_cost:,.2f}")
         st.write(f"GST (18% on taxable items): ₹{gst:,.2f}")
-        st.write(f"Unforeseen (5%): ₹{unforeseen:,.2f}")
+        st.write(f"Unforeseen (1%): ₹{unforeseen:,.2f}")
         st.write(f"Final Total (Rounded): ₹{final_total:,.2f}")
 
         # File generation buttons
@@ -1019,7 +1019,7 @@ def main_app():
                 for label, val in [
                     ("Subtotal", total_cost),
                     ("GST (18%)", gst),
-                    ("Unforeseen (5%)", unforeseen),
+                    ("Unforeseen (1%)", unforeseen),
                     ("Grand Total Rounded To Next 1000", final_total)
                 ]:
                     ws.merge_cells(f'A{row_num}:E{row_num}')
@@ -1289,7 +1289,7 @@ def main_app():
                   summary_data = [
                       ("Subtotal", f"{total_cost:.2f}"),
                       ("GST (18%)", f"{gst:.2f}"),
-                      ("Unforeseen (5%)", f"{unforeseen:.2f}"),
+                      ("Unforeseen (1%)", f"{unforeseen:.2f}"),
                       ("Grand Total Rounded To Next 1000", f"{final_total:.2f}")
                   ]
               
@@ -1399,7 +1399,7 @@ def main_app():
         st.markdown(f"""
         **Subtotal:** ₹{total_cost:,.2f}  
         **GST (18%):** ₹{gst:,.2f}  
-        **Unforeseen (5%):** ₹{unforeseen:,.2f}  
+        **Unforeseen (1%):** ₹{unforeseen:,.2f}  
         **Final Total:** ₹{final_total:,.2f}
         """)
         
