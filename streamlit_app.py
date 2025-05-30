@@ -476,8 +476,8 @@ def main_app():
                         move_item_down(idx)
     # Add New Item or Subheading buttons
     button_col1, button_col2, button_col3, button_col4, button_col5, button_col6 = st.columns([2, 2, 2, 2, 2, 2])
-    with button_col1:
-        if st.button("➕ Add Item", key="add_item_btn"):
+    with button_col6:
+        if st.button("🔽 Add from List", key="add_item_btn"):
             # Toggle add item section and hide others
             st.session_state.show_add_item = not st.session_state.get('show_add_item', False)
             st.session_state.show_wizard = False
@@ -486,7 +486,7 @@ def main_app():
             st.session_state.show_templates = False  # Add this line
             st.session_state.show_upload = False    # Add this line
             st.rerun()
-    with button_col2:
+    with button_col1:
         if st.button("🔍 Smart Filter", key="open_wizard"):
             # Toggle wizard and hide others
             st.session_state.show_wizard = not st.session_state.get('show_wizard', False)
@@ -496,8 +496,8 @@ def main_app():
             st.session_state.show_templates = False  # Add this line
             st.session_state.show_upload = False    # Add this line
             st.rerun()
-    with button_col3:
-        if st.button("➕ Add Subheading", key="add_subheading_btn"):
+    with button_col4:
+        if st.button("📌 Add Subheading", key="add_subheading_btn"):
             # Toggle subheading and hide others
             st.session_state.adding_subheading = not st.session_state.get('adding_subheading', False)
             st.session_state.show_add_item = False
@@ -506,8 +506,8 @@ def main_app():
             st.session_state.show_templates = False  # Add this line
             st.session_state.show_upload = False    # Add this line
             st.rerun()
-    with button_col4:
-        if st.button("➕ Add Other", key="add_other_btn", type="secondary", 
+    with button_col5:
+        if st.button("🧩 Add Other", key="add_other_btn", type="secondary", 
                     help="Add custom items not in database"):
             # Toggle other items section and hide others
             st.session_state.show_add_other = not st.session_state.get('show_add_other', False)
@@ -517,7 +517,7 @@ def main_app():
             st.session_state.show_templates = False  # Add this line
             st.session_state.show_upload = False    # Add this line
             st.rerun()
-    with button_col5:
+    with button_col2:
         if st.button("📘 Templates", key="show_templates_btn"):
             st.session_state.show_templates = not st.session_state.get('show_templates', False)
             st.session_state.show_add_item = False
@@ -526,7 +526,7 @@ def main_app():
             st.session_state.show_add_other = False
             st.session_state.show_upload = False    # Add this line
             st.rerun()
-    with button_col6:
+    with button_col3:
         # Replace your existing upload button with this:
         if st.button("⬆️ Upload Excel", key="show_upload_btn"):
             st.session_state.show_upload = not st.session_state.get('show_upload', False)
