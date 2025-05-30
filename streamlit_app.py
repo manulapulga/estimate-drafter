@@ -633,7 +633,7 @@ def main_app():
                 if i + j < len(template_names):
                     template_name = template_names[i + j]
                     with cols[j]:
-                        if st.button(f"📌 {template_name}", key=f"template_btn_{template_name}"):
+                        if st.button(f"📝 {template_name}", key=f"template_btn_{template_name}"):
                             template_df = template_data[template_name]
                             main_items_data = data  # From your existing load_main_items()
     
