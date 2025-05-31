@@ -231,7 +231,7 @@ def main_app():
         )
         gst = round(taxable_amount * 0.18, 2)
         
-        unforeseen = round(total_cost * 0.05, 2)
+        unforeseen = round(total_cost * 0.01, 2)
         final_total = math.ceil((total_cost + gst + unforeseen) / 1000) * 1000
         return total_cost, gst, unforeseen, final_total
     
