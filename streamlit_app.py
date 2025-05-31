@@ -6,6 +6,10 @@ from openpyxl import Workbook
 from openpyxl.styles import Alignment, Border, Side
 from item_wizard import show_item_wizard
 import base64
+from decimal import Decimal, ROUND_HALF_UP, getcontext
+
+
+getcontext().prec = 10  # Increase precision
 
 
 # Set page config
@@ -221,19 +225,44 @@ def main_app():
         st.rerun()
 
     def calculate_totals():
-        # Calculate total cost (including all items)
-        total_cost = sum(item['Cost'] for item in st.session_state.selected_items if item.get('Type') != 'Subheading')
-        
-        # Calculate GST only for items where GST is applicable
+        """
+        Ensures the final total (total_cost + gst + unforeseen) is a multiple of 1000
+        by adjusting unforeseen <= ₹10,000 downward.
+        """
+        selected_items = st.session_state.selected_items
+    
+        total_cost = sum(
+            Decimal(str(item['Cost']))
+            for item in selected_items
+            if item.get('Type') != 'Subheading'
+        )
+    
         taxable_amount = sum(
-            item['Cost'] for item in st.session_state.selected_items 
+            Decimal(str(item['Cost']))
+            for item in selected_items
             if item.get('Type') != 'Subheading' and item.get('GST_Applicable', True)
         )
-        gst = round(taxable_amount * 0.18, 2)
-        
-        unforeseen = round(total_cost * 0.01, 2)
-        final_total = math.ceil((total_cost + gst + unforeseen) / 1000) * 1000
-        return total_cost, gst, unforeseen, final_total
+    
+        gst = (taxable_amount * Decimal('0.18')).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+    
+        # Base unforeseen = 1% of total cost, capped at ₹10,000
+        base_unforeseen = min((total_cost * Decimal('0.01')).quantize(Decimal('0.01')), Decimal('10000.00'))
+    
+        # Adjust unforeseen downward to make final_total a multiple of 1000
+        step = Decimal('0.01')
+        unforeseen = base_unforeseen
+        while unforeseen >= Decimal('0.00'):
+            final_total = total_cost + gst + unforeseen
+            if final_total % 1000 == 0:
+                break
+            unforeseen -= step
+    
+        # Fallback (should not happen)
+        if unforeseen < 0:
+            unforeseen = Decimal('0.00')
+            final_total = (total_cost + gst + unforeseen).quantize(Decimal('0.01'))
+    
+        return float(total_cost), float(gst), float(unforeseen), float(final_total)
     
     def move_item_up(index):
         if index > 0:
@@ -960,7 +989,7 @@ def main_app():
         st.write(f"Subtotal: ₹{total_cost:,.2f}")
         st.write(f"GST (18% on taxable items): ₹{gst:,.2f}")
         st.write(f"Unforeseen (1%): ₹{unforeseen:,.2f}")
-        st.write(f"Final Total (Rounded): ₹{final_total:,.2f}")
+        st.write(f"Final Total: ₹{final_total:,.2f}")
 
         # File generation buttons
         col1, col2, col3, col4 = st.columns([2, 2, 1, 1])  # Added a 4th column for preview
@@ -1020,7 +1049,7 @@ def main_app():
                     ("Subtotal", total_cost),
                     ("GST (18%)", gst),
                     ("Unforeseen (1%)", unforeseen),
-                    ("Grand Total Rounded To Next 1000", final_total)
+                    ("Grand Total", final_total)
                 ]:
                     ws.merge_cells(f'A{row_num}:E{row_num}')
                     ws[f'A{row_num}'] = label
@@ -1290,7 +1319,7 @@ def main_app():
                       ("Subtotal", f"{total_cost:.2f}"),
                       ("GST (18%)", f"{gst:.2f}"),
                       ("Unforeseen (1%)", f"{unforeseen:.2f}"),
-                      ("Grand Total Rounded To Next 1000", f"{final_total:.2f}")
+                      ("Grand Total", f"{final_total:.2f}")
                   ]
               
                   for label, value in summary_data:
