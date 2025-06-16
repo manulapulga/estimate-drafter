@@ -224,46 +224,51 @@ def main_app():
         st.session_state.item_count = max(0, st.session_state.item_count - 1)
         st.rerun()
 
+
     def calculate_totals():
         """
         Ensures the final total (total_cost + gst + unforeseen) is a multiple of 1000
-        by adjusting unforeseen <= ₹10,000 downward.
+        by adjusting unforeseen downward (<= ₹10,000), and all values are rounded to the nearest rupee.
         """
         selected_items = st.session_state.selected_items
     
+        # Calculate total cost (excluding Subheadings)
         total_cost = sum(
             Decimal(str(item['Cost']))
             for item in selected_items
             if item.get('Type') != 'Subheading'
-        )
+        ).to_integral_value(rounding=ROUND_HALF_UP)
     
+        # Taxable amount (only GST-applicable items)
         taxable_amount = sum(
             Decimal(str(item['Cost']))
             for item in selected_items
             if item.get('Type') != 'Subheading' and item.get('GST_Applicable', True)
         )
     
-        gst = (taxable_amount * Decimal('0.18')).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+        # GST at 18%, rounded to nearest rupee
+        gst = (taxable_amount * Decimal('0.18')).to_integral_value(rounding=ROUND_HALF_UP)
     
-        # Base unforeseen = 1% of total cost, capped at ₹10,000
-        base_unforeseen = min((total_cost * Decimal('0.01')).quantize(Decimal('0.01')), Decimal('10000.00'))
+        # Base unforeseen = 1% of total cost, max ₹10,000
+        base_unforeseen = min((total_cost * Decimal('0.01')).to_integral_value(rounding=ROUND_HALF_UP), Decimal('10000'))
     
-        # Adjust unforeseen downward to make final_total a multiple of 1000
-        step = Decimal('0.01')
+        # Adjust unforeseen downward to make final_total a multiple of ₹1000
         unforeseen = base_unforeseen
-        while unforeseen >= Decimal('0.00'):
+        step = Decimal('1')  # adjust in ₹1 steps
+    
+        while unforeseen >= 0:
             final_total = total_cost + gst + unforeseen
             if final_total % 1000 == 0:
                 break
             unforeseen -= step
     
-        # Fallback (should not happen)
+        # Final fallback (extremely rare)
         if unforeseen < 0:
-            unforeseen = Decimal('0.00')
-            final_total = (total_cost + gst + unforeseen).quantize(Decimal('0.01'))
+            unforeseen = Decimal('0')
+            final_total = total_cost + gst
     
-        return float(total_cost), float(gst), float(unforeseen), float(final_total)
-    
+        return int(total_cost), int(gst), int(unforeseen), int(final_total)
+
     def move_item_up(index):
         if index > 0:
             st.session_state.selected_items[index], st.session_state.selected_items[index - 1] = \
