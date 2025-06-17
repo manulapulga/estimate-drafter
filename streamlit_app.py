@@ -33,6 +33,7 @@ def toggle_section(section_key):
         'show_priceapprovedmr_options',
         'show_costindex_options',
         'show_gwd_options',
+        'show_templates_options',
         'show_pump_selector'
     ]
     
@@ -1708,6 +1709,64 @@ if st.session_state.get('authenticated', False):
                     
         except Exception as e:
             st.sidebar.error(f"Error accessing GWD Data: {str(e)}")    
+    
+    if 'show_templates_options' not in st.session_state:
+        st.session_state.show_templates_options = False
+    
+    # Add Templates download button
+    if st.sidebar.button("Download Templates"):
+        toggle_section('show_templates_options')
+        st.rerun()
+    
+    if st.session_state.get('show_templates_options', False):
+        try:
+            # List files in the Templates directory
+            import os
+            template_files = []
+            templates_dir = "Templates"
+            
+            if os.path.exists(templates_dir) and os.path.isdir(templates_dir):
+                template_files = [f for f in os.listdir(templates_dir) if os.path.isfile(os.path.join(templates_dir, f))]
+            
+            if not template_files:
+                st.sidebar.warning("No files found in Templates directory")
+            else:
+                # Sort files alphabetically
+                template_files.sort()
+                
+                # Create dropdown to select file
+                selected_file = st.sidebar.selectbox(
+                    "Select Template File",
+                    template_files,
+                    key="template_file_select"
+                )
+                
+                # Create download button for selected file
+                file_path = os.path.join(templates_dir, selected_file)
+                
+                # Determine MIME type based on file extension
+                file_ext = os.path.splitext(selected_file)[1].lower()
+                mime_types = {
+                    '.pdf': 'application/pdf',
+                    '.xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                    '.xls': 'application/vnd.ms-excel',
+                    '.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                    '.doc': 'application/msword',
+                    '.txt': 'text/plain',
+                    '.csv': 'text/csv'
+                }
+                mime_type = mime_types.get(file_ext, 'application/octet-stream')
+                
+                with open(file_path, "rb") as file:
+                    st.sidebar.download_button(
+                        label=f"⬇️ Download {selected_file}",
+                        data=file,
+                        file_name=selected_file,
+                        mime=mime_type
+                    )
+                    
+        except Exception as e:
+            st.sidebar.error(f"Error accessing Templates: {str(e)}")
     # Add to your session state initialization (if not already present)
     if 'show_pump_selector' not in st.session_state:
         st.session_state.show_pump_selector = False
