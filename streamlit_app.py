@@ -226,48 +226,44 @@ def main_app():
         st.rerun()
 
 
-    def calculate_totals():
+    def calculate_totals(manual_unforeseen=None):
         """
-        Ensures the final total (total_cost + gst + unforeseen) is a multiple of 1000
-        by adjusting unforeseen downward (<= ₹10,000), and all values are rounded to the nearest rupee.
+        Calculate totals with manual unforeseen input
+        Defaults to 2.5% of (total_cost + gst) if not provided
+        Final total is rounded to next 1000
         """
         selected_items = st.session_state.selected_items
-    
+        
         # Calculate total cost (excluding Subheadings)
         total_cost = sum(
             Decimal(str(item['Cost']))
             for item in selected_items
             if item.get('Type') != 'Subheading'
         ).to_integral_value(rounding=ROUND_HALF_UP)
-    
+        
         # Taxable amount (only GST-applicable items)
         taxable_amount = sum(
             Decimal(str(item['Cost']))
             for item in selected_items
             if item.get('Type') != 'Subheading' and item.get('GST_Applicable', True)
         )
-    
+        
         # GST at 18%, rounded to nearest rupee
         gst = (taxable_amount * Decimal('0.18')).to_integral_value(rounding=ROUND_HALF_UP)
-    
-        # Base unforeseen = 1% of total cost, max ₹10,000
-        base_unforeseen = min((total_cost * Decimal('0.01')).to_integral_value(rounding=ROUND_HALF_UP), Decimal('10000'))
-    
-        # Adjust unforeseen downward to make final_total a multiple of ₹1000
-        unforeseen = base_unforeseen
-        step = Decimal('1')  # adjust in ₹1 steps
-    
-        while unforeseen >= 0:
-            final_total = total_cost + gst + unforeseen
-            if final_total % 1000 == 0:
-                break
-            unforeseen -= step
-    
-        # Final fallback (extremely rare)
-        if unforeseen < 0:
-            unforeseen = Decimal('0')
-            final_total = total_cost + gst
-    
+        
+        # Calculate base unforeseen (2.5% of total + gst)
+        base_unforeseen = ((total_cost + gst) * Decimal('0.025')).to_integral_value(rounding=ROUND_HALF_UP)
+        
+        # Use manual unforeseen if provided, otherwise use base
+        unforeseen = manual_unforeseen if manual_unforeseen is not None else base_unforeseen
+        
+        # Ensure unforeseen doesn't exceed 2.5% of total + gst
+        unforeseen = min(unforeseen, base_unforeseen)
+        
+        # Calculate final total and round up to next 1000
+        final_total = total_cost + gst + unforeseen
+        final_total = math.ceil(final_total / 1000) * 1000  # Round up to next 1000
+        
         return int(total_cost), int(gst), int(unforeseen), int(final_total)
 
     def move_item_up(index):
@@ -990,13 +986,56 @@ def main_app():
 
     # Totals and file generation
     if any(i.get("Type") != "Subheading" for i in st.session_state.selected_items):
-        total_cost, gst, unforeseen, final_total = calculate_totals()
+        # Calculate base values
+        total_cost, gst, _, _ = calculate_totals(0)
+        
+        # Calculate maximum allowed unforeseen (2.5% of total + gst)
+        max_unforeseen = (total_cost + gst) * 0.025
+        default_unforeseen = max_unforeseen  # Default to max allowed
+        
+        # Initialize or get current unforeseen amount
+        if 'unforeseen_amount' not in st.session_state:
+            st.session_state.unforeseen_amount = default_unforeseen
+        
         st.subheader("Estimate Breakdown")
         st.write(f"Subtotal: ₹{total_cost:,.2f}")
         st.write(f"GST (18% on taxable items): ₹{gst:,.2f}")
-        st.write(f"Unforeseen (1%): ₹{unforeseen:,.2f}")
-        st.write(f"Final Total: ₹{final_total:,.2f}")
-
+        
+        # Create columns to control the input field width
+        col1, col2 = st.columns([1, 3])  # Adjust ratio to change width
+        
+        with col1:
+            # Text input for unforeseen amount with reduced width
+            unforeseen_input = st.text_input(
+                f"Unforeseen (max 2.5%): ₹{max_unforeseen:,.2f}",
+                value=f"{st.session_state.unforeseen_amount:,.2f}",
+                key="unforeseen_input"
+            )
+        
+        # Add ₹ symbol in a separate column for better alignment
+        with col2:
+            st.markdown("<div style='padding-top: 1.5rem;'></div>", unsafe_allow_html=True)
+        
+        # Process and validate input
+        try:
+            entered_amount = float(unforeseen_input.replace(',', ''))
+            
+            if entered_amount > max_unforeseen:
+                st.warning(f"Amount reduced to maximum allowed (2.5% of total + GST = ₹{max_unforeseen:,.2f})")
+                unforeseen_amount = max_unforeseen
+            else:
+                unforeseen_amount = entered_amount
+                
+            st.session_state.unforeseen_amount = unforeseen_amount
+            
+        except ValueError:
+            st.error("Please enter a valid number")
+            unforeseen_amount = st.session_state.unforeseen_amount
+        
+        # Calculate final totals with the validated amount
+        total_cost, gst, unforeseen, final_total = calculate_totals(int(unforeseen_amount))
+        
+        st.write(f"Final Total (rounded to next ₹1000): ₹{final_total:,.2f}")
         # File generation buttons
         col1, col2, col3, col4 = st.columns([2, 2, 1, 1])  # Added a 4th column for preview
         with col1:
@@ -1041,10 +1080,10 @@ def main_app():
                         ws.append([
                             serial,
                             item['Item'],
-                            item['Unit Price'],
+                            round(float(item['Unit Price']), 2),  # Rounded rate
                             item['Item Unit'],
-                            f"{item['Quantity']} ({item['Quantity_Remarks']})" if item.get('Quantity_Remarks') else item['Quantity'],
-                            item['Cost'],
+                            f"{round(float(item['Quantity']), 2)} ({item['Quantity_Remarks']})" if item.get('Quantity_Remarks') else round(float(item['Quantity']), 2),  # Rounded quantity
+                            round(float(item['Cost']), 2),  # Rounded total
                             "Yes" if item.get('GST_Applicable', True) else "No"
                         ])
                         serial += 1
@@ -1054,8 +1093,8 @@ def main_app():
                 for label, val in [
                     ("Subtotal", total_cost),
                     ("GST (18%)", gst),
-                    ("Unforeseen (1%)", unforeseen),
-                    ("Grand Total", final_total)
+                    ("Unforeseen (max 2.5%)", unforeseen),
+                    ("Grand Total Rounded to Next 1000", final_total)
                 ]:
                     ws.merge_cells(f'A{row_num}:E{row_num}')
                     ws[f'A{row_num}'] = label
@@ -1290,31 +1329,35 @@ def main_app():
                               x_row_start + sum(col_widths[:i]), y_row_start + row_height
                           )
               
-                      # If the item type is "Other", round the serial number
+                      # For the first column (serial number) - keep centered
                       if item.get("Type") == "Other":
-                          # Draw a circle for serial number
-                          x = x_row_start + col_widths[0] / 2
-                          y = y_row_start + row_height / 2
-                          r = 4  # radius
+                          # Draw circle for serial number (unchanged)
                           pdf.ellipse(x - r, y - r, r * 2, r * 2)
-                  
-                          # Set the serial number for the first column and round it
                           pdf.set_xy(x_row_start, y_row_start)
-                          pdf.cell(col_widths[0], row_height, str(round(serial)), 0, 0, 'C')
+                          pdf.cell(col_widths[0], row_height, str(round(serial)), 0, 0, 'C')  # Centered
                       else:
                           pdf.set_xy(x_row_start, y_row_start)
-                          pdf.cell(col_widths[0], row_height, str(serial), 0, 0, 'C')  # Normal serial number
-              
-                      for i, text in enumerate(row_data[1:], 1):  # Start from index 1 (skip serial number)
+                          pdf.cell(col_widths[0], row_height, str(serial), 0, 0, 'C')  # Centered
+                  
+                      # For the item name column (second column) - left-justified
+                      pdf.set_xy(x_row_start + col_widths[0], y_row_start)
+                      cell_lines = split_text(str(item['Item']), col_widths[1])
+                      vertical_offset = (row_height - (6 * len(cell_lines))) / 2
+                      
+                      for line in cell_lines:
+                          pdf.set_xy(x_row_start + col_widths[0], y_row_start + vertical_offset)
+                          pdf.cell(col_widths[1], 6, line, 0, 0, 'L')  # Changed to 'L' for left alignment
+                          vertical_offset += 6
+                  
+                      # For remaining columns (keep centered)
+                      for i, text in enumerate(row_data[2:], 2):  # Start from index 2 (rate)
                           pdf.set_xy(x_row_start + sum(col_widths[:i]), y_row_start)
-              
                           cell_lines = split_text(str(text), col_widths[i])
-              
                           vertical_offset = (row_height - (6 * len(cell_lines))) / 2
-              
+                          
                           for line in cell_lines:
                               pdf.set_xy(x_row_start + sum(col_widths[:i]), y_row_start + vertical_offset)
-                              pdf.cell(col_widths[i], 6, line, 0, 0, 'C')
+                              pdf.cell(col_widths[i], 6, line, 0, 0, 'C')  # Keep centered
                               vertical_offset += 6
               
                       pdf.set_y(y_row_start + row_height)
@@ -1324,8 +1367,8 @@ def main_app():
                   summary_data = [
                       ("Subtotal", f"{total_cost:.2f}"),
                       ("GST (18%)", f"{gst:.2f}"),
-                      ("Unforeseen (1%)", f"{unforeseen:.2f}"),
-                      ("Grand Total", f"{final_total:.2f}")
+                      ("Unforeseen (max 2.5%)", f"{unforeseen:.2f}"),
+                      ("Grand Total Rounded to Next 1000", f"{final_total:.2f}")
                   ]
               
                   for label, value in summary_data:
@@ -1352,14 +1395,33 @@ def main_app():
                       pdf.set_y(y + row_height)
               
                   # Signature Area
-                  if pdf.get_y() + 20 > pdf.h - 30:
+                  if pdf.get_y() + 30 > pdf.h - 30:  # Increased buffer for signature block
                       pdf.add_page()
-              
-                  pdf.set_font("Arial", 'B', 12)
-                  pdf.set_xy(pdf.w - 70, pdf.h - 40)
-                  pdf.cell(60, 10, "District Officer", ln=True, align='C')
-                  pdf.set_xy(pdf.w - 70, pdf.h - 30)
-                  pdf.cell(60, 10, "(Seal & Signature)", ln=True, align='C')
+                  
+                  # Signature labels with equal spacing
+                  pdf.set_font("Arial", 'B', 10)  # Smaller font size to fit all three
+                  
+                  # Assistant Engineer (Left)
+                  pdf.set_xy(20, pdf.h - 40)  # Left position
+                  pdf.cell(50, 5, "Assistant Engineer", ln=True, align='C')
+                  pdf.set_xy(20, pdf.h - 35)
+                  pdf.cell(50, 5, "(Seal & Signature)", ln=True, align='C')
+                  
+                  # Assistant Executive Engineer (Center)
+                  pdf.set_xy(pdf.w/2 - 25, pdf.h - 40)  # Center position
+                  pdf.cell(50, 5, "Assistant Executive Engineer", ln=True, align='C')
+                  pdf.set_xy(pdf.w/2 - 25, pdf.h - 35)
+                  pdf.cell(50, 5, "(Seal & Signature)", ln=True, align='C')
+                  
+                  # District Officer (Right)
+                  pdf.set_xy(pdf.w - 70, pdf.h - 40)  # Right position
+                  pdf.cell(50, 5, "District Officer", ln=True, align='C')
+                  pdf.set_xy(pdf.w - 70, pdf.h - 35)
+                  pdf.cell(50, 5, "(Seal & Signature)", ln=True, align='C')
+                  
+                  # Add horizontal line above signatures
+                  pdf.set_line_width(0.5)
+                  pdf.line(20, pdf.h - 45, pdf.w - 20, pdf.h - 45)
               
                   # Save and offer download
                   pdf_file = "estimate.pdf"
@@ -1434,8 +1496,8 @@ def main_app():
         st.markdown(f"""
         **Subtotal:** ₹{total_cost:,.2f}  
         **GST (18%):** ₹{gst:,.2f}  
-        **Unforeseen (1%):** ₹{unforeseen:,.2f}  
-        **Final Total:** ₹{final_total:,.2f}
+        **Unforeseen (max 2.5%):** ₹{unforeseen:,.2f}  
+        **Final Total Rounded to Next 1000:** ₹{final_total:,.2f}
         """)
         
         if st.button("Close Preview", key="close_preview"):
