@@ -1330,14 +1330,23 @@ def main_app():
                           )
               
                       # For the first column (serial number) - keep centered
+                      # In your PDF generation section, replace the problematic code with:
                       if item.get("Type") == "Other":
-                          # Draw circle for serial number (unchanged)
+                          # Calculate circle position and size
+                          r = 4  # Radius of the circle
+                          x = x_row_start + col_widths[0]/2  # Center of the first column
+                          y = y_row_start + row_height/2     # Vertical center of the row
+                          
+                          # Draw circle
                           pdf.ellipse(x - r, y - r, r * 2, r * 2)
+                          
+                          # Print serial number centered in the circle
                           pdf.set_xy(x_row_start, y_row_start)
-                          pdf.cell(col_widths[0], row_height, str(round(serial)), 0, 0, 'C')  # Centered
+                          pdf.cell(col_widths[0], row_height, str(serial), 0, 0, 'C')
                       else:
+                          # Standard item - just print the serial number
                           pdf.set_xy(x_row_start, y_row_start)
-                          pdf.cell(col_widths[0], row_height, str(serial), 0, 0, 'C')  # Centered
+                          pdf.cell(col_widths[0], row_height, str(serial), 0, 0, 'C')
                   
                       # For the item name column (second column) - left-justified
                       pdf.set_xy(x_row_start + col_widths[0], y_row_start)
