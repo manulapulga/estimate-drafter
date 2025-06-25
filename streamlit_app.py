@@ -64,11 +64,30 @@ def load_main_items(username):
         st.error(f"Error loading main items data for {username}: {str(e)}")
         st.stop()
         
-# Add this with the other data loading functions
 @st.cache_data
 def load_templates():
     try:
-        template_data = pd.read_excel("Templates.xlsx", sheet_name=None)
+        import os
+        template_data = {}
+        templates_dir = "Templates"
+        
+        if os.path.exists(templates_dir) and os.path.isdir(templates_dir):
+            # Get all Excel files in the Templates directory
+            template_files = [f for f in os.listdir(templates_dir) 
+                           if f.endswith(('.xlsx', '.xls')) and os.path.isfile(os.path.join(templates_dir, f))]
+            
+            for template_file in template_files:
+                # Remove file extension for the sheet name
+                sheet_name = os.path.splitext(template_file)[0]
+                file_path = os.path.join(templates_dir, template_file)
+                
+                # Read each Excel file
+                template_data[sheet_name] = pd.read_excel(file_path)
+        
+        if not template_data:
+            st.warning("No template files found in the Templates directory")
+            return {}
+            
         return template_data
     except Exception as e:
         st.error(f"Error loading template data: {str(e)}")
@@ -279,33 +298,74 @@ def main_app():
             st.rerun()
 
     def handle_item_selection(selected_item):
-        # Find the item in wizard data first
-        wizard_item = wizard_data[wizard_data['Item Name'] == selected_item].iloc[0]
-        
-        # Try to find matching item in main data for unit price and unit
-        main_item = data[data['Item Name'] == selected_item]
-        
-        if not main_item.empty:
-            main_item = main_item.iloc[0]
-            unit_price = main_item['Unit Price']
-            unit = main_item['Item Unit']
+        # Check if we're editing an existing item
+        if 'show_wizard_for_edit' in st.session_state and st.session_state.show_wizard_for_edit is not None:
+            edit_idx = st.session_state.show_wizard_for_edit
+            
+            # Find the item in wizard data first
+            wizard_item = wizard_data[wizard_data['Item Name'] == selected_item].iloc[0]
+            
+            # Try to find matching item in main data for unit price and unit
+            main_item = data[data['Item Name'] == selected_item]
+            
+            if not main_item.empty:
+                main_item = main_item.iloc[0]
+                unit_price = main_item['Unit Price']
+                unit = main_item['Item Unit']
+            else:
+                # Use wizard data if not found in main data
+                unit_price = wizard_item['Unit Price']
+                unit = wizard_item['Item Unit']
+            
+            # Preserve the existing quantity and remarks
+            existing_item = st.session_state.selected_items[edit_idx]
+            existing_quantity = existing_item['Quantity']
+            existing_remarks = existing_item.get('Quantity_Remarks', '')
+            
+            # Update the item
+            st.session_state.selected_items[edit_idx] = {
+                'Item': selected_item,
+                'Quantity': existing_quantity,
+                'Unit Price': unit_price,
+                'Item Unit': unit,
+                'Cost': existing_quantity * unit_price,
+                'Type': 'Standard',
+                'GST_Applicable': True,
+                'Quantity_Remarks': existing_remarks
+            }
+            
+            st.session_state.show_wizard = False
+            st.session_state.show_wizard_for_edit = None
+            st.success(f"Item updated to '{selected_item}' successfully!")
         else:
-            # Use wizard data if not found in main data
-            unit_price = wizard_item['Unit Price']
-            unit = wizard_item['Item Unit']
+            # Original code for adding new items
+            wizard_item = wizard_data[wizard_data['Item Name'] == selected_item].iloc[0]
+            
+            # Try to find matching item in main data for unit price and unit
+            main_item = data[data['Item Name'] == selected_item]
+            
+            if not main_item.empty:
+                main_item = main_item.iloc[0]
+                unit_price = main_item['Unit Price']
+                unit = main_item['Item Unit']
+            else:
+                # Use wizard data if not found in main data
+                unit_price = wizard_item['Unit Price']
+                unit = wizard_item['Item Unit']
+            
+            st.session_state.selected_items.append({
+                'Item': selected_item,
+                'Quantity': 1.0,
+                'Unit Price': unit_price,
+                'Item Unit': unit,
+                'Cost': unit_price,
+                'Type': 'Standard',
+                'GST_Applicable': True,
+                'Quantity_Remarks': ""
+            })
+            st.session_state.show_wizard = False
+            st.success(f"Item '{selected_item}' added successfully!")
         
-        st.session_state.selected_items.append({
-            'Item': selected_item,
-            'Quantity': 1.0,
-            'Unit Price': unit_price,
-            'Item Unit': unit,
-            'Cost': unit_price,
-            'Type': 'Standard',
-            'GST_Applicable': True,
-            'Quantity_Remarks': ""
-        })
-        st.session_state.show_wizard = False
-        st.success(f"Item '{selected_item}' added successfully!")
         st.rerun()
 
     # Display added items and subheadings
@@ -423,13 +483,25 @@ def main_app():
                 # Display for standard items
                 col1, col2 = st.columns([3, 1])
                 with col1:
-                    item_name = st.selectbox(
-                        "Select Item", 
-                        [''] + item_names, 
-                        index=item_names.index(item['Item']) + 1 if item['Item'] in item_names else 0, 
-                        key=f"edit_item_{idx}"
-                    )
-                    st.text(f"Item Description: {item_name}" if item_name else "")
+                    # Create two columns within col1 - one for dropdown, one for smart filter
+                    col1a, col1b = st.columns([3, 1])
+                    
+                    with col1a:
+                        item_name = st.selectbox(
+                            "Select Item", 
+                            [''] + item_names, 
+                            index=item_names.index(item['Item']) + 1 if item['Item'] in item_names else 0, 
+                            key=f"edit_item_{idx}"
+                        )
+                        st.text(f"Item Description: {item_name}" if item_name else "")
+                    
+                    with col1b:
+                        st.markdown("<div style='height:28px;'></div>", unsafe_allow_html=True)
+                        if st.button("🔍 Smart Filter", key=f"smart_filter_{idx}"):
+                            st.session_state.show_wizard_for_edit = idx  # Track which item we're editing
+                            st.session_state.show_wizard = True
+                            st.rerun()
+                            
                 with col2:
                     quantity = st.text_input(
                         "Quantity", 
@@ -446,7 +518,7 @@ def main_app():
                     # Show unit rate below quantity
                     st.markdown(f"**Rate:** ₹{item['Unit Price']:.2f} per {item['Item Unit']}")
                     # Quantity Remarks section (for standard items)
-
+            
                     # Check if a remark already exists
                     remark = item.get('Quantity_Remarks', '')
                     
@@ -644,19 +716,18 @@ def main_app():
         show_item_wizard(wizard_data, handle_item_selection)
         if st.button("✕ Close Wizard", key="close_wizard", type="primary"):
             st.session_state.show_wizard = False
+            if 'show_wizard_for_edit' in st.session_state:
+                st.session_state.show_wizard_for_edit = None
             st.rerun()
         # Show Templates section if toggled on
+    # In the load_templates section, replace with this:
+
     if st.session_state.get('show_templates', False):
         template_data = load_templates()
         template_names = list(template_data.keys())
-    
+        
         st.markdown("### 📄 Available Templates")
     
-        # Ensure selected_items list is initialized
-        if 'selected_items' not in st.session_state:
-            st.session_state.selected_items = []
-    
-        # Display templates as buttons (3 per row)
         num_columns = 3
         for i in range(0, len(template_names), num_columns):
             cols = st.columns(num_columns)
@@ -665,17 +736,58 @@ def main_app():
                     template_name = template_names[i + j]
                     with cols[j]:
                         if st.button(f"📝 {template_name}", key=f"template_btn_{template_name}"):
-                            template_df = template_data[template_name]
-                            main_items_data = data  # From your existing load_main_items()
+                            from openpyxl import load_workbook
+                            template_path = f"Templates/{template_name}.xlsx"
+                            wb = load_workbook(template_path)
+                            ws = wb.active
     
+                            current_subheading = None
                             added_count = 0
-                            for _, row in template_df.iterrows():
-                                item_name = row['Item Name']
-                                quantity = row.get('Quantity', 0)
     
-                                main_item = main_items_data[main_items_data['Item Name'] == item_name]
+                            for row_idx in range(1, ws.max_row + 1):
+                                # Detect subheadings from merged cells
+                                is_subheading = False
+                                for merge in ws.merged_cells.ranges:
+                                    if merge.min_row == row_idx and merge.max_row == row_idx:
+                                        if merge.min_col <= 2 and merge.max_col >= 2:
+                                            current_subheading = ws.cell(row=row_idx, column=merge.min_col).value
+                                            is_subheading = True
+                                            break
     
-                                if not main_item.empty:
+                                if is_subheading:
+                                    st.session_state.selected_items.append({
+                                        'Item': current_subheading,
+                                        'Type': 'Subheading'
+                                    })
+                                    continue
+    
+                                item_name = ws.cell(row=row_idx, column=1).value
+                                quantity_cell = ws.cell(row=row_idx, column=2).value
+    
+                                if not item_name:
+                                    continue
+    
+                                # Extract quantity and remarks
+                                remarks = ""
+                                quantity = None
+                                if quantity_cell is not None:
+                                    quantity_str = str(quantity_cell).strip()
+                                    if "(" in quantity_str and ")" in quantity_str:
+                                        parts = quantity_str.split("(", 1)
+                                        remarks = parts[1].split(")", 1)[0].strip()
+                                        try:
+                                            quantity = float(parts[0].strip())
+                                        except ValueError:
+                                            quantity = None
+                                    else:
+                                        try:
+                                            quantity = float(quantity_str)
+                                        except ValueError:
+                                            quantity = None
+    
+                                main_item = data[data['Item Name'] == item_name]
+    
+                                if not main_item.empty and quantity is not None:
                                     main_item = main_item.iloc[0]
                                     st.session_state.selected_items.append({
                                         'Item': item_name,
@@ -685,30 +797,30 @@ def main_app():
                                         'Cost': quantity * main_item['Unit Price'],
                                         'Type': 'Standard',
                                         'GST_Applicable': True,
-                                        'Quantity_Remarks': ""
+                                        'Quantity_Remarks': remarks,
+                                        'Subheading': current_subheading
                                     })
+                                    added_count += 1
                                 else:
                                     st.session_state.selected_items.append({
                                         'Item': item_name,
-                                        'Quantity': quantity,
-                                        'Unit Price': 0,
-                                        'Item Unit': '',
-                                        'Cost': 0,
+                                        'Cost': 0 if quantity is None else quantity,
                                         'Type': 'Other',
                                         'GST_Applicable': True,
-                                        'Quantity_Remarks': ""
+                                        'Quantity_Remarks': remarks,
+                                        'Subheading': current_subheading
                                     })
-                                added_count += 1
+                                    added_count += 1
     
                             st.success(f"✅ Added {added_count} items from '{template_name}' template!")
                             st.session_state.show_templates = False
                             st.rerun()
     
-        # Cancel Button
         st.divider()
         if st.button("✕ Cancel", key="cancel_template", type="primary"):
             st.session_state.show_templates = False
             st.rerun()
+
 
     # Excel upload section            
     if st.session_state.get('show_upload', False):

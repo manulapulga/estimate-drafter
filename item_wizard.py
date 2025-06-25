@@ -2,25 +2,6 @@ import pandas as pd
 import streamlit as st
 from streamlit.components.v1 import html
 
-# 1. DATA LOADING (CACHED FOR PERFORMANCE)
-@st.cache_data
-def load_item_data():
-    """
-    Load your item data here.
-    Replace this with your actual data loading code.
-    For example, if you have a CSV file:
-    return pd.read_csv('your_items.csv')
-    """
-    # Sample data - REPLACE THIS WITH YOUR ACTUAL DATA LOADING CODE
-    data = {
-        'Item Name': [f'Product {i}' for i in range(1, 5001)],
-        'Main Category': ['Electronics']*2000 + ['Clothing']*2000 + ['Home']*1000,
-        'Sub Category 1': ['Phones']*1000 + ['Laptops']*1000 + ['Men']*1000 + ['Women']*1000 + ['Furniture']*500 + ['Decor']*500,
-        'Sub Category 2': ['Smartphones']*500 + ['Basic']*500 + ['Gaming']*500 + ['Business']*500 + ['T-Shirts']*500 + ['Jeans']*500 + ['Dresses']*500 + ['Skirts']*500 + ['Chairs']*250 + ['Tables']*250 + ['Art']*250 + ['Lamps']*250,
-        'Unit Price': [10 + (i % 500) for i in range(5000)],
-        'Item Unit': ['each']*5000
-    }
-    return pd.DataFrame(data)
 
 # 2. ITEM WIZARD COMPONENT
 def show_item_wizard(items_df, add_callback):
