@@ -3,3 +3,4 @@ pandas
 fpdf2
 openpyxl
 streamlit-modal
+num2words

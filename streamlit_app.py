@@ -7,6 +7,8 @@ from openpyxl.styles import Alignment, Border, Side
 from item_wizard import show_item_wizard
 import base64
 from decimal import Decimal, ROUND_HALF_UP, getcontext
+from num2words import num2words
+
 
 
 getcontext().prec = 10  # Increase precision
@@ -713,7 +715,7 @@ def main_app():
 
     # Show Smart Filter if toggled on
     if st.session_state.get('show_wizard', False):
-        show_item_wizard(wizard_data, handle_item_selection)
+        show_item_wizard(wizard_data, handle_item_selection, st.session_state.selected_items)
         if st.button("✕ Close Wizard", key="close_wizard", type="primary"):
             st.session_state.show_wizard = False
             if 'show_wizard_for_edit' in st.session_state:
@@ -1524,6 +1526,20 @@ def main_app():
                   
                       # Move to next line
                       pdf.set_y(y + row_height)
+                      
+                  # Add amount in words (merged row)
+                  row_height = 8
+                  if pdf.get_y() + row_height > pdf.h - 30:
+                      pdf.add_page()
+                      add_watermark(pdf)
+                  
+                  pdf.set_font("Arial", 'B', 10)
+                  pdf.cell(sum(col_widths), row_height, "Amount in Words: " + num2words(int(round(float(final_total))), lang='en_IN').title() + " Rupees Only", border=1, ln=1)
+                  
+                  # Add ISI standards note (merged row)
+                  pdf.set_font("Arial", 'I', 10)
+                  pdf.cell(sum(col_widths), row_height, "All Items should be as per ISI Standards", border=1, ln=1, align='C')
+                  pdf.set_font("Arial", '', 10)  # Reset font    
               
                   # Signature Area
                   if pdf.get_y() + 30 > pdf.h - 30:  # Increased buffer for signature block

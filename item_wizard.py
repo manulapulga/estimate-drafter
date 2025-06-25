@@ -4,7 +4,7 @@ from streamlit.components.v1 import html
 
 
 # 2. ITEM WIZARD COMPONENT
-def show_item_wizard(items_df, add_callback):
+def show_item_wizard(items_df, add_callback, selected_items=None):
     """
     Displays the Smart Filter with filters and pagination
     Parameters:
@@ -88,6 +88,19 @@ def show_item_wizard(items_df, add_callback):
             display: flex;
             align-items: center;
             gap: 0.5rem;
+        }
+        /* ... existing styles ... */
+        .item-card.selected {
+            border: 2px solid #4CAF50;
+            background-color: #f8fff8;
+        }
+        .add-btn {
+            background-color: #4CAF50 !important;
+            color: white !important;
+            border: none !important;
+        }
+        .add-btn.added {
+            background-color: #f44336 !important;
         }
     </style>
     """, unsafe_allow_html=True)
@@ -367,10 +380,18 @@ def show_item_wizard(items_df, add_callback):
             # DISPLAY ITEMS
             for idx in range(start_idx, end_idx):
                 row = filtered_items.iloc[idx]
+                is_selected = selected_items and any(
+                    item.get('Item') == row['Item Name'] 
+                    for item in selected_items 
+                    if isinstance(item, dict) and 'Item' in item
+                )
+                
                 col1, col2 = st.columns([5, 1])
                 with col1:
+                    # Add 'selected' class if item is already in estimate
+                    card_class = "item-card selected" if is_selected else "item-card"
                     st.markdown(f"""
-                        <div class='item-card'>
+                        <div class='{card_class}'>
                             <div class='item-title-container'>
                                 <div class='item-title'>{row['Item Name']}</div>
                             </div>
@@ -381,17 +402,33 @@ def show_item_wizard(items_df, add_callback):
                                 ₹{row['Unit Price']:.2f} per {row['Item Unit']}
                             </div>
                         </div>
-                        <script>
-                        function copyToClipboard(text) {{
-                            navigator.clipboard.writeText(text);
-                            return false;
-                        }}
-                        </script>
                     """, unsafe_allow_html=True)
                     copy_buttons(row['Item Name'], row['Unit Price'], row['Item Unit'])
+                
                 with col2:
-                    if st.button("Add", key=f"add_{idx}"):
-                        add_callback(row['Item Name'])
+                    # Change button style and text if item is already selected
+                    btn_text = "Remove" if is_selected else "Add"
+                    btn_class = "add-btn" if is_selected else "add-btn"
+                    
+                    st.markdown(f"""
+                        <style>
+                            #{btn_text}_{idx} {{
+                                background-color: {'#f44336' if is_selected else '#4CAF50'} !important;
+                                color: white !important;
+                                border: none !important;
+                            }}
+                        </style>
+                    """, unsafe_allow_html=True)
+                    
+                    if st.button(btn_text, key=f"{btn_text}_{idx}"):
+                        if is_selected:
+                            # Find and remove the item from selected_items
+                            for i, item in enumerate(selected_items):
+                                if isinstance(item, dict) and item.get('Item') == row['Item Name']:
+                                    selected_items.pop(i)
+                                    break
+                        else:
+                            add_callback(row['Item Name'])
                         st.rerun()
 
         st.markdown("</div>", unsafe_allow_html=True)  # Close wizard-container
