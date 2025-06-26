@@ -238,6 +238,67 @@ def main_app():
     if 'show_preview' not in st.session_state:
         st.session_state.show_preview = False
     # Functions
+    def update_all_items():
+        selected_items = st.session_state.selected_items.copy()
+        updated_count = 0
+        
+        for idx, item in enumerate(selected_items):
+            if item.get('Type') == 'Subheading':
+                # Handle subheading updates
+                new_heading = st.session_state.get(f"edit_subheading_{idx}", item['Item'])
+                if new_heading.strip() and new_heading != item['Item']:
+                    selected_items[idx]['Item'] = new_heading.strip()
+                    updated_count += 1
+                continue
+                
+            if item.get('Type') == 'Other':
+                # Handle 'Other' type items
+                new_desc = st.session_state.get(f"other_desc_{idx}", item['Item'])
+                new_price = st.session_state.get(f"other_price_{idx}", str(item['Cost']))
+                new_gst = st.session_state.get(f"other_gst_{idx}", item.get('GST_Applicable', False))
+                
+                try:
+                    price = float(new_price)
+                    if new_desc.strip() and price > 0:
+                        selected_items[idx] = {
+                            'Item': new_desc,
+                            'Cost': price,
+                            'Type': 'Other',
+                            'GST_Applicable': new_gst,
+                            'Quantity_Remarks': item.get('Quantity_Remarks', '')
+                        }
+                        updated_count += 1
+                except ValueError:
+                    pass
+            else:
+                # Handle standard items
+                item_name = st.session_state.get(f"edit_item_{idx}", '')
+                quantity = st.session_state.get(f"edit_qty_{idx}", str(item['Quantity']))
+                gst_applicable = st.session_state.get(f"edit_standard_gst_{idx}", item.get('GST_Applicable', True))
+                
+                if item_name and quantity:
+                    try:
+                        quantity = float(quantity)
+                        if quantity > 0:
+                            item_data = data[data['Item Name'] == item_name]
+                            if not item_data.empty:
+                                item_data = item_data.iloc[0]
+                                selected_items[idx] = {
+                                    'Item': item_name,
+                                    'Quantity': quantity,
+                                    'Unit Price': item_data['Unit Price'],
+                                    'Item Unit': item_data['Item Unit'],
+                                    'Cost': quantity * item_data['Unit Price'],
+                                    'Type': 'Standard',
+                                    'GST_Applicable': gst_applicable,
+                                    'Quantity_Remarks': item.get('Quantity_Remarks', '')
+                                }
+                                updated_count += 1
+                    except ValueError:
+                        pass
+        
+        st.session_state.selected_items = selected_items
+        return updated_count
     def add_item():
         st.session_state.item_count += 1
 
@@ -1158,7 +1219,7 @@ def main_app():
         
         st.write(f"Final Total (rounded to next ₹1000): ₹{final_total:,.2f}")
         # File generation buttons
-        col1, col2, col3, col4 = st.columns([2, 2, 1, 1])  # Added a 4th column for preview
+        col1, col2, col3, col4, col5 = st.columns([2, 2, 1, 1, 1])  # Added a 4th column for preview
         with col1:
             if st.button("📄 Generate Excel", key="generate_excel"):
                 wb = Workbook()
@@ -1594,6 +1655,15 @@ def main_app():
                 st.session_state.show_wizard = False
                 st.session_state.show_add_item = False
                 st.session_state.show_add_other = False
+                st.rerun()
+        with col5:
+            if st.button("🔄 Update All", key="update_all", 
+                        help="Update all items with current values"):
+                updated_count = update_all_items()
+                if updated_count > 0:
+                    st.success(f"Updated {updated_count} items successfully!")
+                else:
+                    st.info("No changes detected in any items")
                 st.rerun()        
     # Add this right after the totals section but before the "else" for "No items added"
     if st.session_state.get('show_preview', False) and any(i.get("Type") != "Subheading" for i in st.session_state.selected_items):
