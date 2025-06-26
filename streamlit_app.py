@@ -152,6 +152,147 @@ def main_app():
     item_names, unit_prices, item_units, data = load_main_items(username)
     wizard_data = load_wizard_items(username)
     
+    # Add drag and drop support
+    st.markdown("""
+    <style>
+        .draggable-item {
+            cursor: move;
+            user-select: none;
+            position: relative;
+            z-index: 10;
+        }
+        .draggable-item.dragging {
+            opacity: 0.5;
+            background-color: #e3f2fd;
+        }
+        .dropzone {
+            min-height: 10px;
+            transition: background-color 0.2s;
+        }
+        .dropzone.active {
+            background-color: #e3f2fd;
+            border: 2px dashed #2196F3;
+        }
+    </style>
+    
+    <script>
+    function setupDragAndDrop() {
+        const container = document.querySelector('.streamlit-container');
+        let draggedItem = null;
+        let dropIndicator = null;
+        
+        // Create drop indicator element
+        function createDropIndicator() {
+            const indicator = document.createElement('div');
+            indicator.className = 'drop-indicator';
+            indicator.style.height = '4px';
+            indicator.style.backgroundColor = '#2196F3';
+            indicator.style.margin = '5px 0';
+            indicator.style.borderRadius = '2px';
+            indicator.style.display = 'none';
+            return indicator;
+        }
+        
+        dropIndicator = createDropIndicator();
+        container.appendChild(dropIndicator);
+        
+        // Make items draggable
+        document.querySelectorAll('.draggable-item').forEach(item => {
+            item.draggable = true;
+            
+            item.addEventListener('dragstart', (e) => {
+                draggedItem = item;
+                item.classList.add('dragging');
+                e.dataTransfer.setData('text/plain', ''); // Needed for Firefox
+                e.dataTransfer.effectAllowed = 'move';
+            });
+            
+            item.addEventListener('dragend', () => {
+                item.classList.remove('dragging');
+                dropIndicator.style.display = 'none';
+                draggedItem = null;
+            });
+        });
+        
+        // Setup drop zones
+        document.querySelectorAll('.dropzone').forEach(zone => {
+            zone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                e.dataTransfer.dropEffect = 'move';
+                
+                const rect = zone.getBoundingClientRect();
+                const middleY = rect.top + rect.height / 2;
+                
+                if (e.clientY < middleY) {
+                    // Insert before
+                    dropIndicator.style.display = 'block';
+                    zone.parentNode.insertBefore(dropIndicator, zone);
+                } else {
+                    // Insert after
+                    dropIndicator.style.display = 'block';
+                    if (zone.nextSibling) {
+                        zone.parentNode.insertBefore(dropIndicator, zone.nextSibling);
+                    } else {
+                        zone.parentNode.appendChild(dropIndicator);
+                    }
+                }
+            });
+            
+            zone.addEventListener('dragleave', () => {
+                dropIndicator.style.display = 'none';
+            });
+            
+            zone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                dropIndicator.style.display = 'none';
+                
+                if (!draggedItem) return;
+                
+                const rect = zone.getBoundingClientRect();
+                const middleY = rect.top + rect.height / 2;
+                
+                if (e.clientY < middleY) {
+                    // Insert before
+                    zone.parentNode.insertBefore(draggedItem, zone);
+                } else {
+                    // Insert after
+                    if (zone.nextSibling) {
+                        zone.parentNode.insertBefore(draggedItem, zone.nextSibling);
+                    } else {
+                        zone.parentNode.appendChild(draggedItem);
+                    }
+                }
+                
+                // Get new order
+                const items = Array.from(document.querySelectorAll('.draggable-item'));
+                const order = items.map(el => el.getAttribute('data-item-id'));
+                
+                // Send new order to Streamlit
+                const data = {order: order};
+                Streamlit.setComponentValue(data);
+            });
+        });
+    }
+    
+    // Run setup when elements are available
+    function observeContainer() {
+        const observer = new MutationObserver((mutations) => {
+            if (document.querySelector('.draggable-item')) {
+                setupDragAndDrop();
+                observer.disconnect();
+            }
+        });
+        
+        observer.observe(document.body, {
+            childList: true,
+            subtree: true
+        });
+    }
+    
+    document.addEventListener('DOMContentLoaded', observeContainer);
+    </script>
+    """, unsafe_allow_html=True)
+    
     # UI for Estimate Drafting with updated styles
     st.markdown("<h1 style='text-align: center; color: #154c79;'>ESTIMATE DRAFTER</h1>", unsafe_allow_html=True)
     username = st.session_state.logged_in_username
@@ -1448,12 +1589,33 @@ def main_app():
                           pdf.set_font("Arial", '', 10)  # Reset font after header
               
                       if item.get("Type") == "Subheading":
-                          pdf.set_font("Arial", 'B', 10)  # Subheading bold
-                          pdf.set_xy(pdf.get_x(), pdf.get_y())
-                          pdf.cell(sum(col_widths), 6, f" {item['Item']}", border=1, align='C')
-                          pdf.ln(6)
+                          # Calculate height needed (using fixed 6mm per line)
+                          available_width = sum(col_widths) - 10  # 5mm margin each side
+                          subheading_lines = split_text(item['Item'], available_width)
+                          subheading_height = 6 * len(subheading_lines)
+                          
+                          # Page break check
+                          if pdf.get_y() + subheading_height > pdf.h - 30:
+                              pdf.add_page()
+                              add_watermark(pdf)
+                              draw_table_header()
+                          
+                          # Draw border
+                          x_start = pdf.get_x()
+                          y_start = pdf.get_y()
+                          pdf.rect(x_start, y_start, sum(col_widths), subheading_height)
+                          
+                          # Print text with margins
+                          pdf.set_font("Arial", 'B', 10)
+                          for i, line in enumerate(subheading_lines):
+                              pdf.set_x(x_start + 5)  # 5mm left margin
+                              pdf.cell(sum(col_widths) - 10, 6, line, 0, 0, 'C')  # Centered in remaining width
+                              if i < len(subheading_lines) - 1:
+                                  pdf.ln()
+                          
+                          pdf.set_y(y_start + subheading_height)
                           pdf.set_font("Arial", '', 10)
-                          continue  # Skip to next item after subheading
+                          continue
                       
                       gst_applicable = item.get('GST_Applicable', True)
               
