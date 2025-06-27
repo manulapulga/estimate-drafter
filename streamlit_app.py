@@ -453,7 +453,7 @@ def main_app():
         """
         Calculate totals with manual unforeseen input
         Defaults to 2.5% of (total_cost + gst) if not provided
-        Final total is rounded to next 1000
+        Final total is rounded to next 100
         """
         selected_items = st.session_state.selected_items
         
@@ -485,7 +485,7 @@ def main_app():
         
         # Calculate final total and round up to next 1000
         final_total = total_cost + gst + unforeseen
-        final_total = math.ceil(final_total / 1000) * 1000  # Round up to next 1000
+        final_total = math.ceil(final_total / 100) * 100  # Round up to next 1000
         
         return int(total_cost), int(gst), int(unforeseen), int(final_total)
 
@@ -1358,7 +1358,7 @@ def main_app():
         # Calculate final totals with the validated amount
         total_cost, gst, unforeseen, final_total = calculate_totals(int(unforeseen_amount))
         
-        st.write(f"Final Total (rounded to next ₹1000): ₹{final_total:,.2f}")
+        st.write(f"Final Total (rounded to next ₹100): ₹{final_total:,.2f}")
         # File generation buttons
         col1, col2, col3, col4, col5 = st.columns([2, 2, 1, 1, 1])  # Added a 4th column for preview
         with col1:
@@ -1418,7 +1418,7 @@ def main_app():
                     ("Subtotal", total_cost),
                     ("GST (18%)", gst),
                     ("Unforeseen (max 2.5%)", unforeseen),
-                    ("Grand Total Rounded to Next 1000", final_total)
+                    ("Grand Total Rounded to Next 100", final_total)
                 ]:
                     ws.merge_cells(f'A{row_num}:E{row_num}')
                     ws[f'A{row_num}'] = label
@@ -1724,7 +1724,7 @@ def main_app():
                       ("Subtotal", f"{total_cost:.2f}"),
                       ("GST (18%)", f"{gst:.2f}"),
                       ("Unforeseen (max 2.5%)", f"{unforeseen:.2f}"),
-                      ("Grand Total Rounded to Next 1000", f"{final_total:.2f}")
+                      ("Grand Total Rounded to Next 100", f"{final_total:.2f}")
                   ]
               
                   for label, value in summary_data:
@@ -1876,7 +1876,7 @@ def main_app():
         **Subtotal:** ₹{total_cost:,.2f}  
         **GST (18%):** ₹{gst:,.2f}  
         **Unforeseen (max 2.5%):** ₹{unforeseen:,.2f}  
-        **Final Total Rounded to Next 1000:** ₹{final_total:,.2f}
+        **Final Total Rounded to Next 100:** ₹{final_total:,.2f}
         """)
         
         if st.button("Close Preview", key="close_preview"):
