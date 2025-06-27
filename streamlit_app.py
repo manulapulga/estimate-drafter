@@ -1819,7 +1819,7 @@ def main_app():
                 st.session_state.show_add_other = False
                 st.rerun()
         with col5:
-            if st.button("🔄 Update All", key="update_all", 
+            if st.button("🔁 Update All", key="update_all", 
                         help="Update all items with current values"):
                 updated_count = update_all_items()
                 if updated_count > 0:
