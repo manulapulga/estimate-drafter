@@ -152,147 +152,6 @@ def main_app():
     item_names, unit_prices, item_units, data = load_main_items(username)
     wizard_data = load_wizard_items(username)
     
-    # Add drag and drop support
-    st.markdown("""
-    <style>
-        .draggable-item {
-            cursor: move;
-            user-select: none;
-            position: relative;
-            z-index: 10;
-        }
-        .draggable-item.dragging {
-            opacity: 0.5;
-            background-color: #e3f2fd;
-        }
-        .dropzone {
-            min-height: 10px;
-            transition: background-color 0.2s;
-        }
-        .dropzone.active {
-            background-color: #e3f2fd;
-            border: 2px dashed #2196F3;
-        }
-    </style>
-    
-    <script>
-    function setupDragAndDrop() {
-        const container = document.querySelector('.streamlit-container');
-        let draggedItem = null;
-        let dropIndicator = null;
-        
-        // Create drop indicator element
-        function createDropIndicator() {
-            const indicator = document.createElement('div');
-            indicator.className = 'drop-indicator';
-            indicator.style.height = '4px';
-            indicator.style.backgroundColor = '#2196F3';
-            indicator.style.margin = '5px 0';
-            indicator.style.borderRadius = '2px';
-            indicator.style.display = 'none';
-            return indicator;
-        }
-        
-        dropIndicator = createDropIndicator();
-        container.appendChild(dropIndicator);
-        
-        // Make items draggable
-        document.querySelectorAll('.draggable-item').forEach(item => {
-            item.draggable = true;
-            
-            item.addEventListener('dragstart', (e) => {
-                draggedItem = item;
-                item.classList.add('dragging');
-                e.dataTransfer.setData('text/plain', ''); // Needed for Firefox
-                e.dataTransfer.effectAllowed = 'move';
-            });
-            
-            item.addEventListener('dragend', () => {
-                item.classList.remove('dragging');
-                dropIndicator.style.display = 'none';
-                draggedItem = null;
-            });
-        });
-        
-        // Setup drop zones
-        document.querySelectorAll('.dropzone').forEach(zone => {
-            zone.addEventListener('dragover', (e) => {
-                e.preventDefault();
-                e.dataTransfer.dropEffect = 'move';
-                
-                const rect = zone.getBoundingClientRect();
-                const middleY = rect.top + rect.height / 2;
-                
-                if (e.clientY < middleY) {
-                    // Insert before
-                    dropIndicator.style.display = 'block';
-                    zone.parentNode.insertBefore(dropIndicator, zone);
-                } else {
-                    // Insert after
-                    dropIndicator.style.display = 'block';
-                    if (zone.nextSibling) {
-                        zone.parentNode.insertBefore(dropIndicator, zone.nextSibling);
-                    } else {
-                        zone.parentNode.appendChild(dropIndicator);
-                    }
-                }
-            });
-            
-            zone.addEventListener('dragleave', () => {
-                dropIndicator.style.display = 'none';
-            });
-            
-            zone.addEventListener('drop', (e) => {
-                e.preventDefault();
-                dropIndicator.style.display = 'none';
-                
-                if (!draggedItem) return;
-                
-                const rect = zone.getBoundingClientRect();
-                const middleY = rect.top + rect.height / 2;
-                
-                if (e.clientY < middleY) {
-                    // Insert before
-                    zone.parentNode.insertBefore(draggedItem, zone);
-                } else {
-                    // Insert after
-                    if (zone.nextSibling) {
-                        zone.parentNode.insertBefore(draggedItem, zone.nextSibling);
-                    } else {
-                        zone.parentNode.appendChild(draggedItem);
-                    }
-                }
-                
-                // Get new order
-                const items = Array.from(document.querySelectorAll('.draggable-item'));
-                const order = items.map(el => el.getAttribute('data-item-id'));
-                
-                // Send new order to Streamlit
-                const data = {order: order};
-                Streamlit.setComponentValue(data);
-            });
-        });
-    }
-    
-    // Run setup when elements are available
-    function observeContainer() {
-        const observer = new MutationObserver((mutations) => {
-            if (document.querySelector('.draggable-item')) {
-                setupDragAndDrop();
-                observer.disconnect();
-            }
-        });
-        
-        observer.observe(document.body, {
-            childList: true,
-            subtree: true
-        });
-    }
-    
-    document.addEventListener('DOMContentLoaded', observeContainer);
-    </script>
-    """, unsafe_allow_html=True)
-    
     # UI for Estimate Drafting with updated styles
     st.markdown("<h1 style='text-align: center; color: #154c79;'>ESTIMATE DRAFTER</h1>", unsafe_allow_html=True)
     username = st.session_state.logged_in_username
@@ -500,7 +359,12 @@ def main_app():
             st.session_state.selected_items[index], st.session_state.selected_items[index + 1] = \
                 st.session_state.selected_items[index + 1], st.session_state.selected_items[index]
             st.rerun()
-
+    def move_item_to_position(current_index, new_position):
+        selected_items = st.session_state.selected_items
+        if 0 <= new_position < len(selected_items):
+            item = selected_items.pop(current_index)
+            selected_items.insert(new_position, item)
+            st.rerun()
     def handle_item_selection(selected_item):
         # Check if we're editing an existing item
         if 'show_wizard_for_edit' in st.session_state and st.session_state.show_wizard_for_edit is not None:
@@ -582,7 +446,7 @@ def main_app():
                 new_heading = st.text_input("Edit Subheading", value=item['Item'], key=f"edit_subheading_{idx}")
         
                 # Update and Remove buttons
-                col1, col2, col3, col4, col5 = st.columns([2, 2, 2, 2, 6])
+                col1, col2, col3, col4, col5, col6 = st.columns([2, 2, 2, 2, 1, 6])
                 with col1:
                     if st.button("🔁 Update", key=f"update_sub_{idx}"):
                         if new_heading.strip():
@@ -599,6 +463,26 @@ def main_app():
                 with col4:
                     if st.button("⬇️ Move Down", key=f"move_down_sub_{idx}"):
                         move_item_down(idx)
+                with col5:
+                    new_pos = st.text_input(
+                        "", 
+                        key=f"move_input_{idx}", 
+                        placeholder="Move To", 
+                        label_visibility="collapsed"
+                    )
+                with col6:    
+                    if st.button("Move", key=f"move_button_{idx}"):
+                        try:
+                            target_index = int(new_pos) - 1
+                            if target_index == idx:
+                                st.info("Item already at that position.")
+                            elif 0 <= target_index < len(st.session_state.selected_items):
+                                move_item_to_position(idx, target_index)
+                            else:
+                                st.warning("Invalid position number.")
+                        except ValueError:
+                            st.error("Please enter a valid number.")
+                
             continue
 
 
@@ -653,7 +537,7 @@ def main_app():
 
                     
                 # Action buttons
-                col1, col2, col3, col4, col5 = st.columns([2, 2, 2, 2, 6])
+                col1, col2, col3, col4, col5, col6 = st.columns([2, 2, 2, 2, 1, 6])
                 with col1:
                     if st.button(f"🔁 Update", key=f"update_other_{idx}"):
                         if new_desc and new_price:
@@ -683,6 +567,25 @@ def main_app():
                 with col4:
                     if st.button("⬇️ Move Down", key=f"move_down_sub_{idx}"):
                         move_item_down(idx)
+                with col5:
+                    new_pos = st.text_input(
+                        "", 
+                        key=f"move_input_{idx}", 
+                        placeholder="Move To", 
+                        label_visibility="collapsed"
+                    )
+                with col6:    
+                    if st.button("Move", key=f"move_button_{idx}"):
+                        try:
+                            target_index = int(new_pos) - 1
+                            if target_index == idx:
+                                st.info("Item already at that position.")
+                            elif 0 <= target_index < len(st.session_state.selected_items):
+                                move_item_to_position(idx, target_index)
+                            else:
+                                st.warning("Invalid position number.")
+                        except ValueError:
+                            st.error("Please enter a valid number.")        
             else:
                 # Display for standard items
                 col1, col2 = st.columns([3, 1])
@@ -745,7 +648,7 @@ def main_app():
                             st.rerun()
 
                 # Action buttons inside expander
-                col1, col2, col3, col4, col5 = st.columns([2, 2, 2, 2, 6])
+                col1, col2, col3, col4, col5, col6 = st.columns([2, 2, 2, 2, 1, 6])
                 with col1:
                     if st.button(f"🔁 Update", key=f"update_{idx}"):
                         if item_name and quantity:
@@ -781,6 +684,25 @@ def main_app():
                 with col4:
                     if st.button("⬇️ Move Down", key=f"move_down_sub_{idx}"):
                         move_item_down(idx)
+                with col5:
+                    new_pos = st.text_input(
+                        "", 
+                        key=f"move_input_{idx}", 
+                        placeholder="Move To", 
+                        label_visibility="collapsed"
+                    )
+                with col6:    
+                    if st.button("Move", key=f"move_button_{idx}"):
+                        try:
+                            target_index = int(new_pos) - 1
+                            if target_index == idx:
+                                st.info("Item already at that position.")
+                            elif 0 <= target_index < len(st.session_state.selected_items):
+                                move_item_to_position(idx, target_index)
+                            else:
+                                st.warning("Invalid position number.")
+                        except ValueError:
+                            st.error("Please enter a valid number.")        
     # Add New Item or Subheading buttons
     button_col1, button_col2, button_col3, button_col4, button_col5, button_col6 = st.columns([2, 2, 2, 2, 2, 2])
     with button_col6:
@@ -1756,8 +1678,8 @@ def main_app():
                       pdf.add_page()
                       add_watermark(pdf)
                   
-                  pdf.set_font("Arial", 'B', 10)
-                  pdf.cell(sum(col_widths), row_height, "Amount in Words: " + num2words(int(round(float(final_total))), lang='en_IN').title() + " Rupees Only", border=1, ln=1)
+                  pdf.set_font("Arial", 'B', 10, )
+                  pdf.cell(sum(col_widths), row_height, "Amount in Words: " + num2words(int(round(float(final_total))), lang='en_IN').title() + " Rupees Only", border=1, ln=1, align='C')
                   
                   # Add ISI standards note (merged row)
                   pdf.set_font("Arial", 'I', 10)
