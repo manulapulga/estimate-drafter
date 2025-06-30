@@ -122,6 +122,20 @@ def show_item_wizard(items_df, add_callback, selected_items=None):
             # Search box
             search_term = st.text_input("🔍 Search items", key="wizard_search")
             
+            # Add sorting dropdown
+            sort_options = {
+                "A to Z": "name_asc",
+                "Z to A": "name_desc",
+                "Price Low to High": "price_asc",
+                "Price High to Low": "price_desc"
+            }
+            selected_sort = st.selectbox(
+                "Sort by",
+                options=list(sort_options.keys()),
+                key="wizard_sort",
+                help="Sort items by name or price"
+            )
+            
             # Initialize filters in session state if not exists
             if 'wizard_filters' not in st.session_state:
                 st.session_state.wizard_filters = {
@@ -256,6 +270,20 @@ def show_item_wizard(items_df, add_callback, selected_items=None):
         with items_col:
             # Apply filters
             filtered_items = items_df.copy()
+            
+            # Apply sorting
+            sort_key = sort_options[selected_sort]
+            if sort_key == "name_asc":
+                filtered_items = filtered_items.sort_values('Item Name', ascending=True)
+            elif sort_key == "name_desc":
+                filtered_items = filtered_items.sort_values('Item Name', ascending=False)
+            elif sort_key == "price_asc":
+                filtered_items = filtered_items.sort_values('Unit Price', ascending=True)
+            elif sort_key == "price_desc":
+                filtered_items = filtered_items.sort_values('Unit Price', ascending=False)
+            
+            # Reset index after sorting for proper pagination
+            filtered_items = filtered_items.reset_index(drop=True)
             
             # Category filters
             if st.session_state.wizard_filters['main_categories']:
