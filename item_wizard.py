@@ -122,8 +122,9 @@ def show_item_wizard(items_df, add_callback, selected_items=None):
             # Search box
             search_term = st.text_input("🔍 Search items", key="wizard_search")
             
-            # Add sorting dropdown
+            # In the FILTERS COLUMN section, replace the sort_options and selected_sort with this:
             sort_options = {
+                "Default": "default",
                 "A to Z": "name_asc",
                 "Z to A": "name_desc",
                 "Price Low to High": "price_asc",
@@ -281,6 +282,7 @@ def show_item_wizard(items_df, add_callback, selected_items=None):
                 filtered_items = filtered_items.sort_values('Unit Price', ascending=True)
             elif sort_key == "price_desc":
                 filtered_items = filtered_items.sort_values('Unit Price', ascending=False)
+            # For "default", we don't apply any sorting - keep the original order
             
             # Reset index after sorting for proper pagination
             filtered_items = filtered_items.reset_index(drop=True)
