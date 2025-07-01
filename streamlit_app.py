@@ -1382,18 +1382,23 @@ def main_app():
                       pdf.set_font("Arial", style='B', size=72)
                       pdf.set_text_color(180, 240, 230)  # Light magenta color for watermark
                   
-                      text = "GROUND WATER DEPARTMENT"
+                      text = "GWD"
                       text_width = pdf.get_string_width(text)
                       text_height = 72  # Approximate height of the text
                   
-                      # Set the rotation angle for the watermark (diagonal, bottom-left to top-right)
-                      pdf.rotate(54.8, x=0, y=pdf.h)  # Rotate around the bottom-left corner
+                      # Calculate the center of the page
+                      page_width = pdf.w
+                      page_height = pdf.h
+                      center_x = page_width / 2
+                      center_y = page_height / 2
                   
-                      # Position the text starting from the bottom-left corner with a little padding
-                      x = 0  # Padding from the left
-                      y = pdf.h  # Padding from the bottom
+                      # Rotate around the center of the page
+                      pdf.rotate(45, x=center_x, y=center_y)
                   
-                      # Print the watermark diagonally
+                      # Position text such that it is centered
+                      x = center_x - (text_width / 2)
+                      y = center_y + (text_height / 4)  # slight adjustment
+                  
                       pdf.text(x, y, text)
                   
                       # Reset rotation to avoid affecting other content
