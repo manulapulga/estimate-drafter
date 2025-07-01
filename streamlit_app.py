@@ -782,7 +782,7 @@ def main_app():
             st.session_state.show_local_templates = False
             st.rerun()
     with button_col2:
-        if st.button("📘 Templates", key="show_templates_btn"):
+        if st.button("📘 Global Templates", key="show_templates_btn"):
             st.session_state.show_templates = not st.session_state.get('show_templates', False)
             st.session_state.show_add_item = False
             st.session_state.show_wizard = False
