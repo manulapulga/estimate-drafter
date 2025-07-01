@@ -8,6 +8,7 @@ from item_wizard import show_item_wizard
 import base64
 from decimal import Decimal, ROUND_HALF_UP, getcontext
 from num2words import num2words
+import os
 
 
 
@@ -95,6 +96,34 @@ def load_templates():
         st.error(f"Error loading template data: {str(e)}")
         st.stop()
         
+@st.cache_data
+def load_local_templates(username):
+    try:
+        import os
+        template_data = {}
+        templates_dir = os.path.join("Local Templates", username)
+        
+        if os.path.exists(templates_dir) and os.path.isdir(templates_dir):
+            # Get all Excel files in the user's Local Templates directory
+            template_files = [f for f in os.listdir(templates_dir) 
+                           if f.endswith(('.xlsx', '.xls')) and os.path.isfile(os.path.join(templates_dir, f))]
+            
+            for template_file in template_files:
+                # Remove file extension for the sheet name
+                sheet_name = os.path.splitext(template_file)[0]
+                file_path = os.path.join(templates_dir, template_file)
+                
+                # Read each Excel file
+                template_data[sheet_name] = pd.read_excel(file_path)
+        
+        if not template_data:
+            st.warning(f"No template files found in your local templates directory ({templates_dir})")
+            return {}
+            
+        return template_data
+    except Exception as e:
+        st.error(f"Error loading local template data: {str(e)}")
+        st.stop()
 # Load wizard items data
 @st.cache_data
 def load_wizard_items(username):
@@ -234,6 +263,8 @@ def main_app():
         st.session_state.show_templates = False    
     if 'show_upload' not in st.session_state:
         st.session_state.show_upload = False
+    if 'show_local_templates' not in st.session_state:
+        st.session_state.show_local_templates = False
     # Add this with your other session state initializations
     if 'show_preview' not in st.session_state:
         st.session_state.show_preview = False
@@ -704,7 +735,7 @@ def main_app():
                         except ValueError:
                             st.error("Please enter a valid number.")        
     # Add New Item or Subheading buttons
-    button_col1, button_col2, button_col3, button_col4, button_col5, button_col6 = st.columns([2, 2, 2, 2, 2, 2])
+    button_col1, button_col2, button_col3, button_col4, button_col5, button_col6, button_col7 = st.columns([2, 2, 2, 2, 2, 2, 2])
     with button_col6:
         if st.button("🔽 Add from List", key="add_item_btn"):
             # Toggle add item section and hide others
@@ -714,6 +745,7 @@ def main_app():
             st.session_state.show_add_other = False
             st.session_state.show_templates = False  # Add this line
             st.session_state.show_upload = False    # Add this line
+            st.session_state.show_local_templates = False
             st.rerun()
     with button_col1:
         if st.button("🔍 Smart Filter", key="open_wizard"):
@@ -724,6 +756,7 @@ def main_app():
             st.session_state.show_add_other = False
             st.session_state.show_templates = False  # Add this line
             st.session_state.show_upload = False    # Add this line
+            st.session_state.show_local_templates = False
             st.rerun()
     with button_col4:
         if st.button("📌 Add Subheading", key="add_subheading_btn"):
@@ -734,6 +767,7 @@ def main_app():
             st.session_state.show_add_other = False
             st.session_state.show_templates = False  # Add this line
             st.session_state.show_upload = False    # Add this line
+            st.session_state.show_local_templates = False
             st.rerun()
     with button_col5:
         if st.button("🧩 Add Other", key="add_other_btn", type="secondary", 
@@ -745,6 +779,7 @@ def main_app():
             st.session_state.adding_subheading = False
             st.session_state.show_templates = False  # Add this line
             st.session_state.show_upload = False    # Add this line
+            st.session_state.show_local_templates = False
             st.rerun()
     with button_col2:
         if st.button("📘 Templates", key="show_templates_btn"):
@@ -754,6 +789,7 @@ def main_app():
             st.session_state.adding_subheading = False
             st.session_state.show_add_other = False
             st.session_state.show_upload = False    # Add this line
+            st.session_state.show_local_templates = False
             st.rerun()
     with button_col3:
         # Replace your existing upload button with this:
@@ -764,7 +800,18 @@ def main_app():
             st.session_state.show_wizard = False
             st.session_state.adding_subheading = False
             st.session_state.show_add_other = False
+            st.session_state.show_local_templates = False
             st.rerun()
+    with button_col7:
+        if st.button("🏠 Local Templates", key="show_local_templates_btn"):
+            st.session_state.show_local_templates = not st.session_state.get('show_local_templates', False)
+            st.session_state.show_add_item = False
+            st.session_state.show_wizard = False
+            st.session_state.adding_subheading = False
+            st.session_state.show_add_other = False
+            st.session_state.show_upload = False
+            st.session_state.show_templates = False
+            st.rerun()        
     # Show Add Item section if toggled on
     if st.session_state.get('show_add_item', False):
         idx = len([i for i in st.session_state.selected_items if i.get("Type") != "Subheading"])
@@ -947,7 +994,105 @@ def main_app():
             st.session_state.show_templates = False
             st.rerun()
 
-
+    # Show Local Templates section if toggled on
+    if st.session_state.get('show_local_templates', False):
+        template_data = load_local_templates(username)
+        template_names = list(template_data.keys())
+        
+        st.markdown("### 🏠 Your Local Templates")
+    
+        num_columns = 3
+        for i in range(0, len(template_names), num_columns):
+            cols = st.columns(num_columns)
+            for j in range(num_columns):
+                if i + j < len(template_names):
+                    template_name = template_names[i + j]
+                    with cols[j]:
+                        if st.button(f"📝 {template_name}", key=f"local_template_btn_{template_name}"):
+                            from openpyxl import load_workbook
+                            template_path = os.path.join("Local Templates", username, f"{template_name}.xlsx")
+                            wb = load_workbook(template_path)
+                            ws = wb.active
+    
+                            current_subheading = None
+                            added_count = 0
+    
+                            for row_idx in range(1, ws.max_row + 1):
+                                # Detect subheadings from merged cells
+                                is_subheading = False
+                                for merge in ws.merged_cells.ranges:
+                                    if merge.min_row == row_idx and merge.max_row == row_idx:
+                                        if merge.min_col <= 2 and merge.max_col >= 2:
+                                            current_subheading = ws.cell(row=row_idx, column=merge.min_col).value
+                                            is_subheading = True
+                                            break
+    
+                                if is_subheading:
+                                    st.session_state.selected_items.append({
+                                        'Item': current_subheading,
+                                        'Type': 'Subheading'
+                                    })
+                                    continue
+    
+                                item_name = ws.cell(row=row_idx, column=1).value
+                                quantity_cell = ws.cell(row=row_idx, column=2).value
+    
+                                if not item_name:
+                                    continue
+    
+                                # Extract quantity and remarks
+                                remarks = ""
+                                quantity = None
+                                if quantity_cell is not None:
+                                    quantity_str = str(quantity_cell).strip()
+                                    if "(" in quantity_str and ")" in quantity_str:
+                                        parts = quantity_str.split("(", 1)
+                                        remarks = parts[1].split(")", 1)[0].strip()
+                                        try:
+                                            quantity = float(parts[0].strip())
+                                        except ValueError:
+                                            quantity = None
+                                    else:
+                                        try:
+                                            quantity = float(quantity_str.split("(")[0].strip()) if quantity_str.split("(")[0].strip() else None
+                                        except ValueError:
+                                            quantity = None
+    
+                                main_item = data[data['Item Name'] == item_name]
+    
+                                if not main_item.empty and quantity is not None:
+                                    main_item = main_item.iloc[0]
+                                    st.session_state.selected_items.append({
+                                        'Item': item_name,
+                                        'Quantity': quantity,
+                                        'Unit Price': main_item['Unit Price'],
+                                        'Item Unit': main_item['Item Unit'],
+                                        'Cost': quantity * main_item['Unit Price'],
+                                        'Type': 'Standard',
+                                        'GST_Applicable': True,
+                                        'Quantity_Remarks': remarks,
+                                        'Subheading': current_subheading
+                                    })
+                                    added_count += 1
+                                else:
+                                    st.session_state.selected_items.append({
+                                        'Item': item_name,
+                                        'Cost': 0 if quantity is None else quantity,
+                                        'Type': 'Other',
+                                        'GST_Applicable': True,
+                                        'Quantity_Remarks': remarks,
+                                        'Subheading': current_subheading
+                                    })
+                                    added_count += 1
+    
+                            st.success(f"✅ Added {added_count} items from '{template_name}' template!")
+                            st.session_state.show_local_templates = False
+                            st.rerun()
+    
+        st.divider()
+        if st.button("✕ Cancel", key="cancel_local_template", type="primary"):
+            st.session_state.show_local_templates = False
+            st.rerun()
     # Excel upload section            
     if st.session_state.get('show_upload', False):
         # Add this error handling block FIRST
