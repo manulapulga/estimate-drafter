@@ -1957,8 +1957,6 @@ def main_app():
         if st.button("Close Preview", key="close_preview"):
             st.session_state.show_preview = False
             st.rerun()
-    else:
-        st.info("No items added to the estimate yet.")
 # Check authentication
 if 'authenticated' not in st.session_state:
     st.session_state.authenticated = False
