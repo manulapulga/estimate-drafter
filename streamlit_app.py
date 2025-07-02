@@ -1480,11 +1480,13 @@ def main_app():
                         serial += 1
                         row_num += 1
 
+                false_unforeseen = final_total - (total_cost + gst)
+                
                 # Add totals
                 for label, val in [
                     ("Subtotal", total_cost),
                     ("GST (18%)", gst),
-                    ("Unforeseen (max 2.5%)", unforeseen),
+                    ("Unforeseen", false_unforeseen),
                     ("Grand Total Rounded to Next 100", final_total)
                 ]:
                     ws.merge_cells(f'A{row_num}:E{row_num}')
@@ -1522,6 +1524,7 @@ def main_app():
                   from fpdf import FPDF
               
                   pdf = FPDF()
+                  
                   def add_watermark(pdf):
                       """Function to add a diagonal watermark to every page"""
                       pdf.set_font("Arial", style='B', size=72)
@@ -1550,10 +1553,11 @@ def main_app():
                       pdf.rotate(0)
                       
                       pdf.set_text_color(0, 0, 0)  # Black color for the main content
-                        
+                  
                   pdf.set_auto_page_break(auto=True, margin=15)
                   pdf.add_page()
                   add_watermark(pdf)
+                  
                   # Main content
                   pdf.set_font("Arial", 'B', 16)
                   pdf.set_text_color(0, 0, 0)
@@ -1594,12 +1598,15 @@ def main_app():
                   else:
                       # Single line if it fits
                       pdf.cell(200, 10, txt=estimate_heading, ln=True, align='C')
-
               
+                  # Define column widths
                   col_widths = [10, 70, 20, 20, 20, 30]
                   headers = ["Sl.No", "Item Name", "Qty", "Unit", "Rate", "Total"]
-
-              
+                  
+                  # Calculate total table width and left margin for centering
+                  table_width = sum(col_widths)
+                  left_margin = (pdf.w - table_width) / 2
+                  
                   def split_text(text, max_width):
                       """Split text into multiple lines based on available width"""
                       if not isinstance(text, str):
@@ -1631,9 +1638,9 @@ def main_app():
                   def draw_table_header():
                       """Draw the table header on new pages"""
                       pdf.set_font("Arial", 'B', 10)
-                      x_start = pdf.get_x()
+                      x_start = left_margin  # Use calculated left margin
                       y_start = pdf.get_y()
-                      pdf.rect(x_start, y_start, sum(col_widths), 6)  # Header border
+                      pdf.rect(x_start, y_start, table_width, 6)  # Header border
               
                       for i in range(1, len(col_widths)):
                           pdf.line(
@@ -1662,7 +1669,7 @@ def main_app():
               
                       if item.get("Type") == "Subheading":
                           # Calculate height needed (using fixed 6mm per line)
-                          available_width = sum(col_widths) - 10  # 5mm margin each side
+                          available_width = table_width - 10  # 5mm margin each side
                           subheading_lines = split_text(item['Item'], available_width)
                           subheading_height = 6 * len(subheading_lines)
                           
@@ -1673,15 +1680,15 @@ def main_app():
                               draw_table_header()
                           
                           # Draw border
-                          x_start = pdf.get_x()
+                          x_start = left_margin
                           y_start = pdf.get_y()
-                          pdf.rect(x_start, y_start, sum(col_widths), subheading_height)
+                          pdf.rect(x_start, y_start, table_width, subheading_height)
                           
                           # Print text with margins
                           pdf.set_font("Arial", 'B', 10)
                           for i, line in enumerate(subheading_lines):
                               pdf.set_x(x_start + 5)  # 5mm left margin
-                              pdf.cell(sum(col_widths) - 10, 6, line, 0, 0, 'C')  # Centered in remaining width
+                              pdf.cell(table_width - 10, 6, line, 0, 0, 'C')  # Centered in remaining width
                               if i < len(subheading_lines) - 1:
                                   pdf.ln()
                           
@@ -1703,17 +1710,12 @@ def main_app():
                           if remark:
                               qty_text = f"{item['Quantity']:.4f} ({remark})"
                           else:
-                              remark = item.get('Quantity_Remarks', '')
-                              if remark:
-                                  qty_text = f"{item['Quantity']:.4f} ({remark})"
-                              else:
-                                  qty_text = f"{item['Quantity']:.4f}"
+                              qty_text = f"{item['Quantity']:.4f}"
               
                       total_text = f"{item['Cost']:.2f}"
                       if not gst_applicable:
                           total_text += " (No GST)"
               
-                      # To:
                       row_data = [
                           str(serial),
                           item['Item'],
@@ -1723,7 +1725,7 @@ def main_app():
                           total_text
                       ]
               
-                      x_row_start = pdf.get_x()
+                      x_row_start = left_margin
                       y_row_start = pdf.get_y()
               
                       max_lines = calculate_max_lines(row_data)
@@ -1735,11 +1737,11 @@ def main_app():
                           add_watermark(pdf)
                           draw_table_header()
                           pdf.set_font("Arial", '', 10)
-                          x_row_start = pdf.get_x()
+                          x_row_start = left_margin
                           y_row_start = pdf.get_y()
               
                       # Draw the row border
-                      pdf.rect(x_row_start, y_row_start, sum(col_widths), row_height)
+                      pdf.rect(x_row_start, y_row_start, table_width, row_height)
                       
                       # Draw vertical lines
                       for i in range(1, len(col_widths)):
@@ -1749,7 +1751,6 @@ def main_app():
                           )
               
                       # For the first column (serial number) - keep centered
-                      # In your PDF generation section, replace the problematic code with:
                       if item.get("Type") == "Other":
                           # Calculate circle position and size
                           r = 4  # Radius of the circle
@@ -1793,7 +1794,7 @@ def main_app():
               
                   # Summary Section
                   round_off = final_total - (total_cost + gst + unforeseen)
-
+              
                   summary_data = [
                       ("Subtotal", f"{total_cost:.2f}"),
                       ("GST (18%)", f"{gst:.2f}"),
@@ -1809,12 +1810,12 @@ def main_app():
                           add_watermark(pdf)
                           pdf.set_font("Arial", '', 10)  # Reset the correct font and size
                   
-                      x = pdf.get_x()
+                      x = left_margin
                       y = pdf.get_y()
                       
                       # Set bold font for summary items
                       pdf.set_font("Arial", 'B', 10)  # Changed to bold
-
+              
                       # Draw both label and value in the same row
                       pdf.set_xy(x, y)
                       pdf.cell(sum(col_widths[:-1]), row_height, label, border=1, align='C')
@@ -1824,21 +1825,24 @@ def main_app():
                   
                       # Move to next line
                       pdf.set_y(y + row_height)
-                      
+                  
                   # Add amount in words (merged row)
                   row_height = 8
                   if pdf.get_y() + row_height > pdf.h - 30:
                       pdf.add_page()
                       add_watermark(pdf)
                   
-                  pdf.set_font("Arial", 'B', 10, )
-                  pdf.cell(sum(col_widths), row_height, "Amount in Words: " + num2words(int(round(float(final_total))), lang='en_IN').title() + " Rupees Only", border=1, ln=1, align='C')
+                  # Set x position to left margin to center the cell
+                  pdf.set_x(left_margin)
+                  pdf.set_font("Arial", 'B', 10)
+                  pdf.cell(table_width, row_height, "Amount in Words: " + num2words(int(round(float(final_total))), lang='en_IN').title() + " Rupees Only", border=1, ln=1, align='C')
                   
                   # Add ISI standards note (merged row)
+                  pdf.set_x(left_margin)  # Set x position to left margin to center the cell
                   pdf.set_font("Arial", 'I', 10)
-                  pdf.cell(sum(col_widths), row_height, "All Items should be as per ISI Standards", border=1, ln=1, align='C')
-                  pdf.set_font("Arial", '', 10)  # Reset font    
-              
+                  pdf.cell(table_width, row_height, "All Items should be as per ISI Standards", border=1, ln=1, align='C')
+                  pdf.set_font("Arial", '', 10)  # Reset font
+                  
                   # Signature Area
                   if pdf.get_y() + 30 > pdf.h - 30:  # Increased buffer for signature block
                       pdf.add_page()
@@ -1878,7 +1882,7 @@ def main_app():
                           data=f,
                           file_name=pdf_file,
                           mime="application/pdf"
-                      )    
+                      )   
         with col3:
             if st.button("👁️ Preview", key="preview_estimate"):
                 st.session_state.show_preview = not st.session_state.get('show_preview', False)
