@@ -1793,13 +1793,12 @@ def main_app():
                       serial += 1
               
                   # Summary Section
-                  round_off = final_total - (total_cost + gst + unforeseen)
+                  false_unforeseen = final_total - (total_cost + gst)
               
                   summary_data = [
                       ("Subtotal", f"{total_cost:.2f}"),
                       ("GST (18%)", f"{gst:.2f}"),
-                      ("Unforeseen (max 2.5%)", f"{unforeseen:.2f}"),
-                      ("Round Off", f"{round_off:.2f}"),
+                      ("Unforeseen", f"{false_unforeseen:.2f}"),
                       ("Grand Total Rounded to Next 100", f"{final_total:.2f}")
                   ]
               
