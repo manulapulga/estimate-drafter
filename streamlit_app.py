@@ -238,6 +238,18 @@ def main_app():
                 background-color: #FFA500 !important;
                 color: white !important;
             }
+            /* Make textarea more interactive */
+            textarea[data-baseweb="textarea"] {
+                min-height: 100px;
+                resize: vertical;
+                white-space: pre-wrap;
+            }
+            
+            /* Ensure paste works in textarea */
+            .stTextArea textarea {
+                -webkit-user-select: text !important;
+                user-select: text !important;
+            }
         </style>
     """, unsafe_allow_html=True)
 
@@ -1426,6 +1438,34 @@ def main_app():
         total_cost, gst, unforeseen, final_total = calculate_totals(int(unforeseen_amount))
         
         st.write(f"Final Total (rounded to next ₹100): ₹{final_total:,.2f}")
+        
+       
+        # Replace the existing note input section with this:
+        if any(i.get("Type") != "Subheading" for i in st.session_state.selected_items):
+            # Initialize note in session state if not exists
+            if 'estimate_note' not in st.session_state:
+                st.session_state.estimate_note = ""
+            
+            # Add note input area with increased limit
+            st.subheader("Estimate Note")
+            note_container = st.container()
+            with note_container:
+                st.session_state.estimate_note = st.text_area(
+                    "Add a note to appear in the estimate (max 1000 words)",
+                    value=st.session_state.estimate_note,
+                    key="estimate_note_input",
+                    height=150,
+                    max_chars=7000,  # Approx 1000 words
+                    help="You can paste text into this field (Ctrl+V). Maximum 1000 words allowed."
+                )
+                
+                # Add a word counter
+                word_count = len(st.session_state.estimate_note.split())
+                st.caption(f"Word count: {word_count}/1000 ({(word_count/1000)*100:.1f}%)")
+                if word_count > 1000:
+                    st.warning("Note exceeds 1000 word limit. Please shorten your note.")
+            
+        
         # File generation buttons
         col1, col2, col3, col4, col5 = st.columns([2, 2, 1, 1, 1])  # Added a 4th column for preview
         with col1:
@@ -1842,6 +1882,33 @@ def main_app():
                   pdf.cell(table_width, row_height, "All Items should be as per ISI Standards", border=1, ln=1, align='C')
                   pdf.set_font("Arial", '', 10)  # Reset font
                   
+                  
+                  # In the PDF generation section, modify the note section:
+                  if 'estimate_note' in st.session_state and st.session_state.estimate_note.strip():
+                      # Calculate height needed for note (approx 6mm per line)
+                      pdf.set_font("Arial", '', 9)  # Slightly smaller font for longer notes
+                      note_lines = pdf.multi_cell(0, 5, st.session_state.estimate_note, split_only=True)
+                      note_height = 5 * len(note_lines)  # 5mm per line
+                      
+                      # Check if we need a new page for the note
+                      if pdf.get_y() + note_height > pdf.h - 60:  # 60mm buffer for signatures
+                          pdf.add_page()
+                      
+                      # Add minimal gap (2mm)
+                      pdf.ln(2)
+                      
+                      # Draw note box with border
+                      pdf.set_x(left_margin)
+                      pdf.multi_cell(
+                          table_width, 
+                          5,  # Line height
+                          st.session_state.estimate_note,
+                          border=1,
+                          align='L'
+                      )
+                      
+                      # Reset font for remaining content
+                      pdf.set_font("Arial", '', 10)
                   # Signature Area
                   if pdf.get_y() + 30 > pdf.h - 30:  # Increased buffer for signature block
                       pdf.add_page()
