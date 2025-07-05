@@ -297,15 +297,21 @@ def main_app():
             if item.get('Type') == 'Other':
                 # Handle 'Other' type items
                 new_desc = st.session_state.get(f"other_desc_{idx}", item['Item'])
-                new_price = st.session_state.get(f"other_price_{idx}", str(item['Cost']))
+                new_qty = st.session_state.get(f"other_qty_{idx}", str(item['Quantity']))
+                new_unit = st.session_state.get(f"other_unit_{idx}", item.get('Item Unit', ''))
+                new_rate = st.session_state.get(f"other_rate_{idx}", str(item.get('Unit Price', 0)))
                 new_gst = st.session_state.get(f"other_gst_{idx}", item.get('GST_Applicable', False))
                 
                 try:
-                    price = float(new_price)
-                    if new_desc.strip() and price > 0:
+                    qty = float(new_qty) if new_qty else 0
+                    rate = float(new_rate) if new_rate else 0
+                    if new_desc.strip():
                         selected_items[idx] = {
-                            'Item': new_desc,
-                            'Cost': price,
+                            'Item': new_desc.strip(),
+                            'Quantity': qty,
+                            'Unit Price': rate,
+                            'Item Unit': new_unit,
+                            'Cost': qty * rate,
                             'Type': 'Other',
                             'GST_Applicable': new_gst,
                             'Quantity_Remarks': item.get('Quantity_Remarks', '')
@@ -549,57 +555,87 @@ def main_app():
                         key=f"other_desc_{idx}"
                     )
                 with col2:
-                    # Editable total price
-                    new_price = st.text_input(
-                        "Total Price", 
-                        value=f"{item['Cost']:.2f}",
-                        key=f"other_price_{idx}"
+                    # Editable quantity
+                    new_qty = st.text_input(
+                        "Quantity", 
+                        value=f"{item['Quantity']}",
+                        key=f"other_qty_{idx}"
                     )
-                    # Editable GST checkbox
-                    new_gst = st.checkbox(
-                        "GST Applicable?", 
-                        value=item.get('GST_Applicable', False),
-                        key=f"other_gst_{idx}"
+                    
+                col1, col2 = st.columns([1, 1])
+                with col1:
+                    # Editable unit
+                    new_unit = st.text_input(
+                        "Unit", 
+                        value=item.get('Item Unit', ''),
+                        key=f"other_unit_{idx}"
                     )
-                    # Remark Section for 'Other' Items
-                    remark = item.get('Quantity_Remarks', '')
-                    button_label = "✏️ Edit Remark" if remark else "➕ Add Remark"
+                with col2:
+                    # Editable unit rate
+                    new_rate = st.text_input(
+                        "Unit Rate (₹)", 
+                        value=f"{item.get('Unit Price', 0):.2f}",
+                        key=f"other_rate_{idx}"
+                    )
                     
-                    if st.button(button_label, key=f"edit_remark_other_{idx}"):
-                        st.session_state.selected_items[idx]['show_remark_input'] = True
+                # Calculate and display total
+                try:
+                    qty = float(new_qty) if new_qty else 0
+                    rate = float(new_rate) if new_rate else 0
+                    total = qty * rate
+                    st.markdown(f"**Total: ₹{total:,.2f}**")
+                except ValueError:
+                    st.warning("Please enter valid numbers for quantity and rate")
                     
-                    if remark and not item.get('show_remark_input', False):
-                        st.info(f"📋 Quantity Remark: {remark}")
-                    
-                    if item.get('show_remark_input', False):
-                        new_remark = st.text_input("Edit Remark", value=remark, key=f"remark_input_other_{idx}", max_chars=100)
-                        if st.button("Save Remark", key=f"save_remark_other_{idx}"):
-                            st.session_state.selected_items[idx]['Quantity_Remarks'] = new_remark
-                            st.session_state.selected_items[idx]['show_remark_input'] = False
-                            st.rerun()
-
-                    
+                # Editable GST checkbox
+                new_gst = st.checkbox(
+                    "GST Applicable?", 
+                    value=item.get('GST_Applicable', False),
+                    key=f"other_gst_{idx}"
+                )
+                
+                # Remark Section for 'Other' Items
+                remark = item.get('Quantity_Remarks', '')
+                button_label = "✏️ Edit Remark" if remark else "➕ Add Remark"
+                
+                if st.button(button_label, key=f"edit_remark_other_{idx}"):
+                    st.session_state.selected_items[idx]['show_remark_input'] = True
+                
+                if remark and not item.get('show_remark_input', False):
+                    st.info(f"📋 Quantity Remark: {remark}")
+                
+                if item.get('show_remark_input', False):
+                    new_remark = st.text_input("Edit Remark", value=remark, key=f"remark_input_other_{idx}", max_chars=100)
+                    if st.button("Save Remark", key=f"save_remark_other_{idx}"):
+                        st.session_state.selected_items[idx]['Quantity_Remarks'] = new_remark
+                        st.session_state.selected_items[idx]['show_remark_input'] = False
+                        st.rerun()
+            
                 # Action buttons
                 col1, col2, col3, col4, col5, col6 = st.columns([2, 2, 2, 2, 1, 6])
                 with col1:
                     if st.button(f"🔁 Update", key=f"update_other_{idx}"):
-                        if new_desc and new_price:
+                        if new_desc and new_qty and new_unit and new_rate:
                             try:
-                                price = float(new_price)
-                                if price > 0:
+                                qty = float(new_qty)
+                                rate = float(new_rate)
+                                if qty > 0 and rate >= 0:
                                     st.session_state.selected_items[idx] = {
                                         'Item': new_desc,
-                                        'Cost': price,
+                                        'Quantity': qty,
+                                        'Unit Price': rate,
+                                        'Item Unit': new_unit,
+                                        'Cost': qty * rate,
                                         'Type': 'Other',
                                         'GST_Applicable': new_gst,
                                         'Quantity_Remarks': item.get('Quantity_Remarks', ''),
-                                        'show_remark_input': False  # Add this line
+                                        'show_remark_input': False
                                     }
-                                    st.session_state[f"expander_{idx}"] = False  # Add this line to collapse
+                                    st.session_state[f"expander_{idx}"] = False
                                     st.success("Custom item updated successfully!")
                                     st.rerun()
                             except ValueError:
-                                st.error("Please enter a valid price")
+                                st.error("Please enter valid numbers for quantity and rate")
                 with col2:
                     if st.button(f"❌ Remove", key=f"remove_{idx}"):
                         remove_item(idx)
@@ -906,7 +942,7 @@ def main_app():
             st.rerun()
         # Show Templates section if toggled on
     # In the load_templates section, replace with this:
-
+    # Then in the template loading section where items are added:
     if st.session_state.get('show_templates', False):
         template_data = load_templates()
         template_names = list(template_data.keys())
@@ -973,6 +1009,7 @@ def main_app():
                                 main_item = data[data['Item Name'] == item_name]
     
                                 if not main_item.empty and quantity is not None:
+                                    # Standard item
                                     main_item = main_item.iloc[0]
                                     st.session_state.selected_items.append({
                                         'Item': item_name,
@@ -987,9 +1024,13 @@ def main_app():
                                     })
                                     added_count += 1
                                 else:
+                                    # Other item - only reflect name, leave other fields blank/zero
                                     st.session_state.selected_items.append({
                                         'Item': item_name,
-                                        'Cost': 0 if quantity is None else quantity,
+                                        'Quantity': 0,
+                                        'Unit Price': 0,
+                                        'Item Unit': "",
+                                        'Cost': 0,
                                         'Type': 'Other',
                                         'GST_Applicable': True,
                                         'Quantity_Remarks': remarks,
@@ -1007,6 +1048,7 @@ def main_app():
             st.rerun()
 
     # Show Local Templates section if toggled on
+    # Then in the local template loading section where items are added:
     if st.session_state.get('show_local_templates', False):
         template_data = load_local_templates(username)
         template_names = list(template_data.keys())
@@ -1073,6 +1115,7 @@ def main_app():
                                 main_item = data[data['Item Name'] == item_name]
     
                                 if not main_item.empty and quantity is not None:
+                                    # Standard item
                                     main_item = main_item.iloc[0]
                                     st.session_state.selected_items.append({
                                         'Item': item_name,
@@ -1087,9 +1130,13 @@ def main_app():
                                     })
                                     added_count += 1
                                 else:
+                                    # Other item - only reflect name, leave other fields blank/zero
                                     st.session_state.selected_items.append({
                                         'Item': item_name,
-                                        'Cost': 0 if quantity is None else quantity,
+                                        'Quantity': 0,
+                                        'Unit Price': 0,
+                                        'Item Unit': "",
+                                        'Cost': 0,
                                         'Type': 'Other',
                                         'GST_Applicable': True,
                                         'Quantity_Remarks': remarks,
@@ -1101,9 +1148,10 @@ def main_app():
                             st.session_state.show_local_templates = False
                             st.rerun()
     
-        st.divider()
-        if st.button("✕ Cancel", key="cancel_local_template", type="primary"):
-            st.session_state.show_local_templates = False
+            st.divider()
+            if st.button("✕ Cancel", key="cancel_local_template", type="primary"):
+                st.session_state.show_local_templates = False
+                st.rerun()
             st.rerun()
     # Excel upload section            
     if st.session_state.get('show_upload', False):
@@ -1134,6 +1182,7 @@ def main_app():
     
         uploaded_file = st.file_uploader("Choose an Excel file", type=['xlsx'], key="excel_uploader")
         
+        # In the Excel upload section, modify the item processing logic:
         if uploaded_file is not None:
             try:
                 # Read the uploaded file with openpyxl to handle merged cells
@@ -1195,7 +1244,6 @@ def main_app():
                         continue
                     
                     # Get cell values - different columns for app estimate vs regular file
-                    # Then update the column mapping when reading the Excel file:
                     if is_app_estimate:
                         # For estimates generated by this app (new column order)
                         item_name = str(ws.cell(row=row, column=2).value) if ws.cell(row=row, column=2).value else ""  # Column B (Item Name)
@@ -1293,10 +1341,13 @@ def main_app():
                                 })
                                 added_count += 1
                             else:
-                                # Other item
+                                # Other item - only reflect name, leave other fields blank/zero
                                 st.session_state.selected_items.append({
                                     'Item': item_name,
-                                    'Cost': float(total_price),
+                                    'Quantity': 0,
+                                    'Unit Price': 0,
+                                    'Item Unit': "",
+                                    'Cost': 0,
                                     'Type': 'Other',
                                     'GST_Applicable': True,
                                     'Quantity_Remarks': remarks
@@ -1342,7 +1393,7 @@ def main_app():
     if st.session_state.get('show_add_other', False):
         with st.container():
             st.markdown(f"<div class='estimate-item'>", unsafe_allow_html=True)
-            col1, col2 = st.columns([3, 1])
+            col1, col2, col3, col4 = st.columns([5, 1, 1, 1])
             with col1:
                 item_name = st.text_input(
                     "Item Description", 
@@ -1350,27 +1401,55 @@ def main_app():
                     placeholder="Enter custom item description"
                 )
             with col2:
-                total_price = st.text_input(
-                    "Total Price", 
-                    key=f"other_item_price",
-                    placeholder="Enter total price"
+                quantity = st.text_input(
+                    "Quantity", 
+                    value="1",
+                    key=f"other_item_qty",
+                    placeholder="Enter quantity"
                 )
-                gst_applicable = st.checkbox(
-                    "GST Applicable?", 
-                    value=True,
-                    key=f"other_item_gst"
+                
+            with col3:
+                unit = st.text_input(
+                    "Unit", 
+                    key=f"other_item_unit",
+                    placeholder="e.g., meter, each, kg"
                 )
-
+            with col4:
+                unit_price = st.text_input(
+                    "Unit Rate (₹)", 
+                    key=f"other_item_rate",
+                    placeholder="Enter rate per unit"
+                )
+                
+            # Calculate and display total
+            try:
+                qty = float(quantity) if quantity else 0
+                rate = float(unit_price) if unit_price else 0
+                total = qty * rate
+                st.markdown(f"**Total: ₹{total:,.2f}**")
+            except ValueError:
+                st.warning("Please enter valid numbers for quantity and rate")
+                
+            gst_applicable = st.checkbox(
+                "GST Applicable?", 
+                value=True,
+                key=f"other_item_gst"
+            )
+    
             col1, col2 = st.columns([1, 1])
             with col1:
                 if st.button(f"Add Custom Item", key=f"add_other_item"):
-                    if item_name and total_price:
+                    if item_name and quantity and unit and unit_price:
                         try:
-                            price = float(total_price)
-                            if price > 0:
+                            qty = float(quantity)
+                            rate = float(unit_price)
+                            if qty > 0 and rate >= 0:
                                 st.session_state.selected_items.append({
                                     'Item': item_name,
-                                    'Cost': price,
+                                    'Quantity': qty,
+                                    'Unit Price': rate,
+                                    'Item Unit': unit,
+                                    'Cost': qty * rate,
                                     'Type': 'Other',
                                     'GST_Applicable': gst_applicable
                                 })
@@ -1378,7 +1457,7 @@ def main_app():
                                 st.success(f"Custom item '{item_name}' added successfully!")
                                 st.rerun()
                         except ValueError:
-                            st.error("Please enter a valid price")
+                            st.error("Please enter valid numbers for quantity and rate")
             with col2:
                 if st.button("✕ Cancel", key=f"cancel_other_item", type="primary", 
                             help="Close without adding item"):
@@ -1494,13 +1573,13 @@ def main_app():
                         row_num += 1
                     elif item.get("Type") == "Other":
                         remark = item.get('Quantity_Remarks', '')
-                        qty_field = f"- ({remark})" if remark else "-"
+                        qty_field = f"{item['Quantity']} ({remark})" if remark else f"{item['Quantity']}"
                         ws.append([
                             serial,
                             item['Item'],
-                            "-",
-                            "-",
                             qty_field,
+                            item['Item Unit'],
+                            item['Unit Price'],
                             item['Cost'],
                             "Yes" if item.get('GST_Applicable', False) else "No"
                         ])
@@ -1738,11 +1817,16 @@ def main_app():
                       
                       gst_applicable = item.get('GST_Applicable', True)
               
+                      # In the PDF generation section, modify the item processing logic:
+
                       if item.get("Type") == "Other":
-                          rate_text = "-"
-                          unit_text = "-"
+                          rate_text = f"{item['Unit Price']:.2f}" if 'Unit Price' in item else "-"
+                          unit_text = item.get('Item Unit', '-')
                           remark = item.get('Quantity_Remarks', '')
-                          qty_text = f"- ({remark})" if remark else "-"
+                          if remark:
+                              qty_text = f"{item.get('Quantity', '-')} ({remark})"
+                          else:
+                              qty_text = f"{item.get('Quantity', '-')}"
                       else:
                           rate_text = f"{item['Unit Price']:.2f}"
                           unit_text = item['Item Unit']
@@ -1751,7 +1835,7 @@ def main_app():
                               qty_text = f"{item['Quantity']:.4f} ({remark})"
                           else:
                               qty_text = f"{item['Quantity']:.4f}"
-              
+                      
                       total_text = f"{item['Cost']:.2f}"
                       if not gst_applicable:
                           total_text += " (No GST)"
@@ -1989,14 +2073,17 @@ def main_app():
                     "Amount": ""
                 })
             else:
+                # In the preview section, replace the "Other" item handling with:
                 if item.get("Type") == "Other":
+                    remark = f" ({item['Quantity_Remarks']})" if item.get('Quantity_Remarks') else ""
                     preview_data.append({
                         "Item": f"🔹 {item['Item']}",
-                        "Quantity": "-",
-                        "Unit": "-",
-                        "Rate": "-",
+                        "Quantity": f"{item['Quantity']}{remark}",
+                        "Unit": item['Item Unit'],
+                        "Rate": f"₹{item['Unit Price']:,.2f}",
                         "Amount": f"₹{item['Cost']:,.2f}"
                     })
+                
                 else:
                     remark = f" ({item['Quantity_Remarks']})" if item.get('Quantity_Remarks') else ""
                     preview_data.append({
