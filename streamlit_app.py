@@ -307,6 +307,7 @@ def main_app():
     # Add this with your other session state initializations
     if 'show_preview' not in st.session_state:
         st.session_state.show_preview = False
+        
     # Functions
     def update_all_items():
         selected_items = st.session_state.selected_items.copy()
@@ -1219,7 +1220,8 @@ def main_app():
                 is_app_estimate = False
                 try:
                     if (ws['B2'].value == "Item Name" and ws['C2'].value == "Qty" and
-                        ws['D2'].value == "Unit" and ws['E2'].value == "Rate"):
+                        ws['D2'].value == "Unit" and ws['E2'].value == "Rate" and
+                        ws['F2'].value == "Total" and ws['G2'].value == "GST"):
                         is_app_estimate = True
                 except:
                     pass
@@ -1273,6 +1275,10 @@ def main_app():
                         unit_cell = ws.cell(row=row, column=4).value
                         rate_cell = ws.cell(row=row, column=5).value
                         total_price_cell = ws.cell(row=row, column=6).value
+                        gst_cell = ws.cell(row=row, column=7).value if ws.max_column >= 7 else "Yes"  # Default to Yes if column doesn't exist
+                        
+                        # Check GST applicability
+                        gst_applicable = str(gst_cell).strip().lower() == "yes" if gst_cell else True  # Default to True if empty
                         
                         # Detect "Other" items in app-generated Excel
                         is_other_item = False
@@ -1305,7 +1311,8 @@ def main_app():
                                     'Total Price': qty * rate,
                                     'Type': 'Other',
                                     'Remarks': remarks,
-                                    'Subheading': current_subheading
+                                    'Subheading': current_subheading,
+                                    'GST_Applicable': gst_applicable
                                 })
                             except (ValueError, TypeError):
                                 items.append({
@@ -1316,7 +1323,8 @@ def main_app():
                                     'Total Price': 0,
                                     'Type': 'Other',
                                     'Remarks': "",
-                                    'Subheading': current_subheading
+                                    'Subheading': current_subheading,
+                                    'GST_Applicable': True
                                 })
                         else:
                             # Standard item processing
@@ -1333,7 +1341,8 @@ def main_app():
                                 'Total Price': total_price_cell,
                                 'Type': 'Standard',
                                 'Remarks': remarks,
-                                'Subheading': current_subheading
+                                'Subheading': current_subheading,
+                                'GST_Applicable': gst_applicable
                             })
                     else:
                         # Original processing for non-app Excel files
@@ -1374,7 +1383,8 @@ def main_app():
                             'Quantity': quantity,
                             'Remarks': remarks,
                             'Total Price': total_price,
-                            'Subheading': current_subheading
+                            'Subheading': current_subheading,
+                            'GST_Applicable': True  # Default to True for non-app estimates
                         })
                 
                 items_df = pd.DataFrame(items)
@@ -1404,6 +1414,7 @@ def main_app():
                             item_name = row['Item Name']
                             quantity = row['Quantity']
                             remarks = row.get('Remarks', '')
+                            gst_applicable = row.get('GST_Applicable', True)  # Default to True if not specified
                             
                             if row.get('Type') == 'Other':
                                 # Add "Other" item with all extracted values
@@ -1414,7 +1425,7 @@ def main_app():
                                     'Item Unit': str(row.get('Unit', '')),
                                     'Cost': float(row.get('Total Price', 0)),
                                     'Type': 'Other',
-                                    'GST_Applicable': True,
+                                    'GST_Applicable': gst_applicable,
                                     'Quantity_Remarks': remarks
                                 })
                                 added_count += 1
@@ -1431,7 +1442,7 @@ def main_app():
                                         'Item Unit': main_item['Item Unit'],
                                         'Cost': float(quantity) * main_item['Unit Price'],
                                         'Type': 'Standard',
-                                        'GST_Applicable': True,
+                                        'GST_Applicable': gst_applicable,
                                         'Quantity_Remarks': remarks
                                     })
                                     added_count += 1
@@ -1444,7 +1455,7 @@ def main_app():
                                         'Item Unit': "",
                                         'Cost': float(row.get('Total Price', 0)),
                                         'Type': 'Other',
-                                        'GST_Applicable': True,
+                                        'GST_Applicable': gst_applicable,
                                         'Quantity_Remarks': remarks
                                     })
                                     added_count += 1
@@ -1462,7 +1473,7 @@ def main_app():
         else:
             if st.button("✕ Cancel", key="cancel_upload_no_file", type="primary"):
                 st.session_state.show_upload = False
-                st.rerun()        
+                st.rerun()  
     # Show Subheading section if toggled on
     if st.session_state.get('adding_subheading', False):
         subheading = st.text_input("Enter Subheading", key="new_subheading")
