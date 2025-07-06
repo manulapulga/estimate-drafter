@@ -1768,6 +1768,8 @@ def main_app():
                   pdf.add_page()
                   add_watermark(pdf)
                   
+                  # In the PDF generation section, replace the work description and head note handling with this:
+
                   # Main content
                   pdf.set_font("Arial", 'B', 16)
                   pdf.set_text_color(0, 0, 0)
@@ -1778,12 +1780,13 @@ def main_app():
                   pdf.set_xy(pdf.w - 60, 15)  # Position at top right with some margin
                   pdf.multi_cell(50, 5, user_info, 0, 'R')  # Right-aligned multi-cell for multiple lines
                   
-                  # Center the main heading below the user info
-                  pdf.set_y(40)  # Move down a bit from top
+                  # Start work description below user info (with sufficient space)
+                  pdf.set_y(40)  # Move down from top
                   pdf.set_font("Arial", 'B', 16)
                   
                   # Process multi-line heading with proper line breaks
                   heading_lines = estimate_heading.split('\n')
+                  heading_height = 0
                   
                   for line in heading_lines:
                       # Calculate width of heading text
@@ -1800,27 +1803,33 @@ def main_app():
                               if pdf.get_string_width(test_line) < (pdf.w - 40):
                                   current_line = test_line
                               else:
+                                  # Draw the current line
                                   pdf.cell(200, 10, txt=current_line, ln=True, align='C')
+                                  heading_height += 10
                                   current_line = word
                           if current_line:
                               pdf.cell(200, 10, txt=current_line, ln=True, align='C')
+                              heading_height += 10
                       else:
                           # Single line if it fits
                           pdf.cell(200, 10, txt=line, ln=True, align='C')
+                          heading_height += 10
                   
-                  # Add head note if it exists
+                  # Calculate position for head note (after work description with some padding)
+                  head_note_y = pdf.get_y() + 10  # Add 10mm padding after work description
+                  
+                  # Add head note if it exists (only if we have space)
                   if hasattr(st.session_state, 'head_note') and st.session_state.head_note.strip():
                       try:
-                          # Define margins if not already defined
-                          if 'left_margin' not in locals():
-                              left_margin = 20
-                              right_margin = 20
-                              table_width = pdf.w - left_margin - right_margin
-                  
+                          # Define margins
+                          left_margin = 20
+                          right_margin = 20
+                          table_width = pdf.w - left_margin - right_margin
+                          
                           pdf.set_font("Arial", '', 10)
                           
-                          # Position below user info (adjust y-position as needed)
-                          pdf.set_y(60)
+                          # Position head note after work description
+                          pdf.set_y(head_note_y)
                           
                           # Calculate width for head note (same as table width)
                           head_note_width = table_width
