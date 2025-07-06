@@ -1302,7 +1302,7 @@ def main_app():
                                     'Quantity': qty,
                                     'Unit': unit,
                                     'Rate': rate,
-                                    'Total Price': total,
+                                    'Total Price': qty * rate,
                                     'Type': 'Other',
                                     'Remarks': remarks,
                                     'Subheading': current_subheading
