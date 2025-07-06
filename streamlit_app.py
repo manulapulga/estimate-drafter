@@ -250,10 +250,37 @@ def main_app():
                 -webkit-user-select: text !important;
                 user-select: text !important;
             }
+            .stTextArea textarea {
+                font-size: 16px !important;
+                line-height: 1.5 !important;
+                padding: 10px !important;
+                min-height: 100px !important;
+                resize: vertical !important;
+            }
         </style>
     """, unsafe_allow_html=True)
 
-    estimate_heading = st.text_input(" ", placeholder="Work Description", key="work_desc")
+    estimate_heading = st.text_area(
+        "Work Description", 
+        placeholder="Enter work description (press Enter for new lines)",
+        key="work_desc",
+        height=100  # Adjust height as needed
+    )
+    if 'head_note' not in st.session_state:  # Add this line
+        st.session_state.head_note = ""  
+    # Add this section for head note
+    st.markdown("<h3 style='text-align: center; color: #76b5c5; font-size: 125%;'>HEAD NOTE</h3>", unsafe_allow_html=True)
+    head_note_container = st.container()
+    with head_note_container:
+        st.session_state.head_note = st.text_area(
+            "Add a note to appear at the top of the estimate",
+            value=st.session_state.head_note,
+            key="head_note_input",
+            height=100,
+            max_chars=2000,
+            placeholder="Enter any special instructions or notes that should appear at the top of the estimate"
+        )
+    
     st.markdown("<h3 style='text-align: center; color: #76b5c5; font-size: 125%;'>ADD ITEMS TO ESTIMATE</h3>", unsafe_allow_html=True)
 
     # Initialize session state
@@ -1526,23 +1553,16 @@ def main_app():
                 st.session_state.estimate_note = ""
             
             # Add note input area with increased limit
-            st.subheader("Estimate Note")
+            st.subheader("Foot Note")
             note_container = st.container()
             with note_container:
                 st.session_state.estimate_note = st.text_area(
-                    "Add a note to appear in the estimate (max 1000 words)",
+                    "Add a note to appear at the bottm of the estimate",
                     value=st.session_state.estimate_note,
                     key="estimate_note_input",
                     height=150,
                     max_chars=7000,  # Approx 1000 words
-                    help="You can paste text into this field (Ctrl+V). Maximum 1000 words allowed."
                 )
-                
-                # Add a word counter
-                word_count = len(st.session_state.estimate_note.split())
-                st.caption(f"Word count: {word_count}/1000 ({(word_count/1000)*100:.1f}%)")
-                if word_count > 1000:
-                    st.warning("Note exceeds 1000 word limit. Please shorten your note.")
             
         
         # File generation buttons
@@ -1643,6 +1663,7 @@ def main_app():
                   from fpdf import FPDF
               
                   pdf = FPDF()
+                  pdf.set_auto_page_break(auto=True, margin=15)
                   
                   def add_watermark(pdf):
                       """Function to add a diagonal watermark to every page"""
@@ -1673,6 +1694,8 @@ def main_app():
                       
                       pdf.set_text_color(0, 0, 0)  # Black color for the main content
                   
+                  # Replace the PDF head note section with this more robust version:
+
                   pdf.set_auto_page_break(auto=True, margin=15)
                   pdf.add_page()
                   add_watermark(pdf)
@@ -1691,33 +1714,81 @@ def main_app():
                   pdf.set_y(40)  # Move down a bit from top
                   pdf.set_font("Arial", 'B', 16)
                   
-                  # Calculate width of heading text
-                  heading_width = pdf.get_string_width(estimate_heading)
+                  # Process multi-line heading with proper line breaks
+                  heading_lines = estimate_heading.split('\n')
                   
-                  # If heading is too wide for page (with 20mm margins on each side)
-                  if heading_width > (pdf.w - 40):
-                      # Split heading into multiple lines
-                      words = estimate_heading.split()
-                      lines = []
-                      current_line = ""
+                  for line in heading_lines:
+                      # Calculate width of heading text
+                      heading_width = pdf.get_string_width(line)
                       
-                      for word in words:
-                          test_line = f"{current_line} {word}" if current_line else word
-                          if pdf.get_string_width(test_line) < (pdf.w - 40):
-                              current_line = test_line
-                          else:
-                              lines.append(current_line)
-                              current_line = word
-                      if current_line:
-                          lines.append(current_line)
-                      
-                      # Write each line centered
-                      for line in lines:
+                      # If line is too wide for page (with 20mm margins on each side)
+                      if heading_width > (pdf.w - 40):
+                          # Split long lines into multiple lines
+                          words = line.split()
+                          current_line = ""
+                          
+                          for word in words:
+                              test_line = f"{current_line} {word}" if current_line else word
+                              if pdf.get_string_width(test_line) < (pdf.w - 40):
+                                  current_line = test_line
+                              else:
+                                  pdf.cell(200, 10, txt=current_line, ln=True, align='C')
+                                  current_line = word
+                          if current_line:
+                              pdf.cell(200, 10, txt=current_line, ln=True, align='C')
+                      else:
+                          # Single line if it fits
                           pdf.cell(200, 10, txt=line, ln=True, align='C')
-                  else:
-                      # Single line if it fits
-                      pdf.cell(200, 10, txt=estimate_heading, ln=True, align='C')
-              
+                  
+                  # Add head note if it exists
+                  if hasattr(st.session_state, 'head_note') and st.session_state.head_note.strip():
+                      try:
+                          # Define margins if not already defined
+                          if 'left_margin' not in locals():
+                              left_margin = 20
+                              right_margin = 20
+                              table_width = pdf.w - left_margin - right_margin
+                  
+                          pdf.set_font("Arial", '', 10)
+                          
+                          # Position below user info (adjust y-position as needed)
+                          pdf.set_y(60)
+                          
+                          # Calculate width for head note (same as table width)
+                          head_note_width = table_width
+                          
+                          # First calculate height needed
+                          pdf.set_x(left_margin)
+                          test_lines = pdf.multi_cell(
+                              w=head_note_width,
+                              h=5,
+                              txt=st.session_state.head_note,
+                              split_only=True
+                          )
+                          head_note_height = 5 * len(test_lines)
+                          
+                          # Check if we need a new page
+                          if pdf.get_y() + head_note_height > pdf.h - 30:
+                              pdf.add_page()
+                              add_watermark(pdf)
+                              pdf.set_y(40)  # Reset Y position after new page
+                          
+                          # Draw head note box with border
+                          pdf.set_x(left_margin)
+                          pdf.multi_cell(
+                              w=head_note_width,
+                              h=5,
+                              txt=st.session_state.head_note,
+                              border=1,
+                              align='L'
+                          )
+                          
+                          # Add space after head note
+                          pdf.ln(10)
+                          
+                      except Exception as e:
+                          st.error(f"Error adding head note to PDF: {str(e)}")
+                  
                   # Define column widths
                   col_widths = [10, 70, 20, 20, 20, 30]
                   headers = ["Sl.No", "Item Name", "Qty", "Unit", "Rate", "Total"]
