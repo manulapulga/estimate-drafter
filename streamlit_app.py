@@ -213,7 +213,6 @@ def main_app():
             }
             .estimate-item {
                 margin-bottom: 1rem;
-                padding: 1rem;
                 border-radius: 0.5rem;
                 background-color: #f8f9fa;
             }
