@@ -16,16 +16,18 @@ def show_item_wizard(items_df, add_callback, selected_items=None):
     st.markdown("""
     <style>
         .wizard-container {
-            border-top: 1px solid #ddd;
-            padding: 1rem;
-            margin: 1rem 0;
-            background-color: #f8f9fa;
+            border-top: 1.5px solid #21d6d7eb;
+            padding: 0rem;
+            margin: 0rem 0;
+            background-color: #21d6d7eb;
+            border-radius: 0px;
         }
         .filter-section {
-            background-color: #f0f2f6;
-            padding: 0.5rem;
-            border-radius: 0.3rem;
-            margin-bottom: 0.5rem;
+            border-top: 1.5px solid #21d6d7eb;
+            padding: 0rem;
+            margin: 0rem 0;
+            background-color: #21d6d7eb;
+            border-radius: 0px;
         }
         .filter-header {
             font-weight: bold;
