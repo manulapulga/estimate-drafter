@@ -23,7 +23,7 @@ def show_item_wizard(items_df, add_callback, selected_items=None):
             border-radius: 0px;
         }
         .filter-section {
-            border-top: 1.5px solid #ddd;
+            border-top: 0px solid #ddd;
             padding: 0rem;
             margin: 0rem 0;
             background-color: #ddd;
