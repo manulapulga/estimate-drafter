@@ -257,6 +257,24 @@ def main_app():
                 min-height: 100px !important;
                 resize: vertical !important;
             }
+            /* Remove +/- buttons from number input */
+            input[type=number]::-webkit-inner-spin-button, 
+            input[type=number]::-webkit-outer-spin-button { 
+                -webkit-appearance: none;
+                margin: 0; 
+            }
+            input[type=number] {
+                -moz-appearance: textfield;
+            }
+            
+            /* Narrow number input */
+            .narrow-number-input {
+                width: 150px !important;
+            }
+            /* Apply to all number inputs */
+            div[data-baseweb="input"] input {
+                width: 150px !important;
+            }
         </style>
     """, unsafe_allow_html=True)
 
@@ -307,6 +325,10 @@ def main_app():
     # Add this with your other session state initializations
     if 'show_preview' not in st.session_state:
         st.session_state.show_preview = False
+    if 'manual_final_total' not in st.session_state:
+        st.session_state.manual_final_total = None
+    if 'edit_final_total' not in st.session_state:
+        st.session_state.edit_final_total = False    
         
     # Functions
     def update_all_items():
@@ -386,8 +408,7 @@ def main_app():
 
 
     def calculate_totals(manual_unforeseen=None):
-        """
-        Calculate totals with manual unforeseen input
+        """Calculate totals with manual unforeseen input
         Defaults to 2.5% of (total_cost + gst) if not provided
         Final total is rounded to next 100
         """
@@ -419,9 +440,12 @@ def main_app():
         # Ensure unforeseen doesn't exceed 2.5% of total + gst
         unforeseen = min(unforeseen, base_unforeseen)
         
-        # Calculate final total and round up to next 1000
-        final_total = total_cost + gst + unforeseen
-        final_total = math.ceil(final_total / 100) * 100  # Round up to next 1000
+        # Calculate final total and round up to next 100
+        if st.session_state.get('edit_final_total', False) and st.session_state.get('manual_final_total') is not None:
+            final_total = st.session_state.manual_final_total
+        else:
+            final_total = total_cost + gst + unforeseen
+            final_total = math.ceil(final_total / 100) * 100  # Round up to next 100
         
         return int(total_cost), int(gst), int(unforeseen), int(final_total)
 
@@ -1589,7 +1613,7 @@ def main_app():
         st.write(f"GST (18% on taxable items): ₹{gst:,.2f}")
         
         # Create columns to control the input field width
-        col1, col2 = st.columns([1, 3])  # Adjust ratio to change width
+        col1, col2 = st.columns([1, 3])
         
         with col1:
             # Text input for unforeseen amount with reduced width
@@ -1598,10 +1622,6 @@ def main_app():
                 value=f"{st.session_state.unforeseen_amount:,.2f}",
                 key="unforeseen_input"
             )
-        
-        # Add ₹ symbol in a separate column for better alignment
-        with col2:
-            st.markdown("<div style='padding-top: 1.5rem;'></div>", unsafe_allow_html=True)
         
         # Process and validate input
         try:
@@ -1622,7 +1642,71 @@ def main_app():
         # Calculate final totals with the validated amount
         total_cost, gst, unforeseen, final_total = calculate_totals(int(unforeseen_amount))
         
-        st.write(f"Final Total (rounded to next ₹100): ₹{final_total:,.2f}")
+        # Add toggle for manual final total
+        col1, col2,col3 = st.columns([2, 2, 2])
+        with col1:
+            st.write(f"Final Total (rounded to next ₹100): ₹{final_total:,.2f}")
+        with col2:
+            # Toggle button for manual edit
+            st.session_state.edit_final_total = st.toggle(
+                "Edit Final Total", 
+                value=st.session_state.get('edit_final_total', False),
+                key="edit_final_total_toggle"
+            )
+        
+        # Handle manual final total input
+        if st.session_state.edit_final_total:
+            # Create columns to control layout
+            col1, col2 = st.columns([1, 3])
+            
+            with col1:
+                # Calculate minimum allowed total (subtotal + GST rounded up)
+                min_total = math.ceil((total_cost + gst) / 100) * 100
+                
+                # Create a text input styled as narrow (without +/- buttons)
+                manual_total_str = st.text_input(
+                    "Enter Final Total (₹)",
+                    value=f"{final_total:,.0f}",
+                    key="manual_final_total_input",
+                    help=f"Minimum: ₹{min_total:,.0f}, Maximum: ₹{math.ceil((total_cost + gst + max_unforeseen) / 100) * 100:,.0f}"
+                )
+                
+                try:
+                    # Parse the input (remove commas and convert to float)
+                    manual_total = float(manual_total_str.replace(',', ''))
+                    
+                    # Round to nearest 100
+                    manual_total = math.ceil(manual_total / 100) * 100
+                    
+                    # Validate range
+                    if manual_total < min_total:
+                        st.warning(f"Total cannot be less than ₹{min_total:,.0f}")
+                        manual_total = min_total
+                    elif manual_total > (total_cost + gst + max_unforeseen):
+                        st.warning(f"Total cannot exceed ₹{math.ceil((total_cost + gst + max_unforeseen) / 100) * 100:,.0f}")
+                        manual_total = math.ceil((total_cost + gst + max_unforeseen) / 100) * 100
+                    
+                    if manual_total != final_total:
+                        # Calculate new unforeseen based on manual total
+                        new_unforeseen = manual_total - (total_cost + gst)
+                        
+                        # Update values
+                        unforeseen = new_unforeseen
+                        final_total = manual_total
+                        st.session_state.unforeseen_amount = new_unforeseen
+                        st.session_state.manual_final_total = manual_total
+                        
+                except ValueError:
+                    st.error("Please enter a valid number")
+                    manual_total = final_total
+        else:
+            # Reset to calculated total when toggle is off
+            if st.session_state.manual_final_total is not None:
+                st.session_state.manual_final_total = None
+            final_total = math.ceil((total_cost + gst + unforeseen) / 100) * 100
+        
+        # Display the final total (either manual or calculated)
+        st.write(f"Final Total: ₹{final_total:,.2f}")
         
        
         # Replace the existing note input section with this:
