@@ -2070,14 +2070,18 @@ def main_app():
                               qty_text = f"{item.get('Quantity', '-')} ({remark})"
                           else:
                               qty_text = f"{item.get('Quantity', '-')}"
+                      # Replace it with this:
                       else:
                           rate_text = f"{item['Unit Price']:.2f}"
                           unit_text = item['Item Unit']
                           remark = item.get('Quantity_Remarks', '')
+                          # Format quantity to remove trailing zeros
+                          qty_value = item['Quantity']
+                          qty_str = f"{qty_value:.4f}".rstrip('0').rstrip('.') if '.' in f"{qty_value:.4f}" else f"{qty_value}"
                           if remark:
-                              qty_text = f"{item['Quantity']:.4f} ({remark})"
+                              qty_text = f"{qty_str} ({remark})"
                           else:
-                              qty_text = f"{item['Quantity']:.4f}"
+                              qty_text = qty_str
                       
                       total_text = f"{item['Cost']:.2f}"
                       if not gst_applicable:
