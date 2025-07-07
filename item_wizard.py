@@ -16,8 +16,7 @@ def show_item_wizard(items_df, add_callback, selected_items=None):
     st.markdown("""
     <style>
         .wizard-container {
-            border: 1px solid #ddd;
-            border-radius: 0.5rem;
+            border-top: 1px solid #ddd;
             padding: 1rem;
             margin: 1rem 0;
             background-color: #f8f9fa;
