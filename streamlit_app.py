@@ -181,6 +181,14 @@ def main_app():
     item_names, unit_prices, item_units, data = load_main_items(username)
     wizard_data = load_wizard_items(username)
     
+    # Handle clear all functionality using new query_params API
+    if st.query_params.get("clear_all", "") == "true":
+        st.session_state.work_desc = st.query_params.get("work_desc", "")
+        st.session_state.head_note = st.query_params.get("head_note", "")
+        st.session_state.estimate_note = st.query_params.get("estimate_note", "")
+        st.query_params.clear()  # Clear the query params after use
+        
+    
     # UI for Estimate Drafting with updated styles
     st.markdown("<h1 style='text-align: center; color: #154c79;'>ESTIMATE DRAFTER</h1>", unsafe_allow_html=True)
     username = st.session_state.logged_in_username
@@ -2162,6 +2170,31 @@ def main_app():
                       pdf.set_y(y_row_start + row_height)
                       serial += 1
               
+                  # === STEP 1: Estimate dynamic content height ===
+
+                  note_height = 0
+                  if 'estimate_note' in st.session_state and st.session_state.estimate_note.strip():
+                      pdf.set_font("Arial", '', 9)
+                      note_lines = pdf.multi_cell(0, 5, st.session_state.estimate_note, split_only=True)
+                      note_height = 5 * len(note_lines) + 2  # +2mm padding
+                  
+                  # Fixed content heights
+                  summary_height = 4 * 8  # 4 summary rows
+                  amount_words_height = 8
+                  isi_clause_height = 8
+                  signature_height = 35
+                  padding = 10  # buffer space before signature
+                  
+                  # Total content to print
+                  total_block_height = summary_height + amount_words_height + isi_clause_height + note_height + signature_height + padding
+                  
+                  # === STEP 2: Check space available ===
+                  available_space = pdf.h - pdf.get_y() - 20  # 20mm bottom margin
+                  if available_space < total_block_height:
+                      pdf.add_page()
+                      add_watermark(pdf)
+                      pdf.ln(10)  # optional margin on new page
+
                   # Summary Section
                   false_unforeseen = final_total - (total_cost + gst)
               
@@ -2239,35 +2272,48 @@ def main_app():
                       
                       # Reset font for remaining content
                       pdf.set_font("Arial", '', 10)
-                  # Signature Area
-                  if pdf.get_y() + 30 > pdf.h - 30:  # Increased buffer for signature block
+                      
+                      
+                  # Signature Area (Immediately after last content)
+                  pdf.ln(50)  # Add vertical space after last content, adjust if needed
+                  
+                  # Capture current Y after all previous content (note or ISI clause)
+                  signature_y = pdf.get_y()
+                  
+                  # Check if enough space is available; otherwise, start on a new page
+                  if signature_y + 35 > pdf.h - 20:  # 35mm height needed, 20mm bottom margin
                       pdf.add_page()
+                      add_watermark(pdf)
+                      signature_y = pdf.get_y()
                   
                   # Signature labels with equal spacing
-                  pdf.set_font("Arial", 'B', 10)  # Smaller font size to fit all three
+                  pdf.set_font("Arial", 'B', 10)
                   
                   # Assistant Engineer (Left)
-                  pdf.set_xy(20, pdf.h - 40)  # Left position
+                  pdf.set_xy(20, signature_y)
                   pdf.cell(50, 5, "Assistant Engineer", ln=True, align='C')
-                  pdf.set_xy(20, pdf.h - 35)
+                  pdf.set_xy(20, signature_y + 5)
                   pdf.cell(50, 5, "(Seal & Signature)", ln=True, align='C')
                   
                   # Assistant Executive Engineer (Center)
-                  pdf.set_xy(pdf.w/2 - 25, pdf.h - 40)  # Center position
+                  center_x = pdf.w/2 - 25
+                  pdf.set_xy(center_x, signature_y)
                   pdf.cell(50, 5, "Assistant Executive Engineer", ln=True, align='C')
-                  pdf.set_xy(pdf.w/2 - 25, pdf.h - 35)
+                  pdf.set_xy(center_x, signature_y + 5)
                   pdf.cell(50, 5, "(Seal & Signature)", ln=True, align='C')
                   
                   # District Officer (Right)
-                  pdf.set_xy(pdf.w - 70, pdf.h - 40)  # Right position
+                  right_x = pdf.w - 70
+                  pdf.set_xy(right_x, signature_y)
                   pdf.cell(50, 5, "District Officer", ln=True, align='C')
-                  pdf.set_xy(pdf.w - 70, pdf.h - 35)
+                  pdf.set_xy(right_x, signature_y + 5)
                   pdf.cell(50, 5, "(Seal & Signature)", ln=True, align='C')
                   
                   # Add horizontal line above signatures
                   pdf.set_line_width(0.5)
-                  pdf.line(20, pdf.h - 45, pdf.w - 20, pdf.h - 45)
-              
+                  pdf.line(20, signature_y - 5, pdf.w - 20, signature_y - 5)
+          
+
                   
                   # Save and offer download
                   pdf_file = "estimate.pdf"
@@ -2293,7 +2339,16 @@ def main_app():
                 st.session_state.show_wizard = False
                 st.session_state.show_add_item = False
                 st.session_state.show_add_other = False
+                # Use st.query_params to clear the fields
+                st.query_params.clear()
+                st.query_params.update({
+                    "clear_all": "true",
+                    "work_desc": "",
+                    "head_note": "",
+                    "estimate_note": ""
+                })
                 st.rerun()
+              
         with col5:
             if st.button("🔁 Update All", key="update_all", 
                         help="Update all items with current values"):
