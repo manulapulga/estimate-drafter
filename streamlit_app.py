@@ -734,7 +734,7 @@ def main_app():
                     
                     with col1b:
                         st.markdown("<div style='height:28px;'></div>", unsafe_allow_html=True)
-                        if st.button("🔍 Smart Filter", key=f"smart_filter_{idx}"):
+                        if st.button("🔍 Smart Filter View", key=f"smart_filter_{idx}"):
                             st.session_state.show_wizard_for_edit = idx  # Track which item we're editing
                             st.session_state.show_wizard = True
                             st.rerun()
@@ -836,7 +836,7 @@ def main_app():
     # Add New Item or Subheading buttons
     button_col1, button_col2, button_col3, button_col4, button_col5, button_col6, button_col7 = st.columns([2, 2, 2, 2, 2, 2, 2])
     with button_col6:
-        if st.button("🔽 Add from List", key="add_item_btn"):
+        if st.button("🔽 Add from Dropdown List", key="add_item_btn"):
             # Toggle add item section and hide others
             st.session_state.show_add_item = not st.session_state.get('show_add_item', False)
             st.session_state.show_wizard = False
@@ -847,7 +847,7 @@ def main_app():
             st.session_state.show_local_templates = False
             st.rerun()
     with button_col1:
-        if st.button("🔍 Smart Filter", key="open_wizard"):
+        if st.button("🔍 Smart Filter View", key="open_wizard"):
             # Toggle wizard and hide others
             st.session_state.show_wizard = not st.session_state.get('show_wizard', False)
             st.session_state.show_add_item = False
@@ -869,7 +869,7 @@ def main_app():
             st.session_state.show_local_templates = False
             st.rerun()
     with button_col5:
-        if st.button("🧩 Add Other", key="add_other_btn", type="secondary", 
+        if st.button("🧩 Add Custom Items", key="add_other_btn", type="secondary", 
                     help="Add custom items not in database"):
             # Toggle other items section and hide others
             st.session_state.show_add_other = not st.session_state.get('show_add_other', False)
@@ -892,7 +892,7 @@ def main_app():
             st.rerun()
     with button_col3:
         # Replace your existing upload button with this:
-        if st.button("⬆️ Upload Excel", key="show_upload_btn"):
+        if st.button("⬆️ Upload Excel File", key="show_upload_btn"):
             st.session_state.show_upload = not st.session_state.get('show_upload', False)
             st.session_state.show_templates = False
             st.session_state.show_add_item = False
@@ -1728,7 +1728,7 @@ def main_app():
             
         
         # File generation buttons
-        col1, col2, col3, col4, col5 = st.columns([2, 2, 1, 1, 1])  # Added a 4th column for preview
+        col1, col2, col3, col4, col5 = st.columns([1, 1, 1, 1, 1])  # Added a 4th column for preview
         with col1:
             if st.button("📄 Generate Excel", key="generate_excel"):
                 wb = Workbook()
@@ -2268,6 +2268,7 @@ def main_app():
                   pdf.set_line_width(0.5)
                   pdf.line(20, pdf.h - 45, pdf.w - 20, pdf.h - 45)
               
+                  
                   # Save and offer download
                   pdf_file = "estimate.pdf"
                   pdf.output(pdf_file)
