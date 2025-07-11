@@ -1927,7 +1927,7 @@ def main_app():
                         key="download_excel"
                     )
         with col2:
-            if st.button("Generate PDF File"):
+            if st.button("📄 Generate PDF File"):
                 from fpdf import FPDF
             
                 pdf = FPDF()
