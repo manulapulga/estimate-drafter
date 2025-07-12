@@ -2326,7 +2326,7 @@ def main_app():
                     # Move to next line
                     pdf.set_y(y + row_height)
                 
-                # Add amount in words (merged row)
+                 # Add amount in words (merged row)
                 row_height = 8
                 if pdf.get_y() + row_height > pdf.h - 30:
                     pdf.add_page()
@@ -2335,7 +2335,35 @@ def main_app():
                 # Set x position to left margin to center the cell
                 pdf.set_x(left_margin)
                 pdf.set_font("Arial", 'B', 10)
-                pdf.cell(table_width, row_height, "Amount in Words: " + num2words(int(round(float(final_total))), lang='en_IN').title() + " Rupees Only", border=1, ln=1, align='C')
+                
+                # Calculate the amount in words
+                amount_words = "Amount in Words: " + num2words(int(round(float(final_total))), lang='en_IN').title() + " Rupees Only"
+                
+                # First calculate how many lines we need
+                test_lines = pdf.multi_cell(
+                    w=table_width,
+                    h=6,  # line height
+                    txt=amount_words,
+                    split_only=True
+                )
+                lines_needed = len(test_lines)
+                required_height = 6 * lines_needed  # 6mm per line
+                
+                # Check if we need more space
+                if pdf.get_y() + required_height > pdf.h - 30:
+                    pdf.add_page()
+                    add_watermark(pdf)
+                    pdf.set_x(left_margin)
+                
+                # Now actually draw the cell with the correct height
+                pdf.multi_cell(
+                    w=table_width,
+                    h=6,  # line height
+                    txt=amount_words,
+                    border=1,
+                    ln=1,  # move to next line after
+                    align='C'
+                )
                 
                 # Add ISI standards note (merged row)
                 pdf.set_x(left_margin)  # Set x position to left margin to center the cell
