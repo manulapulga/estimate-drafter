@@ -368,9 +368,11 @@ def main_app():
     if 'edit_final_total' not in st.session_state:
         st.session_state.edit_final_total = False
     if 'rounding_option' not in st.session_state:
-        st.session_state.rounding_option = "1000"  # Default to round to 1000
+        st.session_state.rounding_option = "none"  # Default to round to 100
     if 'edit_final_total_toggle' not in st.session_state:
         st.session_state.edit_final_total_toggle = False
+    if 'unforeseen_amount' not in st.session_state:
+        st.session_state.unforeseen_amount = 0
 
         
     # Functions
