@@ -186,19 +186,6 @@ def login_page(credentials_df):
         </p>
     </div>
     """, unsafe_allow_html=True)
-def set_rounding_option(option):
-    st.session_state.rounding_option = option
-    # Uncheck other options
-    if option == "100":
-        st.session_state.round_1000_checkbox = False
-        st.session_state.round_none_checkbox = False
-    elif option == "1000":
-        st.session_state.round_100_checkbox = False
-        st.session_state.round_none_checkbox = False
-    else:  # "none"
-        st.session_state.round_100_checkbox = False
-        st.session_state.round_1000_checkbox = False
-    st.rerun()
 # Main app
 def main_app():
     # Load data
@@ -366,14 +353,7 @@ def main_app():
     if 'manual_final_total' not in st.session_state:
         st.session_state.manual_final_total = None
     if 'edit_final_total' not in st.session_state:
-        st.session_state.edit_final_total = False
-    if 'rounding_option' not in st.session_state:
-        st.session_state.rounding_option = "none"  # Default to round to 100
-    if 'edit_final_total_toggle' not in st.session_state:
-        st.session_state.edit_final_total_toggle = False
-    if 'unforeseen_amount' not in st.session_state:
-        st.session_state.unforeseen_amount = 0
-
+        st.session_state.edit_final_total = False    
         
     # Functions
     def update_all_items():
@@ -485,16 +465,12 @@ def main_app():
         # Ensure unforeseen doesn't exceed 2.5% of total + gst
         unforeseen = min(unforeseen, base_unforeseen)
         
-        # Replace the rounding line with:
+        # Calculate final total and round up to next 100
         if st.session_state.get('edit_final_total', False) and st.session_state.get('manual_final_total') is not None:
             final_total = st.session_state.manual_final_total
         else:
             final_total = total_cost + gst + unforeseen
-            if st.session_state.rounding_option == "100":
-                final_total = math.ceil(final_total / 100) * 100
-            elif st.session_state.rounding_option == "1000":
-                final_total = math.ceil(final_total / 1000) * 1000
-            # If "none" is selected, no rounding is applied
+            final_total = math.ceil(final_total / 100) * 100  # Round up to next 100
         
         return int(total_cost), int(gst), int(unforeseen), int(final_total)
 
@@ -1688,15 +1664,22 @@ def main_app():
         st.write(f"GST (18% on taxable items): ₹{gst:,.2f}")
         
         # Create columns to control the input field width
-        col1, col2, col3 = st.columns([6, 1, 17])  # Slightly adjusted column widths
+        col1, col2, col3 = st.columns([1, 1, 2])  # Slightly adjusted column widths
 
         with col1:
             unforeseen_input = st.text_input(
                 f"Unforeseen (max 2.5%): ₹{max_unforeseen:,.2f}",
                 value=f"{st.session_state.unforeseen_amount:,.2f}",
-                key="unforeseen_input",
-                disabled=st.session_state.edit_final_total
+                key="unforeseen_input"
             )
+        
+        with col2:
+            st.markdown("<div style='margin-top: 1.75em'></div>", unsafe_allow_html=True)  # Push button down
+            if st.button("🔁", key="reset_unforeseen"):
+                st.session_state.unforeseen_amount = round(max_unforeseen, 2)
+                st.session_state.manual_final_total = None  # Optional
+                st.rerun()
+        
         
         # Process and validate input
         try:
@@ -1717,54 +1700,17 @@ def main_app():
         # Calculate final totals with the validated amount
         total_cost, gst, unforeseen, final_total = calculate_totals(int(unforeseen_amount))
         
-        # Final Total Settings
-        st.write("Final Total Settings:")
-        rounding_col1, rounding_col2, rounding_col3, rounding_col4 = st.columns([1, 1, 1, 6])
-        
-        # Handle toggle switch for editing final total
-        # Replace the existing toggle section with this:
-        with rounding_col1:
-            edit_mode = st.toggle(
+        # Add toggle for manual final total
+        col1, col2,col3 = st.columns([2, 2, 2])
+        with col1:
+            st.write(f"Final Total (rounded to next ₹100): ₹{final_total:,.2f}")
+        with col2:
+            # Toggle button for manual edit
+            st.session_state.edit_final_total = st.toggle(
                 "Edit Final Total", 
                 value=st.session_state.get('edit_final_total', False),
                 key="edit_final_total_toggle"
             )
-            
-            # Update session state immediately when toggle changes
-            if edit_mode != st.session_state.get('edit_final_total', False):
-                st.session_state.edit_final_total = edit_mode
-                st.session_state.rounding_option = "none" if edit_mode else "100"  # Default to 100 when not editing
-                st.rerun()
-        
-        # Hide or show rounding options based on toggle
-        if not st.session_state.edit_final_total:
-            with rounding_col2:
-                st.checkbox(
-                    "Round to ₹100",
-                    value=st.session_state.rounding_option == "100",
-                    key="round_100_checkbox",
-                    on_change=lambda: set_rounding_option("100") if st.session_state.round_100_checkbox else None
-                )
-            with rounding_col3:
-                st.checkbox(
-                    "Round to ₹1000",
-                    value=st.session_state.rounding_option == "1000",
-                    key="round_1000_checkbox",
-                    on_change=lambda: set_rounding_option("1000") if st.session_state.round_1000_checkbox else None
-                )
-            with rounding_col4:
-                st.checkbox(
-                    "No Rounding",
-                    value=st.session_state.rounding_option == "none",
-                    key="round_none_checkbox",
-                    on_change=lambda: set_rounding_option("none") if st.session_state.round_none_checkbox else None
-                )
-        else:
-            # If toggled ON, force rounding to 'none' and disable checkboxes
-            st.session_state.rounding_option = "none"
-            st.session_state.round_100_checkbox = False
-            st.session_state.round_1000_checkbox = False
-            st.session_state.round_none_checkbox = True
         
         # Handle manual final total input
         if st.session_state.edit_final_total:
@@ -1812,7 +1758,8 @@ def main_app():
             # Reset to calculated total when toggle is off
             if st.session_state.manual_final_total is not None:
                 st.session_state.manual_final_total = None
-
+            final_total = math.ceil((total_cost + gst + unforeseen) / 100) * 100
+        
         # Display the final total (either manual or calculated)
         st.write(f"Final Total: ₹{final_total:,.2f}")
         
@@ -1901,11 +1848,12 @@ def main_app():
             
                 false_unforeseen = final_total - (total_cost + gst)
                 
+                # Add totals
                 for label, val in [
                     ("Subtotal", total_cost),
                     ("GST (18%)", gst),
                     ("Unforeseen", false_unforeseen),
-                    (f"Grand Total", final_total)
+                    ("Grand Total Rounded to Next 100", final_total)
                 ]:
                     ws.merge_cells(f'A{row_num}:E{row_num}')
                     ws[f'A{row_num}'] = label
@@ -2352,7 +2300,7 @@ def main_app():
                     ("Subtotal", f"{total_cost:.2f}"),
                     ("GST (18%)", f"{gst:.2f}"),
                     ("Unforeseen", f"{false_unforeseen:.2f}"),
-                    (f"Grand Total", f"{final_total:.2f}")
+                    ("Grand Total Rounded to Next 100", f"{final_total:.2f}")
                 ]
             
                 for label, value in summary_data:
@@ -2387,35 +2335,7 @@ def main_app():
                 # Set x position to left margin to center the cell
                 pdf.set_x(left_margin)
                 pdf.set_font("Arial", 'B', 10)
-                
-                # Calculate the amount in words
-                amount_words = "Amount in Words: " + num2words(int(round(float(final_total))), lang='en_IN').title() + " Rupees Only"
-                
-                # First calculate how many lines we need
-                test_lines = pdf.multi_cell(
-                    w=table_width,
-                    h=6,  # line height
-                    txt=amount_words,
-                    split_only=True
-                )
-                lines_needed = len(test_lines)
-                required_height = 6 * lines_needed  # 6mm per line
-                
-                # Check if we need more space
-                if pdf.get_y() + required_height > pdf.h - 30:
-                    pdf.add_page()
-                    add_watermark(pdf)
-                    pdf.set_x(left_margin)
-                
-                # Now actually draw the cell with the correct height
-                pdf.multi_cell(
-                    w=table_width,
-                    h=6,  # line height
-                    txt=amount_words,
-                    border=1,
-                    ln=1,  # move to next line after
-                    align='C'
-                )
+                pdf.cell(table_width, row_height, "Amount in Words: " + num2words(int(round(float(final_total))), lang='en_IN').title() + " Rupees Only", border=1, ln=1, align='C')
                 
                 # Add ISI standards note (merged row)
                 pdf.set_x(left_margin)  # Set x position to left margin to center the cell
