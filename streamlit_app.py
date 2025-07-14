@@ -34,7 +34,10 @@ def break_long_words(text, max_length=8):
         for word in text.split()
     ])
 
-
+def force_refresh():
+    st.session_state._force_refresh = not st.session_state.get("_force_refresh", False)
+    st.rerun()  # Immediately rerun app
+  
 def toggle_section(section_key):
     """Toggle a section and properly collapse all others"""
     # Get current state of the clicked section
@@ -186,6 +189,24 @@ def login_page(credentials_df):
         </p>
     </div>
     """, unsafe_allow_html=True)
+def set_rounding_option(option):
+    """Handle mutually exclusive rounding options"""
+    if option == 'manual':
+        st.session_state.edit_final_total = True
+        st.session_state.rounding_option = None
+    else:
+        st.session_state.edit_final_total = False
+        st.session_state.rounding_option = option
+    
+    # Uncheck all other options
+    for opt in ['1000', '100', 'none', 'manual']:
+        if opt != option:
+            key = f"{opt}_cb" if opt != 'manual' else "manual_edit_cb"
+            if key in st.session_state:
+                st.session_state[key] = False
+    
+    # Force immediate update
+    st.rerun()    
 # Main app
 def main_app():
     # Load data
@@ -299,6 +320,17 @@ def main_app():
             /* Apply to all number inputs */
             div[data-baseweb="input"] input {
                 width: 150px !important;
+            }
+            /* Style for rounding option checkboxes */
+            div[data-testid="stHorizontalBlock"] > div {
+                padding: 0 5px;
+            }
+            div[data-testid="stHorizontalBlock"] label {
+                font-size: 14px !important;
+                white-space: nowrap;
+            }
+            div[data-testid="stHorizontalBlock"] .stCheckbox {
+                margin-bottom: 0 !important;
             }
         </style>
     """, unsafe_allow_html=True)
@@ -466,11 +498,21 @@ def main_app():
         unforeseen = min(unforeseen, base_unforeseen)
         
         # Calculate final total and round up to next 100
-        if st.session_state.get('edit_final_total', False) and st.session_state.get('manual_final_total') is not None:
+        # Rounding logic
+        if st.session_state.edit_final_total and st.session_state.manual_final_total is not None:
             final_total = st.session_state.manual_final_total
         else:
             final_total = total_cost + gst + unforeseen
-            final_total = math.ceil(final_total / 100) * 100  # Round up to next 100
+        
+            # Apply rounding
+            rounding = st.session_state.get('rounding_option', '1000')  # default
+            if rounding == 'none':
+                final_total = int(final_total)
+            elif rounding == '100':
+                final_total = math.ceil(final_total / 100) * 100
+            elif rounding == '1000':
+                final_total = math.ceil(final_total / 1000) * 1000
+        
         
         return int(total_cost), int(gst), int(unforeseen), int(final_total)
 
@@ -860,9 +902,9 @@ def main_app():
                         except ValueError:
                             st.error("Please enter a valid number.")        
     # Add New Item or Subheading buttons
-    button_col1, button_col2, button_col3, button_col4, button_col5, button_col6, button_col7 = st.columns([2, 2, 2, 2, 2, 2, 2])
+    button_col1, button_col2, button_col3, button_col4, button_col5, button_col6, button_col7,button_col8  = st.columns([2, 2, 2, 2, 2, 2, 2, 2])
     with button_col6:
-        if st.button("🔽 Add from Dropdown List", key="add_item_btn"):
+        if st.button("🔽 Add from Dropdown", key="add_item_btn"):
             # Toggle add item section and hide others
             st.session_state.show_add_item = not st.session_state.get('show_add_item', False)
             st.session_state.show_wizard = False
@@ -895,7 +937,7 @@ def main_app():
             st.session_state.show_local_templates = False
             st.rerun()
     with button_col5:
-        if st.button("🧩 Add Custom Items", key="add_other_btn", type="secondary", 
+        if st.button("🧩 Custom Items", key="add_other_btn", type="secondary", 
                     help="Add custom items not in database"):
             # Toggle other items section and hide others
             st.session_state.show_add_other = not st.session_state.get('show_add_other', False)
@@ -936,7 +978,16 @@ def main_app():
             st.session_state.show_add_other = False
             st.session_state.show_upload = False
             st.session_state.show_templates = False
-            st.rerun()        
+            st.rerun()
+    with button_col8:
+            if st.button("🔁 Update All Items", key="update_all2", 
+                        help="Update all items with current values"):
+                updated_count = update_all_items()
+                if updated_count > 0:
+                    st.success(f"Updated {updated_count} items successfully!")
+                else:
+                    st.info("No changes detected in any items")
+                st.rerun()        
     # Show Add Item section if toggled on
     if st.session_state.get('show_add_item', False):
         idx = len([i for i in st.session_state.selected_items if i.get("Type") != "Subheading"])
@@ -1655,6 +1706,22 @@ def main_app():
         max_unforeseen = (total_cost + gst) * 0.025
         default_unforeseen = max_unforeseen  # Default to max allowed
         
+        # Decide the rounding label
+        rounding_label = ""
+        
+        if st.session_state.edit_final_total:
+            rounding_label = "Final Total"
+        else:
+            option = st.session_state.get("rounding_option", "1000")
+            if option == "none":
+                rounding_label = "Final Total (No Rounding)"
+            elif option == "100":
+                rounding_label = "Final Total (Rounded to 100)"
+            elif option == "1000":
+                rounding_label = "Final Total (Rounded to 1,000)"
+            else:
+                rounding_label = "Final Total"
+                
         # Initialize or get current unforeseen amount
         if 'unforeseen_amount' not in st.session_state:
             st.session_state.unforeseen_amount = default_unforeseen
@@ -1678,6 +1745,7 @@ def main_app():
             if st.button("🔁", key="reset_unforeseen"):
                 st.session_state.unforeseen_amount = round(max_unforeseen, 2)
                 st.session_state.manual_final_total = None  # Optional
+                st.session_state.edit_final_total = False   # ⬅️ Force toggle OFF
                 st.rerun()
         
         
@@ -1701,16 +1769,41 @@ def main_app():
         total_cost, gst, unforeseen, final_total = calculate_totals(int(unforeseen_amount))
         
         # Add toggle for manual final total
-        col1, col2,col3 = st.columns([2, 2, 2])
+        col1, col2, col3, col4, col5 = st.columns([5, 2, 2, 2, 2])
         with col1:
-            st.write(f"Final Total (rounded to next ₹100): ₹{final_total:,.2f}")
+            st.write(f"{rounding_label}: ₹{final_total:,.2f}")
         with col2:
-            # Toggle button for manual edit
-            st.session_state.edit_final_total = st.toggle(
-                "Edit Final Total", 
-                value=st.session_state.get('edit_final_total', False),
-                key="edit_final_total_toggle"
+            round_1000 = st.checkbox(
+                "Round to ₹1,000", 
+                value=st.session_state.get('rounding_option', '1000') == '1000',
+                key="round_1000_cb",
+                on_change=lambda: set_rounding_option('1000')
             )
+        
+        with col3:
+            round_100 = st.checkbox(
+                "Round to ₹100", 
+                value=st.session_state.get('rounding_option', '1000') == '100',
+                key="round_100_cb",
+                on_change=lambda: set_rounding_option('100')
+            )
+        
+        with col4:
+            no_rounding = st.checkbox(
+                "No Rounding", 
+                value=st.session_state.get('rounding_option', '1000') == 'none',
+                key="no_rounding_cb",
+                on_change=lambda: set_rounding_option('none')
+            )
+        
+        with col5:
+            manual_edit = st.checkbox(
+                "Edit Manually", 
+                value=st.session_state.get('edit_final_total', False),
+                key="manual_edit_cb",
+                on_change=lambda: set_rounding_option('manual')
+            )
+            
         
         # Handle manual final total input
         if st.session_state.edit_final_total:
@@ -1719,22 +1812,19 @@ def main_app():
             
             with col1:
                 # Calculate minimum allowed total (subtotal + GST rounded up)
-                min_total = math.ceil((total_cost + gst) / 100) * 100
+                min_total = math.ceil(total_cost + gst)
                 
                 # Create a text input styled as narrow (without +/- buttons)
                 manual_total_str = st.text_input(
                     "Enter Final Total (₹)",
                     value=f"{final_total:,.0f}",
                     key="manual_final_total_input",
-                    help=f"Minimum: ₹{min_total:,.0f}, Maximum: ₹{math.ceil((total_cost + gst + max_unforeseen) / 100) * 100:,.0f}"
+                    help=f"Minimum: ₹{min_total:,.0f}, Maximum: ₹{math.ceil(total_cost + gst + max_unforeseen):,.0f}"
                 )
                 
                 try:
                     # Parse the input (remove commas and convert to float)
                     manual_total = float(manual_total_str.replace(',', ''))
-                    
-                    # Round to nearest 100
-                    manual_total = math.ceil(manual_total / 100) * 100
                     
                     # Validate range
                     if manual_total < min_total:
@@ -1758,10 +1848,7 @@ def main_app():
             # Reset to calculated total when toggle is off
             if st.session_state.manual_final_total is not None:
                 st.session_state.manual_final_total = None
-            final_total = math.ceil((total_cost + gst + unforeseen) / 100) * 100
-        
-        # Display the final total (either manual or calculated)
-        st.write(f"Final Total: ₹{final_total:,.2f}")
+  
         
        
         # Replace the existing note input section with this:
@@ -1784,7 +1871,7 @@ def main_app():
             
         
         # File generation buttons
-        col1, col2, col3, col4, col5 = st.columns([1, 1, 1, 1, 1])  # Added a 4th column for preview
+        col1, col2, col3, col4, col5 = st.columns([1, 1.5, 1, 1, 1])  # Added a 4th column for preview
         with col1:
             if st.button("📄 Generate Excel File", key="generate_excel"):
                 wb = Workbook()
@@ -1853,7 +1940,7 @@ def main_app():
                     ("Subtotal", total_cost),
                     ("GST (18%)", gst),
                     ("Unforeseen", false_unforeseen),
-                    ("Grand Total Rounded to Next 100", final_total)
+                    (rounding_label, final_total)
                 ]:
                     ws.merge_cells(f'A{row_num}:E{row_num}')
                     ws[f'A{row_num}'] = label
@@ -2300,7 +2387,7 @@ def main_app():
                     ("Subtotal", f"{total_cost:.2f}"),
                     ("GST (18%)", f"{gst:.2f}"),
                     ("Unforeseen", f"{false_unforeseen:.2f}"),
-                    ("Grand Total Rounded to Next 100", f"{final_total:.2f}")
+                    (rounding_label, f"{final_total:.2f}")
                 ]
             
                 for label, value in summary_data:
@@ -2460,7 +2547,7 @@ def main_app():
             st.markdown("PDF Signature Area Settings")
         
             # Create three equal-width columns below the button
-            pdf_param_col1, pdf_param_col2, pdf_param_col3, pdf_param_col4 = st.columns(4)
+            pdf_param_col1, pdf_param_col2, pdf_param_col3 = st.columns(3)
             
             # Initialize parameters if not in session state
             if 'signature_height' not in st.session_state:
@@ -2528,7 +2615,7 @@ def main_app():
                 st.rerun()
               
         with col5:
-            if st.button("🔁 Update All Items", key="update_all", 
+            if st.button("🔁 Update All Items", key="update_all1", 
                         help="Update all items with current values"):
                 updated_count = update_all_items()
                 if updated_count > 0:
