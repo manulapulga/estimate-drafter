@@ -1880,7 +1880,10 @@ def main_app():
                 
                 # Header - Work Description (centered)
                 # Add Head Note (always include the merged cell, even if blank)
-                ws.merge_cells('A1:G1')  # Ensure merged cell always exists
+                ws.merge_cells('A1:G1')
+                ws['A1'] = estimate_heading
+                ws['A1'].alignment = Alignment(horizontal='center', vertical='center')
+                ws['A1'].font = ws['A1'].font.copy(bold=True, size=14)
                 ws.merge_cells('A2:G2')  # Ensure merged cell always exists
                 ws['A2'] = st.session_state.get('head_note', '')  # Use empty string if not set
                 ws['A2'].alignment = Alignment(horizontal='center', vertical='center', wrap_text=True)
