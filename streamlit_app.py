@@ -1370,7 +1370,7 @@ def main_app():
                         return
                     
                     # Set the range to process (rows 3 to subtotal_row)
-                    row_range = range(3, subtotal_row)
+                    row_range = range(4, subtotal_row)
                 else:
                     # For regular Excel files, process all rows (skip header if needed)
                     row_range = range(1, ws.max_row + 1)
