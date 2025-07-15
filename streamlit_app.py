@@ -1912,7 +1912,7 @@ def main_app():
                 ws.append(headers)
                 
                 # Add items
-                row_num = 4 if hasattr(st.session_state, 'head_note') and st.session_state.head_note.strip() else 3
+                row_num = 4
                 serial = 1
                 for item in st.session_state.selected_items:
                     if item.get("Type") == "Subheading":
