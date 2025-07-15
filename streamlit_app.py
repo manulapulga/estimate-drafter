@@ -1346,15 +1346,22 @@ def main_app():
                         'estimate_note': estimate_note
                     }
                     
-                    # Find last non-empty cell in column A
-                    for row in range(ws.max_row, 0, -1):
+                    # Initialize estimate_note as empty string
+                    estimate_note = ""
+                    
+                    # Loop through all rows in column A to find the matching text
+                    for row in range(1, ws.max_row):
                         cell_val = ws.cell(row=row, column=1).value
-                        if cell_val and str(cell_val).strip():
-                            st.session_state.uploaded_excel_data['estimate_note'] = str(cell_val)
+                        if cell_val and str(cell_val).strip() == "All Items should be as per ISI Standards":
+                            next_row_val = ws.cell(row=row + 1, column=1).value
+                            if next_row_val and str(next_row_val).strip():
+                                estimate_note = str(next_row_val).strip()
                             break
                     
-                
+                    # Save to session state
+                    st.session_state.uploaded_excel_data['estimate_note'] = estimate_note
                     st.session_state.estimate_note = estimate_note
+
                 
                     # Find the "Subtotal" row by checking merged cells
                     subtotal_row = None
