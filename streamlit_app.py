@@ -421,7 +421,7 @@ def main_app():
                             'Cost': qty * rate,
                             'Type': 'Other',
                             'GST_Applicable': new_gst,
-                            'Quantity_Remarks': item.get('Quantity_Remarks', '')
+                            'Quantity_Remarks': st.session_state.get(f'remark_input_other_{idx}', item.get('Quantity_Remarks', ''))
                         }
                         updated_count += 1
                 except ValueError:
@@ -447,7 +447,7 @@ def main_app():
                                     'Cost': quantity * item_data['Unit Price'],
                                     'Type': 'Standard',
                                     'GST_Applicable': gst_applicable,
-                                    'Quantity_Remarks': item.get('Quantity_Remarks', '')
+                                    'Quantity_Remarks': st.session_state.get(f'qty_remark_{idx}', item.get('Quantity_Remarks', ''))
                                 }
                                 updated_count += 1
                     except ValueError:
