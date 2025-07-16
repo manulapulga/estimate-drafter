@@ -422,6 +422,7 @@ def main_app():
                             'Type': 'Other',
                             'GST_Applicable': new_gst,
                             'Quantity_Remarks': st.session_state.get(f'remark_input_other_{idx}', item.get('Quantity_Remarks', ''))
+
                         }
                         updated_count += 1
                 except ValueError:
