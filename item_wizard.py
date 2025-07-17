@@ -38,9 +38,9 @@ def show_item_wizard(items_df, add_callback, selected_items=None):
         .item-card {
             padding: 0.7rem;
             margin: 0.3rem 0;
-            border: 1px solid #ddd;
+            border: 1px solid #d6eaf4;
             border-radius: 0.3rem;
-            background-color: white;
+            background: linear-gradient(135deg, #e9f8ff, #effff4); /* Soft blue to pale green */
         }
         .item-title {
             font-weight: 600;
@@ -321,7 +321,7 @@ def show_item_wizard(items_df, add_callback, selected_items=None):
                 filtered_items = filtered_items[filtered_items.apply(search_match, axis=1)]
             
             # PAGINATION CONTROLS
-            PAGE_SIZE = 50
+            PAGE_SIZE = 20
             total_items = len(filtered_items)
             total_pages = max(1, (total_items // PAGE_SIZE) + (1 if total_items % PAGE_SIZE else 0))
             

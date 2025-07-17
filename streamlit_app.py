@@ -1773,8 +1773,8 @@ def main_app():
                 key=f"other_item_gst"
             )
     
-            col1, col2 = st.columns([1, 1])
-            with col1:
+            col1a, col2a = st.columns([1, 1])
+            with col1a:
                 if st.button(f"Add Custom Item", key=f"add_other_item"):
                     if item_name and quantity and unit and unit_price:
                         try:
@@ -1795,7 +1795,7 @@ def main_app():
                                 st.rerun()
                         except ValueError:
                             st.error("Please enter valid numbers for quantity and rate")
-            with col2:
+            with col2a:
                 if st.button("✕ Cancel", key=f"cancel_other_item", type="primary", 
                             help="Close without adding item"):
                     st.session_state.show_add_other = False
