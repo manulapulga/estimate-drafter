@@ -18,6 +18,71 @@ getcontext().prec = 10  # Increase precision
 # Set page config
 st.set_page_config(layout="wide")
 
+st.markdown("""
+    <style>
+    /* Make all buttons stretch full width of their container */
+    button[kind="primary"], button[kind="secondary"] {
+        width: 100% !important;
+        display: block !important;
+    }
+    .stButton > button {
+        width: 100% !important;
+    }
+    </style>
+""", unsafe_allow_html=True)
+
+
+st.markdown("""
+<style>
+/* Extra-light green to blue diagonal background */
+body, .stApp {
+    background: linear-gradient(135deg, #f6fdf4 0%, #f4f9fd 100%) !important;
+    background-attachment: fixed;
+    background-repeat: no-repeat;
+    background-size: cover;
+}
+</style>
+""", unsafe_allow_html=True)
+
+
+
+# Inject styles early
+st.markdown("""
+<style>
+/* Light cyan-to-blue gradient for collapsed expanders */
+div[data-testid="stExpander"]:not([open]) {
+    background: linear-gradient(135deg, #f0fbfc 0%, #e0f3fa 50%, #d6e9fb 100%) !important;
+    border: 1px solid #b3d4f5 !important;
+    border-radius: 10px !important;
+    margin-bottom: 14px;
+    padding: 0 !important;
+    color: #1a3c5a !important;
+}
+
+/* Expander header styling */
+div[data-testid="stExpander"]:not([open]) > summary {
+    background-color: transparent !important;
+    padding: 12px 18px !important;
+    font-family: 'Segoe UI', 'Roboto', sans-serif;
+    font-weight: 600;
+    font-size: 16px;
+    color: #1a3c5a !important;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    border-radius: 10px !important;
+    border: none !important;
+    cursor: pointer;
+}
+
+/* Hover effect — slightly deeper blend */
+div[data-testid="stExpander"]:not([open]):hover {
+    background: linear-gradient(135deg, #e6f7fb 0%, #d2ecf9 50%, #c5def7 100%) !important;
+}
+</style>
+""", unsafe_allow_html=True)
+
+
+
 # Load user credentials from Sheet 2 of Excel
 @st.cache_data
 def load_credentials(file_path):
@@ -152,22 +217,24 @@ def load_wizard_items(username):
 # Login screen
 import streamlit as st
 
+# Load the banner image and encode it as base64
+with open("banner.png", "rb") as image_file:
+    encoded_banner = base64.b64encode(image_file.read()).decode()
+
+
 def login_page(credentials_df):
-    st.markdown("""
-    <div style='text-align: center; margin-top: 0px; margin-bottom: 0px;'>
-        <h1 style='color: #103f66; font-size: 36px; font-weight: 700; margin-top: 0px; margin-bottom: 0px;'>
-            Ground Water Department
-        </h1>
-        <h2 style='color: #1a6fa3; font-size: 24px; font-weight: 600; margin-top: 0px; margin-bottom: 0px;'>
-            Civil Works Estimate Drafter
-        </h2>
-    </div>
+    
+    # Display the banner using HTML
+    st.markdown(f"""
+        <div style='text-align: center; margin-bottom: 10px;'>
+            <img src='data:image/png;base64,{encoded_banner}' style='width: 100%; max-height: 100px; object-fit: contain; border-radius: 6px;' />
+        </div>
     """, unsafe_allow_html=True)
-
+    st.markdown("<div style='height: 20px;'></div>", unsafe_allow_html=True)
     # Create columns to control the width of the input fields
-    col1, col2, col3 = st.columns([2, 1, 2])  # 50% width for each input field
+    col1, col2, col3 = st.columns([1, 2, 1])  # 50% width for each input field
 
-    with col2:
+    with col1:
         username_input = st.text_input("Username", key="username_input")
         password_input = st.text_input("Password", type="password", key="password_input")
     
@@ -179,16 +246,27 @@ def login_page(credentials_df):
                 st.rerun()
             else:
                 st.error("Invalid username or password")
-    
-    # Add the "Powered by DSR 2021" at the bottom
-    st.markdown("""
-    <div style='text-align: center; margin-top: 0px; margin-bottom: 0px; color: #3b7ca5; font-size: 14px;'>
-        Powered by DSR 2021
-        <p style='color: #555; font-size: 15px; margin-top: 0px; margin-bottom: 0px;'>
-            Sign in to create, preview, and download professional estimates in Excel and PDF format.
-        </p>
-    </div>
-    """, unsafe_allow_html=True)
+    with col2:
+        st.markdown("""
+        <div style='text-align: center; margin-top: 0px; margin-bottom: 0px;'>
+            <h2 style='
+                color: #1a6fa3;
+                font-size: 26px;
+                font-weight: 500;
+                font-family: "Poppins", "Segoe UI", sans-serif;
+                margin-top: 0px;
+                margin-bottom: 0px;
+            '>
+                Civil Works Estimate Drafter
+            </h2>
+        </div>
+        """, unsafe_allow_html=True)
+        # Add the "Powered by DSR 2021" at the bottom
+        st.markdown("""
+        <div style='text-align: center; margin-top: 0px; margin-bottom: 0px; color: #3b7ca5; font-size: 14px;'>
+            Powered by DSR 2021
+        </div>
+        """, unsafe_allow_html=True)
 def set_rounding_option(option):
     """Handle mutually exclusive rounding options"""
     if option == 'manual':
@@ -229,16 +307,15 @@ def main_app():
         st.session_state.estimate_note = st.query_params.get("estimate_note", "")
         st.query_params.clear()  # Clear the query params after use
     # UI for Estimate Drafting with updated styles
-    st.markdown("<h1 style='text-align: center; color: #154c79;'>ESTIMATE DRAFTER</h1>", unsafe_allow_html=True)
     username = st.session_state.logged_in_username
     # Get the index value for the logged-in user
     user_row = credentials_df[credentials_df['username'] == username]
     cost_index = f"{user_row.iloc[0]['index'] + 1:.4f}" if not user_row.empty and 'index' in user_row.columns else "N/A"
     
     st.markdown(f"""
-        <div style='text-align: right; color: #666;'>
-            <p>Logged in as: {username}</p>
-            <p>Cost Index: {cost_index}</p>
+        <div style='display: flex; justify-content: space-between; align-items: center; padding: 4px 8px; color: #666;'>
+            <div>Logged in as: {username}</div>
+            <div>Cost Index: {cost_index}</div>
         </div>
     """, unsafe_allow_html=True)
     
@@ -334,9 +411,9 @@ def main_app():
             }
         </style>
     """, unsafe_allow_html=True)
-
+    st.markdown("<h3 style='text-align: center; color: #3f7f94; font-size: 125%;'>Add Title</h3>", unsafe_allow_html=True)
     estimate_heading = st.text_area(
-        "Work Description", 
+        "", 
         placeholder="Enter work description (press Enter for new lines)",
         key="work_desc",
         height=100  # Adjust height as needed
@@ -344,20 +421,21 @@ def main_app():
     if 'head_note' not in st.session_state:  # Add this line
         st.session_state.head_note = ""  
     # Add this section for head note
-    st.markdown("<h3 style='text-align: center; color: #76b5c5; font-size: 125%;'>HEAD NOTE</h3>", unsafe_allow_html=True)
+    st.markdown("<h3 style='text-align: center; color: #3f7f94; font-size: 125%;'>Add Head Note</h3>", unsafe_allow_html=True)
     head_note_container = st.container()
     with head_note_container:
         st.session_state.head_note = st.text_area(
-            "Add a note to appear at the top of the estimate",
+            "",
             value=st.session_state.head_note,
             key="head_note_input",
             height=100,
             max_chars=2000,
             placeholder="Enter any special instructions or notes that should appear at the top of the estimate"
         )
-    
-    st.markdown("<h3 style='text-align: center; color: #76b5c5; font-size: 125%;'>ADD ITEMS TO ESTIMATE</h3>", unsafe_allow_html=True)
-
+    st.markdown("<hr style='margin-top: 20px; margin-bottom: 10px;'>", unsafe_allow_html=True)
+    st.markdown("<div style='height: 20px;'></div>", unsafe_allow_html=True)
+    st.markdown("<h3 style='text-align: center; color: #3f7f94; font-size: 125%;'>Add Items</h3>", unsafe_allow_html=True)
+    st.markdown("<div style='height: 20px;'></div>", unsafe_allow_html=True)
     # Initialize session state
     if 'selected_items' not in st.session_state:
         st.session_state.selected_items = []
@@ -408,6 +486,7 @@ def main_app():
                 new_unit = st.session_state.get(f"other_unit_{idx}", item.get('Item Unit', ''))
                 new_rate = st.session_state.get(f"other_rate_{idx}", str(item.get('Unit Price', 0)))
                 new_gst = st.session_state.get(f"other_gst_{idx}", item.get('GST_Applicable', False))
+                new_remark = break_long_words(st.session_state.get(f'remark_input_other_{idx}', item.get('Quantity_Remarks', '')))
                 
                 try:
                     qty = float(new_qty) if new_qty else 0
@@ -421,8 +500,7 @@ def main_app():
                             'Cost': qty * rate,
                             'Type': 'Other',
                             'GST_Applicable': new_gst,
-                            'Quantity_Remarks': st.session_state.get(f'remark_input_other_{idx}', item.get('Quantity_Remarks', ''))
-
+                            'Quantity_Remarks': new_remark  # Apply break_long_words here
                         }
                         updated_count += 1
                 except ValueError:
@@ -432,6 +510,7 @@ def main_app():
                 item_name = st.session_state.get(f"edit_item_{idx}", '')
                 quantity = st.session_state.get(f"edit_qty_{idx}", str(item['Quantity']))
                 gst_applicable = st.session_state.get(f"edit_standard_gst_{idx}", item.get('GST_Applicable', True))
+                new_remark = break_long_words(st.session_state.get(f'qty_remark_{idx}', item.get('Quantity_Remarks', '')))
                 
                 if item_name and quantity:
                     try:
@@ -448,7 +527,7 @@ def main_app():
                                     'Cost': quantity * item_data['Unit Price'],
                                     'Type': 'Standard',
                                     'GST_Applicable': gst_applicable,
-                                    'Quantity_Remarks': st.session_state.get(f'qty_remark_{idx}', item.get('Quantity_Remarks', ''))
+                                    'Quantity_Remarks': new_remark  # Apply break_long_words here
                                 }
                                 updated_count += 1
                     except ValueError:
@@ -615,7 +694,7 @@ def main_app():
                 new_heading = st.text_input("Edit Subheading", value=item['Item'], key=f"edit_subheading_{idx}")
         
                 # Update and Remove buttons
-                col1, col2, col3, col4, col5, col6 = st.columns([2, 2, 2, 2, 1, 6])
+                col1, col2, col3, col4, col5, col6 = st.columns([1, 1, 1, 1, 0.5, 1])
                 with col1:
                     if st.button("🔁 Update", key=f"update_sub_{idx}"):
                         if new_heading.strip():
@@ -732,7 +811,7 @@ def main_app():
                         st.rerun()
             
                 # Action buttons
-                col1, col2, col3, col4, col5, col6 = st.columns([2, 2, 2, 2, 1, 6])
+                col1, col2, col3, col4, col5, col6 = st.columns([1, 1, 1, 1, 0.5, 1])
                 with col1:
                     if st.button(f"🔁 Update", key=f"update_other_{idx}"):
                         if new_desc and new_qty and new_unit and new_rate:
@@ -847,7 +926,7 @@ def main_app():
                             st.rerun()
 
                 # Action buttons inside expander
-                col1, col2, col3, col4, col5, col6 = st.columns([2, 2, 2, 2, 1, 6])
+                col1, col2, col3, col4, col5, col6 = st.columns([1, 1, 1, 1, 0.5, 1])
                 with col1:
                     if st.button(f"🔁 Update", key=f"update_{idx}"):
                         if item_name and quantity:
@@ -904,7 +983,7 @@ def main_app():
                             st.error("Please enter a valid number.")        
     # Add New Item or Subheading buttons
     button_col1, button_col2, button_col3, button_col4, button_col5, button_col6, button_col7,button_col8  = st.columns([2, 2, 2, 2, 2, 2, 2, 2])
-    with button_col6:
+    with button_col7:
         if st.button("🔽 Add from Dropdown", key="add_item_btn"):
             # Toggle add item section and hide others
             st.session_state.show_add_item = not st.session_state.get('show_add_item', False)
@@ -926,7 +1005,7 @@ def main_app():
             st.session_state.show_upload = False    # Add this line
             st.session_state.show_local_templates = False
             st.rerun()
-    with button_col4:
+    with button_col6:
         if st.button("📌 Add Subheading", key="add_subheading_btn"):
             # Toggle subheading and hide others
             st.session_state.adding_subheading = not st.session_state.get('adding_subheading', False)
@@ -950,7 +1029,7 @@ def main_app():
             st.session_state.show_local_templates = False
             st.rerun()
     with button_col2:
-        if st.button("📘 Global Templates", key="show_templates_btn"):
+        if st.button("🌐 Global Templates", key="show_templates_btn"):
             st.session_state.show_templates = not st.session_state.get('show_templates', False)
             st.session_state.show_add_item = False
             st.session_state.show_wizard = False
@@ -959,9 +1038,9 @@ def main_app():
             st.session_state.show_upload = False    # Add this line
             st.session_state.show_local_templates = False
             st.rerun()
-    with button_col3:
+    with button_col4:
         # Replace your existing upload button with this:
-        if st.button("⬆️ Upload Excel File", key="show_upload_btn"):
+        if st.button("📤 Upload Excel File", key="show_upload_btn"):
             st.session_state.show_upload = not st.session_state.get('show_upload', False)
             st.session_state.show_templates = False
             st.session_state.show_add_item = False
@@ -970,7 +1049,7 @@ def main_app():
             st.session_state.show_add_other = False
             st.session_state.show_local_templates = False
             st.rerun()
-    with button_col7:
+    with button_col3:
         if st.button("🏠 Local Templates", key="show_local_templates_btn"):
             st.session_state.show_local_templates = not st.session_state.get('show_local_templates', False)
             st.session_state.show_add_item = False
@@ -1075,9 +1154,10 @@ def main_app():
     if st.session_state.get('show_templates', False):
         template_data = load_templates()
         template_names = list(template_data.keys())
-        
-        st.markdown("### 📄 Available Templates")
-    
+        st.markdown("<hr style='margin-top: 20px; margin-bottom: 10px;'>", unsafe_allow_html=True)
+        st.markdown("<div style='height: 20px;'></div>", unsafe_allow_html=True)
+        st.markdown("### 🌐 Global Templates")
+        st.markdown("<div style='height: 20px;'></div>", unsafe_allow_html=True)
         num_columns = 3
         for i in range(0, len(template_names), num_columns):
             cols = st.columns(num_columns)
@@ -1085,7 +1165,7 @@ def main_app():
                 if i + j < len(template_names):
                     template_name = template_names[i + j]
                     with cols[j]:
-                        if st.button(f"📝 {template_name}", key=f"template_btn_{template_name}"):
+                        if st.button(f"{template_name}", key=f"template_btn_{template_name}"):
                             from openpyxl import load_workbook
                             template_path = f"Templates/{template_name}.xlsx"
                             wb = load_workbook(template_path)
@@ -1181,9 +1261,10 @@ def main_app():
     if st.session_state.get('show_local_templates', False):
         template_data = load_local_templates(username)
         template_names = list(template_data.keys())
-        
+        st.markdown("<hr style='margin-top: 20px; margin-bottom: 10px;'>", unsafe_allow_html=True)
+        st.markdown("<div style='height: 20px;'></div>", unsafe_allow_html=True)
         st.markdown("### 🏠 Your Local Templates")
-    
+        st.markdown("<hr style='margin-top: 20px; margin-bottom: 10px;'>", unsafe_allow_html=True)
         num_columns = 3
         for i in range(0, len(template_names), num_columns):
             cols = st.columns(num_columns)
@@ -1281,7 +1362,6 @@ def main_app():
             if st.button("✕ Cancel", key="cancel_local_template", type="primary"):
                 st.session_state.show_local_templates = False
                 st.rerun()
-            st.rerun()
     # Excel upload section
     if st.session_state.get('show_upload', False):
         try:
@@ -1424,30 +1504,35 @@ def main_app():
                             is_other_item = True
     
                         if is_other_item:
-                            # For "Other" items, extract all values
                             try:
-                                qty = float(quantity_cell) if quantity_cell and str(quantity_cell).strip() not in ["", "-"] else 0
-                                unit = str(unit_cell) if unit_cell and str(unit_cell).strip() not in ["", "-"] else ""
-                                rate = float(rate_cell) if rate_cell and str(rate_cell).strip() not in ["", "-"] else 0
-                                total = float(total_price_cell) if total_price_cell else qty * rate
-                                
-                                # Extract remarks from quantity cell if present
                                 remarks = ""
-                                if quantity_cell and "(" in str(quantity_cell) and ")" in str(quantity_cell):
-                                    parts = str(quantity_cell).split("(", 1)
-                                    remarks = parts[1].split(")", 1)[0].strip()
+                                qty = 0.0
                                 
+                                if quantity_cell:
+                                    quantity_str = str(quantity_cell).strip()
+                                    if "(" in quantity_str and ")" in quantity_str:
+                                        parts = quantity_str.split("(", 1)
+                                        remarks = parts[1].split(")", 1)[0].strip()
+                                        qty = float(parts[0].strip())
+                                    else:
+                                        qty = float(quantity_str)
+                                
+                                unit = str(unit_cell).strip() if unit_cell and str(unit_cell).strip() not in ["", "-"] else ""
+                                rate = float(str(rate_cell).strip()) if rate_cell and str(rate_cell).strip() not in ["", "-"] else 0.0
+                                total = float(total_price_cell) if total_price_cell else qty * rate
+                        
                                 items.append({
                                     'Item Name': item_name,
                                     'Quantity': qty,
                                     'Unit': unit,
                                     'Rate': rate,
-                                    'Total Price': qty * rate,
+                                    'Total Price': total,
                                     'Type': 'Other',
                                     'Remarks': remarks,
                                     'Subheading': current_subheading,
                                     'GST_Applicable': gst_applicable
                                 })
+                        
                             except (ValueError, TypeError):
                                 items.append({
                                     'Item Name': item_name,
@@ -1463,13 +1548,25 @@ def main_app():
                         else:
                             # Standard item processing
                             remarks = ""
-                            if quantity_cell and "(" in str(quantity_cell) and ")" in str(quantity_cell):
-                                parts = str(quantity_cell).split("(", 1)
-                                remarks = parts[1].split(")", 1)[0].strip()
-                            
+                            quantity = None
+                            if quantity_cell is not None:
+                                quantity_str = str(quantity_cell).strip()
+                                if "(" in quantity_str and ")" in quantity_str:
+                                    parts = quantity_str.split("(", 1)
+                                    remarks = parts[1].split(")", 1)[0].strip()
+                                    try:
+                                        quantity = float(parts[0].strip())
+                                    except ValueError:
+                                        quantity = None
+                                else:
+                                    try:
+                                        quantity = float(quantity_str)
+                                    except ValueError:
+                                        quantity = None
+                        
                             items.append({
                                 'Item Name': item_name,
-                                'Quantity': quantity_cell,
+                                'Quantity': quantity,
                                 'Unit': unit_cell,
                                 'Rate': rate_cell,
                                 'Total Price': total_price_cell,
@@ -1734,12 +1831,15 @@ def main_app():
         if 'unforeseen_amount' not in st.session_state:
             st.session_state.unforeseen_amount = default_unforeseen
         
+        st.markdown("<hr style='margin-top: 20px; margin-bottom: 10px;'>", unsafe_allow_html=True)
+        st.markdown("<div style='height: 20px;'></div>", unsafe_allow_html=True)
+        st.markdown("<h3 style='text-align: center; color: #3f7f94; font-size: 125%;'>Summary</h3>", unsafe_allow_html=True)
         st.subheader("Estimate Breakdown")
         st.write(f"Subtotal: ₹{total_cost:,.2f}")
         st.write(f"GST (18% on taxable items): ₹{gst:,.2f}")
         
         # Create columns to control the input field width
-        col1, col2, col3 = st.columns([1, 1, 2])  # Slightly adjusted column widths
+        col1, col2, col3 = st.columns([5, 1.5, 13.5])  # Slightly adjusted column widths
 
         with col1:
             unforeseen_input = st.text_input(
@@ -1779,7 +1879,7 @@ def main_app():
         # Add toggle for manual final total
         col1, col2, col3, col4, col5 = st.columns([5, 2, 2, 2, 2])
         with col1:
-            st.write(f"{rounding_label}: ₹{final_total:,.2f}")
+            st.markdown(f"**{rounding_label}: ₹{final_total:,.3f}**")
         with col2:
             round_1000 = st.checkbox(
                 "Round to ₹1,000", 
@@ -1864,9 +1964,11 @@ def main_app():
             # Initialize note in session state if not exists
             if 'estimate_note' not in st.session_state:
                 st.session_state.estimate_note = ""
-            
+            st.markdown("<hr style='margin-top: 20px; margin-bottom: 10px;'>", unsafe_allow_html=True)
             # Add note input area with increased limit
-            st.subheader("Foot Note")
+            st.markdown("<div style='height: 20px;'></div>", unsafe_allow_html=True)
+            st.markdown("<h3 style='text-align: center; color: #3f7f94; font-size: 125%;'>Add Foot Note</h3>", unsafe_allow_html=True)
+            
             note_container = st.container()
             with note_container:
                 st.session_state.estimate_note = st.text_area(
@@ -1877,11 +1979,14 @@ def main_app():
                     max_chars=7000,  # Approx 1000 words
                 )
             
-        
+        st.markdown("<hr style='margin-top: 20px; margin-bottom: 10px;'>", unsafe_allow_html=True)
+        st.markdown("<div style='height: 20px;'></div>", unsafe_allow_html=True)
         # File generation buttons
         col1, col2, col3, col4, col5 = st.columns([1, 1.5, 1, 1, 1])  # Added a 4th column for preview
         with col1:
-            if st.button("📄 Generate Excel File", key="generate_excel"):
+            if st.button("📊 Generate Excel File", key="generate_excel"):
+                # Update all items silently
+                update_all_items()
                 wb = Workbook()
                 ws = wb.active
                 ws.title = "Estimate"
@@ -2029,7 +2134,9 @@ def main_app():
                         key="download_excel"
                     )
         with col2:
-            if st.button("📄 Generate PDF File"):
+            if st.button("📕 Generate PDF File"):
+                # Update all items silently
+                update_all_items()
                 from fpdf import FPDF
             
                 pdf = FPDF()
