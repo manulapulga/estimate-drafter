@@ -336,7 +336,7 @@ def main_app():
     cost_index = f"{user_row.iloc[0]['index'] + 1:.4f}" if not user_row.empty and 'index' in user_row.columns else "N/A"
     
     st.markdown(f"""
-        <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600&display=swap" rel="stylesheet">
+        <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500&display=swap" rel="stylesheet">
         <style>
             @keyframes gradientSlide {{
                 0% {{ background-position: 0% 50%; }}
@@ -353,32 +353,32 @@ def main_app():
                 align-items: center;
                 padding: 14px 24px;
                 border-radius: 12px;
-                font-family: "Montserrat", sans-serif;
-                font-weight: 600;
-                font-size: 16px;
+                font-family: "Poppins", sans-serif;
+                font-weight: 500;
+                font-size: 17px;
                 box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
                 margin-bottom: 16px;
+                letter-spacing: 0.4px;
             }}
     
-            .ribbon-left {{
+            .ribbon-left,
+            .ribbon-right {{
                 flex: 1;
-                text-align: left;
+                text-align: center;
+                font-size: 17px;
+                font-weight: 500;
+                color: #003344;
+                white-space: nowrap;
             }}
     
             .ribbon-center {{
                 flex: 2;
                 text-align: center;
                 font-size: 20px;
+                font-weight: 600;
                 letter-spacing: 1px;
-                white-space: nowrap;
                 color: #003344;
-            }}
-    
-            .ribbon-right {{
-                flex: 1;
-                text-align: right;
-                color: #336677;  /* slightly muted blue */
-                font-weight: 500;
+                white-space: nowrap;
             }}
         </style>
     
@@ -388,6 +388,7 @@ def main_app():
             <div class="ribbon-right">Cost Index: {cost_index}</div>
         </div>
     """, unsafe_allow_html=True)
+
 
 
 
@@ -762,7 +763,9 @@ def main_app():
         if item.get('Type') == 'Subheading':
             # Modified expander with controlled state
             expanded = st.session_state.get(f"expander_{idx}", False)
-            with st.expander(f"📌 {item['Item']}", expanded=expanded):
+            # Add padding manually using Unicode spaces
+            subheading_title = f"🗂️***{item['Item']}***🗂️"
+            with st.expander(subheading_title, expanded=expanded):
                 # Editable text input for subheading
                 new_heading = st.text_input("Edit Subheading", value=item['Item'], key=f"edit_subheading_{idx}")
         
