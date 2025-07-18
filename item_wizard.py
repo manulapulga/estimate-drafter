@@ -445,31 +445,40 @@ def show_item_wizard(items_df, add_callback, selected_items=None):
                     """, unsafe_allow_html=True)
                     copy_buttons(row['Item Name'], row['Unit Price'], row['Item Unit'])
                 
+                # In the ITEMS COLUMN section, modify the button display logic:
+
                 with col2:
-                    # Change button style and text if item is already selected
-                    btn_text = "Remove" if is_selected else "Add"
-                    btn_class = "add-btn" if is_selected else "add-btn"
+                    # Check if Sub Category 1 has prefix and suffix *
+                    sub1 = row['Sub Category 1']
+                    is_restricted = isinstance(sub1, str) and sub1.startswith('*') and sub1.endswith('*')
                     
-                    st.markdown(f"""
-                        <style>
-                            #{btn_text}_{idx} {{
-                                background-color: {'#f44336' if is_selected else '#4CAF50'} !important;
-                                color: white !important;
-                                border: none !important;
-                            }}
-                        </style>
-                    """, unsafe_allow_html=True)
-                    
-                    if st.button(btn_text, key=f"{btn_text}_{idx}"):
-                        if is_selected:
-                            # Find and remove the item from selected_items
-                            for i, item in enumerate(selected_items):
-                                if isinstance(item, dict) and item.get('Item') == row['Item Name']:
-                                    selected_items.pop(i)
-                                    break
-                        else:
-                            add_callback(row['Item Name'])
-                        st.rerun()
+                    if not is_restricted:
+                        # Change button style and text if item is already selected
+                        btn_text = "Remove" if is_selected else "Add"
+                        btn_class = "add-btn" if is_selected else "add-btn"
+                        
+                        st.markdown(f"""
+                            <style>
+                                #{btn_text}_{idx} {{
+                                    background-color: {'#f44336' if is_selected else '#4CAF50'} !important;
+                                    color: white !important;
+                                    border: none !important;
+                                }}
+                            </style>
+                        """, unsafe_allow_html=True)
+                        
+                        if st.button(btn_text, key=f"{btn_text}_{idx}"):
+                            if is_selected:
+                                # Find and remove the item from selected_items
+                                for i, item in enumerate(selected_items):
+                                    if isinstance(item, dict) and item.get('Item') == row['Item Name']:
+                                        selected_items.pop(i)
+                                        break
+                            else:
+                                add_callback(row['Item Name'])
+                            st.rerun()
+                    else:
+                        st.markdown("<div style='height: 42px;'></div>", unsafe_allow_html=True)  # Empty space for alignment
 
         st.markdown("</div>", unsafe_allow_html=True)  # Close wizard-container
 
