@@ -226,13 +226,24 @@ with open("swet.png", "rb") as image_file:
 
 def login_page(credentials_df):
     
-    # Display the banner using HTML
+    
     st.markdown(f"""
-        <div style='text-align: center; margin-bottom: 10px;'>
-            <img src='data:image/png;base64,{encoded_banner}' style='width: 100%; max-height: 100px; object-fit: contain; border-radius: 6px;' />
+        <div style='
+            background: linear-gradient(135deg, #e0f7fa, #b2ebf2);
+            padding: 15px;
+            border-radius: 12px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            margin-bottom: 20px;
+        '>
+            <img src='data:image/png;base64,{encoded_banner}' 
+                 style='width: 100%; max-height: 100px; object-fit: contain; border-radius: 8px;' />
         </div>
     """, unsafe_allow_html=True)
+    
+    # Optional spacing below the banner
     st.markdown("<div style='height: 20px;'></div>", unsafe_allow_html=True)
+    
     # Create columns to control the width of the input fields
     col1, col2 = st.columns([1, 3])  # 50% width for each input field
 
@@ -871,20 +882,22 @@ def main_app():
                 
                 # Remark Section for 'Other' Items
                 remark = item.get('Quantity_Remarks', '')
-                button_label = "✏️ Edit Remark" if remark else "➕ Add Remark"
-                
-                if st.button(button_label, key=f"edit_remark_other_{idx}"):
-                    st.session_state.selected_items[idx]['show_remark_input'] = True
-                
-                if remark and not item.get('show_remark_input', False):
-                    st.info(f"📋 Quantity Remark: {remark}")
-                
-                if item.get('show_remark_input', False):
-                    new_remark = st.text_input("Edit Remark", value=remark, key=f"remark_input_other_{idx}", max_chars=100)
-                    if st.button("Save Remark", key=f"save_remark_other_{idx}"):
-                        st.session_state.selected_items[idx]['Quantity_Remarks'] = break_long_words(new_remark)
-                        st.session_state.selected_items[idx]['show_remark_input'] = False
-                        st.rerun()
+                col1, col2 = st.columns([1, 4.5])
+                with col1:
+                    button_label = "✏️ Edit Remark" if remark else "➕ Add Remark"
+                    
+                    if st.button(button_label, key=f"edit_remark_other_{idx}"):
+                        st.session_state.selected_items[idx]['show_remark_input'] = True
+                    
+                    if remark and not item.get('show_remark_input', False):
+                        st.info(f"📋 Quantity Remark: {remark}")
+                    
+                    if item.get('show_remark_input', False):
+                        new_remark = st.text_input("Edit Remark", value=remark, key=f"remark_input_other_{idx}", max_chars=100)
+                        if st.button("Save Remark", key=f"save_remark_other_{idx}"):
+                            st.session_state.selected_items[idx]['Quantity_Remarks'] = break_long_words(new_remark)
+                            st.session_state.selected_items[idx]['show_remark_input'] = False
+                            st.rerun()
             
                 # Action buttons
                 col1, col2, col3, col4, col5, col6 = st.columns([1, 1, 1, 1, 0.5, 1])
