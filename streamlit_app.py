@@ -232,9 +232,11 @@ def login_page(credentials_df):
     """, unsafe_allow_html=True)
     st.markdown("<div style='height: 20px;'></div>", unsafe_allow_html=True)
     # Create columns to control the width of the input fields
-    col1, col2, col3 = st.columns([1, 2, 1])  # 50% width for each input field
+    col1, col2 = st.columns([1, 3])  # 50% width for each input field
 
     with col1:
+        st.markdown("<div style='height: 20px;'></div>", unsafe_allow_html=True)
+        st.markdown("<div style='height: 20px;'></div>", unsafe_allow_html=True)
         username_input = st.text_input("Username", key="username_input")
         password_input = st.text_input("Password", type="password", key="password_input")
     
@@ -248,25 +250,44 @@ def login_page(credentials_df):
                 st.error("Invalid username or password")
     with col2:
         st.markdown("""
-        <div style='text-align: center; margin-top: 0px; margin-bottom: 0px;'>
-            <h2 style='
-                color: #1a6fa3;
-                font-size: 26px;
-                font-weight: 500;
-                font-family: "Poppins", "Segoe UI", sans-serif;
-                margin-top: 0px;
-                margin-bottom: 0px;
-            '>
-                Civil Works Estimate Drafter
-            </h2>
-        </div>
+            <link href="https://fonts.googleapis.com/css2?family=Merriweather:wght@700&display=swap" rel="stylesheet">
+            <style>
+                .gradient-text {
+                    font-family: "Merriweather", serif;
+                    font-size: 60px;
+                    font-weight: 700;
+                    background: linear-gradient(90deg, #007cf0, #00dfd8, #ff0080, #7928ca);
+                    background-size: 300% 300%;
+                    -webkit-background-clip: text;
+                    -webkit-text-fill-color: transparent;
+                    animation: gradientMove 6s ease infinite;
+                    letter-spacing: 1px;
+                    margin: 0;
+                }
+        
+                @keyframes gradientMove {
+                    0% { background-position: 0% 50%; }
+                    50% { background-position: 100% 50%; }
+                    100% { background-position: 0% 50%; }
+                }
+            </style>
+        
+            <div style='text-align: center; margin: 20px 0;'>
+                <h1 class='gradient-text'>ESTIMATE DRAFTER</h1>
+                <p style='
+                    font-family: "Segoe UI", sans-serif;
+                    font-size: 20px;
+                    color: #39779a;
+                    margin-top: 6px;
+                '>
+                    Powered by DSR 2021
+                </p>
+            </div>
         """, unsafe_allow_html=True)
-        # Add the "Powered by DSR 2021" at the bottom
-        st.markdown("""
-        <div style='text-align: center; margin-top: 0px; margin-bottom: 0px; color: #3b7ca5; font-size: 14px;'>
-            Powered by DSR 2021
-        </div>
-        """, unsafe_allow_html=True)
+
+        
+
+
 def set_rounding_option(option):
     """Handle mutually exclusive rounding options"""
     if option == 'manual':
@@ -313,11 +334,61 @@ def main_app():
     cost_index = f"{user_row.iloc[0]['index'] + 1:.4f}" if not user_row.empty and 'index' in user_row.columns else "N/A"
     
     st.markdown(f"""
-        <div style='display: flex; justify-content: space-between; align-items: center; padding: 4px 8px; color: #666;'>
-            <div>Logged in as: {username}</div>
-            <div>Cost Index: {cost_index}</div>
+        <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600&display=swap" rel="stylesheet">
+        <style>
+            @keyframes gradientSlide {{
+                0% {{ background-position: 0% 50%; }}
+                50% {{ background-position: 100% 50%; }}
+                100% {{ background-position: 0% 50%; }}
+            }}
+    
+            .ribbon-bar {{
+                background: linear-gradient(270deg, #d0f0ff, #aee8f8, #d6d9f8, #c0e2ff);
+                background-size: 600% 600%;
+                animation: gradientSlide 10s ease infinite;
+                color: #003344;
+                display: flex;
+                align-items: center;
+                padding: 14px 24px;
+                border-radius: 12px;
+                font-family: "Montserrat", sans-serif;
+                font-weight: 600;
+                font-size: 16px;
+                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+                margin-bottom: 16px;
+            }}
+    
+            .ribbon-left {{
+                flex: 1;
+                text-align: left;
+            }}
+    
+            .ribbon-center {{
+                flex: 2;
+                text-align: center;
+                font-size: 20px;
+                letter-spacing: 1px;
+                white-space: nowrap;
+                color: #003344;
+            }}
+    
+            .ribbon-right {{
+                flex: 1;
+                text-align: right;
+                color: #336677;  /* slightly muted blue */
+                font-weight: 500;
+            }}
+        </style>
+    
+        <div class="ribbon-bar">
+            <div class="ribbon-left">Logged in as: {username}</div>
+            <div class="ribbon-center">ESTIMATE DRAFTER</div>
+            <div class="ribbon-right">Cost Index: {cost_index}</div>
         </div>
     """, unsafe_allow_html=True)
+
+
+
     
     st.markdown("""
         <style>

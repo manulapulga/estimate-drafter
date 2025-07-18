@@ -331,7 +331,7 @@ def show_item_wizard(items_df, add_callback, selected_items=None):
             
             # Navigation buttons
             if total_pages > 1:
-                col1, col2, col3, col4, _ = st.columns([1, 1, 1, 1, 6])
+                col1, col2, col3, col4, col5 = st.columns([1, 1, 3, 1, 1.5],)
                 
                 with col1:
                     if st.button("⏮️", disabled=st.session_state.current_page == 1, 
@@ -346,14 +346,23 @@ def show_item_wizard(items_df, add_callback, selected_items=None):
                         st.rerun()
                 
                 with col3:
-                    st.markdown(f"<div class='pagination-info'>Page {st.session_state.current_page} of {total_pages}</div>", 
-                               unsafe_allow_html=True)
+                    st.markdown(f"""
+                        <div style='text-align: center;' class='pagination-info'>
+                            Page {st.session_state.current_page} of {total_pages}
+                        </div>
+                    """, unsafe_allow_html=True)
                 
                 with col4:
                     if st.button("▶️", disabled=st.session_state.current_page == total_pages, 
                                key="next_page", help="Next page"):
                         st.session_state.current_page += 1
                         st.rerun()
+                with col5:
+                    if st.button("✕ Close", key="close_wizard2", type="primary"):
+                        st.session_state.show_wizard = False
+                        if 'show_wizard_for_edit' in st.session_state:
+                            st.session_state.show_wizard_for_edit = None
+                        st.rerun()        
             
             # Calculate which items to show
             start_idx = (st.session_state.current_page - 1) * PAGE_SIZE
