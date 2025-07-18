@@ -49,14 +49,14 @@ body, .stApp {
 # Inject styles early
 st.markdown("""
 <style>
-/* Light cyan-to-blue gradient for collapsed expanders */
+/* Pale green gradient for collapsed expanders */
 div[data-testid="stExpander"]:not([open]) {
-    background: linear-gradient(135deg, #f0fbfc 0%, #e0f3fa 50%, #d6e9fb 100%) !important;
-    border: 1px solid #b3d4f5 !important;
+    background: linear-gradient(135deg, #f3fdf4 0%, #e3f8e5 50%, #d0f0d2 100%) !important;
+    border: 1px solid #b2ddb3 !important;
     border-radius: 10px !important;
     margin-bottom: 14px;
     padding: 0 !important;
-    color: #1a3c5a !important;
+    color: #1e4023 !important;
 }
 
 /* Expander header styling */
@@ -66,7 +66,7 @@ div[data-testid="stExpander"]:not([open]) > summary {
     font-family: 'Segoe UI', 'Roboto', sans-serif;
     font-weight: 600;
     font-size: 16px;
-    color: #1a3c5a !important;
+    color: #1e4023 !important;
     text-transform: uppercase;
     letter-spacing: 0.4px;
     border-radius: 10px !important;
@@ -74,13 +74,12 @@ div[data-testid="stExpander"]:not([open]) > summary {
     cursor: pointer;
 }
 
-/* Hover effect — slightly deeper blend */
+/* Hover effect — slightly deeper green gradient */
 div[data-testid="stExpander"]:not([open]):hover {
-    background: linear-gradient(135deg, #e6f7fb 0%, #d2ecf9 50%, #c5def7 100%) !important;
+    background: linear-gradient(135deg, #e7faea 0%, #d4f2d8 50%, #c2e8c5 100%) !important;
 }
 </style>
 """, unsafe_allow_html=True)
-
 
 
 # Load user credentials from Sheet 2 of Excel
@@ -220,6 +219,9 @@ import streamlit as st
 # Load the banner image and encode it as base64
 with open("banner.png", "rb") as image_file:
     encoded_banner = base64.b64encode(image_file.read()).decode()
+    
+with open("swet.png", "rb") as image_file:
+    encoded_logo = base64.b64encode(image_file.read()).decode()    
 
 
 def login_page(credentials_df):
@@ -806,7 +808,7 @@ def main_app():
 
 
         item_type = item.get('Type', 'Standard')
-        item_title = f"💧 Item {idx + 1}: {item['Item']} (₹{item['Cost']:.2f})"
+        item_title = f"💧 **Item {idx + 1}: {item['Item']} (₹{item['Cost']:.2f})**"
         if item_type == 'Other':
             item_title += " [Other" + (" +GST" if item.get('GST_Applicable', False) else "") + "]"
         
@@ -2673,7 +2675,7 @@ def main_app():
                         5,  # Line height
                         st.session_state.estimate_note,
                         border=1,
-                        align='L'
+                        align='C'
                     )
                     
                     # Reset font for remaining content
