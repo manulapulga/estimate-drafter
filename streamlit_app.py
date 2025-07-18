@@ -395,7 +395,7 @@ def main_app():
     
         <div class="ribbon-bar">
             <div class="ribbon-left">Logged in as: {username}</div>
-            <div class="ribbon-center">ESTIMATE DRAFT</div>
+            <div class="ribbon-center">ESTIMATE DRAFTER</div>
             <div class="ribbon-right">Cost Index: {cost_index}</div>
         </div>
     """, unsafe_allow_html=True)
