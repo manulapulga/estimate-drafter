@@ -321,7 +321,7 @@ def show_item_wizard(items_df, add_callback, selected_items=None):
                 filtered_items = filtered_items[filtered_items.apply(search_match, axis=1)]
             
             # PAGINATION CONTROLS
-            PAGE_SIZE = 20
+            PAGE_SIZE = 30
             total_items = len(filtered_items)
             total_pages = max(1, (total_items // PAGE_SIZE) + (1 if total_items % PAGE_SIZE else 0))
             
@@ -377,12 +377,13 @@ def show_item_wizard(items_df, add_callback, selected_items=None):
                 # Prepare the texts
                 text1 = item_name
                 text2 = f"{item_name}\t{unit_price}\t{item_unit}"
+                text3 = str(unit_price)  # ensure it's string
             
                 # Escape quotes
                 escaped_text1 = text1.replace('"', '\\"').replace("'", "\\'")
                 escaped_text2 = text2.replace('"', '\\"').replace("'", "\\'")
+                escaped_text3 = text3.replace('"', '\\"').replace("'", "\\'")
             
-                # Inject both buttons in a flex container
                 st.components.v1.html(f"""
                     <style>
                     .copy-btn {{
@@ -408,15 +409,19 @@ def show_item_wizard(items_df, add_callback, selected_items=None):
                         navigator.clipboard.writeText(text);
                     }}
                     </script>
-                    <div style="display: flex; gap: 8px; margin-top: 5px;">
-                        <button onclick='copyToClipboard("{escaped_text1}")'
+                    <div style="display: flex; flex-direction: row; gap: 8px; margin-top: 5px;">
+                        <button type="button" onclick='copyToClipboard("{escaped_text1}")'
                                 class="copy-btn"
-                                title="Copy Item Name">⧉ Copy Item Name</button>
-                        <button onclick='copyToClipboard("{escaped_text2}")'
+                                title="Copy Item Name">⧉ Copy Name</button>
+                        <button type="button" onclick='copyToClipboard("{escaped_text2}")'
                                 class="copy-btn"
-                                title="Copy All Details">📋 Copy Item Details</button>
+                                title="Copy All Details">📋 Copy Details</button>
+                        <button type="button" onclick='copyToClipboard("{escaped_text3}")'
+                                class="copy-btn"
+                                title="Copy Item Price">₹ Copy Price</button>        
                     </div>
-                """, height=50)
+                """, height=70)
+            
             # DISPLAY ITEMS
             for idx in range(start_idx, end_idx):
                 row = filtered_items.iloc[idx]
@@ -480,8 +485,40 @@ def show_item_wizard(items_df, add_callback, selected_items=None):
                     else:
                         st.markdown("<div style='height: 42px;'></div>", unsafe_allow_html=True)  # Empty space for alignment
 
-        st.markdown("</div>", unsafe_allow_html=True)  # Close wizard-container
-
+            # Navigation buttons
+            if total_pages > 1:
+                col1, col2, col3, col4, col5 = st.columns([1, 1, 3, 1, 1.5],)
+                
+                with col1:
+                    if st.button("⏮️", disabled=st.session_state.current_page == 1, 
+                               key="first_page2", help="Go to first page"):
+                        st.session_state.current_page = 1
+                        st.rerun()
+                
+                with col2:
+                    if st.button("◀️", disabled=st.session_state.current_page == 1, 
+                               key="prev_page2", help="Previous page"):
+                        st.session_state.current_page -= 1
+                        st.rerun()
+                
+                with col3:
+                    st.markdown(f"""
+                        <div style='text-align: center;' class='pagination-info'>
+                            Page {st.session_state.current_page} of {total_pages}
+                        </div>
+                    """, unsafe_allow_html=True)
+                
+                with col4:
+                    if st.button("▶️", disabled=st.session_state.current_page == total_pages, 
+                               key="next_page2", help="Next page"):
+                        st.session_state.current_page += 1
+                        st.rerun()
+                with col5:
+                    if st.button("✕ Close", key="close_wizard3", type="primary"):
+                        st.session_state.show_wizard = False
+                        if 'show_wizard_for_edit' in st.session_state:
+                            st.session_state.show_wizard_for_edit = None
+                        st.rerun()        
 # 3. EXAMPLE USAGE
 if __name__ == "__main__":
     st.title("Item Selection Demo")

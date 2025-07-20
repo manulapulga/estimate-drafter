@@ -9,6 +9,7 @@ import base64
 from decimal import Decimal, ROUND_HALF_UP, getcontext
 from num2words import num2words
 import os
+import re
 
 
 
@@ -221,8 +222,10 @@ with open("banner.png", "rb") as image_file:
     encoded_banner = base64.b64encode(image_file.read()).decode()
     
 with open("swet.png", "rb") as image_file:
-    encoded_logo = base64.b64encode(image_file.read()).decode()    
-
+    encoded_logoswet = base64.b64encode(image_file.read()).decode()  
+    
+with open("spec1.png", "rb") as image_file:
+    encoded_logospec = base64.b64encode(image_file.read()).decode() 
 
 def login_page(credentials_df):
     
@@ -262,44 +265,49 @@ def login_page(credentials_df):
             else:
                 st.error("Invalid username or password")
     with col2:
+        st.markdown(f"""
+            <div style='margin-bottom: 5px;'>
+                <img src='data:image/png;base64,{encoded_logospec}' 
+                     style='width: 100%; max-height: 150px; object-fit: contain; border-radius: 8px;' />
+            </div>
+        """, unsafe_allow_html=True)
+    
         st.markdown("""
             <link href="https://fonts.googleapis.com/css2?family=Merriweather:wght@700&display=swap" rel="stylesheet">
             <style>
                 .gradient-text {
                     font-family: "Merriweather", serif;
-                    font-size: 60px;
+                    font-size: 100px;  /* Reduced from 60px */
                     font-weight: 700;
                     background: linear-gradient(90deg, #007cf0, #00dfd8, #ff0080, #7928ca);
                     background-size: 300% 300%;
                     -webkit-background-clip: text;
                     -webkit-text-fill-color: transparent;
                     animation: gradientMove 6s ease infinite;
-                    letter-spacing: 1px;
+                    letter-spacing: 0px;
                     margin: 0;
                 }
-        
+    
                 @keyframes gradientMove {
                     0% { background-position: 0% 50%; }
                     50% { background-position: 100% 50%; }
                     100% { background-position: 0% 50%; }
                 }
             </style>
-        
-            <div style='text-align: center; margin: 20px 0;'>
-                <h1 class='gradient-text'>ESTIMATE DRAFTER</h1>
+    
+            <div style='text-align: center; margin: 5px 0;'>
+                <h1 class='gradient-text'>Standardised Project Estimation Console</h1>
                 <p style='
                     font-family: "Segoe UI", sans-serif;
-                    font-size: 20px;
+                    font-size: 16px;  /* Reduced from 20px */
                     color: #39779a;
                     margin-top: 6px;
                 '>
                     Powered by DSR 2021
                 </p>
             </div>
+            
         """, unsafe_allow_html=True)
-
-        
-
 
 def set_rounding_option(option):
     """Handle mutually exclusive rounding options"""
@@ -326,19 +334,23 @@ def main_app():
     item_names, unit_prices, item_units, data = load_main_items(username)
     wizard_data = load_wizard_items(username)
         
-    # Pre-load work_desc, head_note, estimate_note from uploaded_excel_data if available
+    # Pre-load work_desc, head_note, estimate_note, file_name, and estimate_date from uploaded_excel_data if available
     if 'uploaded_excel_data' in st.session_state:
         preload = st.session_state.uploaded_excel_data
         st.session_state.work_desc = preload.get("work_desc", "")
         st.session_state.head_note = preload.get("head_note", "")
         st.session_state.estimate_note = preload.get("estimate_note", "")
+        st.session_state.file_name = preload.get("file_name", "")
+        st.session_state.estimate_date = preload.get("estimate_date", None)
         del st.session_state.uploaded_excel_data  # Ensure one-time application
-    
+
     # Handle clear all functionality using new query_params API
     if st.query_params.get("clear_all", "") == "true":
         st.session_state.work_desc = st.query_params.get("work_desc", "")
         st.session_state.head_note = st.query_params.get("head_note", "")
         st.session_state.estimate_note = st.query_params.get("estimate_note", "")
+        st.session_state.file_name = ""
+        st.session_state.estimate_date = None
         st.query_params.clear()  # Clear the query params after use
     # UI for Estimate Drafting with updated styles
     username = st.session_state.logged_in_username
@@ -496,7 +508,33 @@ def main_app():
             }
         </style>
     """, unsafe_allow_html=True)
-    st.markdown("<h3 style='text-align: center; color: #3f7f94; font-size: 125%;'>Add Title</h3>", unsafe_allow_html=True)
+    
+    # Add Title row with File Name (left), Heading (center), and Date (right)
+    col1, col2, col3 = st.columns([2, 6, 2])
+    
+    with col1:
+        st.markdown("<div style='padding-top: 12px;'></div>", unsafe_allow_html=True)
+        st.session_state.file_name = st.text_input(
+            label="File No",
+            value=st.session_state.get("file_name", ""),
+            key="file_name_input",
+            label_visibility="collapsed",
+            placeholder="File Name"
+        )
+    
+    with col2:
+        st.markdown("<h3 style='text-align: center; color: #3f7f94; font-size: 125%; margin-top: 2px;'>Add Title</h3>", unsafe_allow_html=True)
+    
+    with col3:
+        st.markdown("<div style='padding-top: 12px;'></div>", unsafe_allow_html=True)
+        st.session_state.estimate_date = st.date_input(
+            label="Estimate Date",
+            value=st.session_state.get("estimate_date"),
+            key="estimate_date_input",
+            label_visibility="collapsed"
+        )
+
+    
     estimate_heading = st.text_area(
         "", 
         placeholder="Enter work description (press Enter for new lines)",
@@ -1510,11 +1548,25 @@ def main_app():
                             estimate_note = str(cell_val)
                             break
                     
+                    file_cell = ws["I1"].value
+                    date_cell = ws["I2"].value
+                    
+                    file_name = str(file_cell).strip() if file_cell else ""
+                    estimate_date = None
+                    
+                    if date_cell:
+                        try:
+                            estimate_date = pd.to_datetime(str(date_cell).strip(), dayfirst=True).date()
+                        except Exception:
+                            pass
                     st.session_state.uploaded_excel_data = {
                         'work_desc': str(ws['A1'].value) if ws['A1'].value else "",
                         'head_note': str(ws['A2'].value) if ws['A2'].value else "",
-                        'estimate_note': estimate_note
+                        'estimate_note': estimate_note,
+                        'file_name': file_name,
+                        'estimate_date': estimate_date
                     }
+                    
                     
                     # Initialize estimate_note as empty string
                     estimate_note = ""
@@ -1597,14 +1649,18 @@ def main_app():
                                 remarks = ""
                                 qty = 0.0
                                 
-                                if quantity_cell:
+                                # Fetch quantity as number and remarks from column H
+                                qty = 0.0
+                                remarks_cell = ws.cell(row=row, column=8)  # Column H
+                                remarks = str(remarks_cell.value).strip() if remarks_cell and remarks_cell.value else ""
+                                
+                                if quantity_cell is not None:
                                     quantity_str = str(quantity_cell).strip()
-                                    if "(" in quantity_str and ")" in quantity_str:
-                                        parts = quantity_str.split("(", 1)
-                                        remarks = parts[1].split(")", 1)[0].strip()
-                                        qty = float(parts[0].strip())
-                                    else:
-                                        qty = float(quantity_str)
+                                    try:
+                                        qty = float(quantity_str.split("(")[0].strip())
+                                    except ValueError:
+                                        qty = 0.0
+                                
                                 
                                 unit = str(unit_cell).strip() if unit_cell and str(unit_cell).strip() not in ["", "-"] else ""
                                 rate = float(str(rate_cell).strip()) if rate_cell and str(rate_cell).strip() not in ["", "-"] else 0.0
@@ -1636,22 +1692,17 @@ def main_app():
                                 })
                         else:
                             # Standard item processing
-                            remarks = ""
+                            remarks_cell = ws.cell(row=row, column=8)  # Column H
+                            remarks = str(remarks_cell.value).strip() if remarks_cell and remarks_cell.value else ""
+                            
                             quantity = None
                             if quantity_cell is not None:
                                 quantity_str = str(quantity_cell).strip()
-                                if "(" in quantity_str and ")" in quantity_str:
-                                    parts = quantity_str.split("(", 1)
-                                    remarks = parts[1].split(")", 1)[0].strip()
-                                    try:
-                                        quantity = float(parts[0].strip())
-                                    except ValueError:
-                                        quantity = None
-                                else:
-                                    try:
-                                        quantity = float(quantity_str)
-                                    except ValueError:
-                                        quantity = None
+                                try:
+                                    quantity = float(quantity_str.split("(")[0].strip())
+                                except ValueError:
+                                    quantity = None
+                            
                         
                             items.append({
                                 'Item Name': item_name,
@@ -2070,139 +2121,162 @@ def main_app():
             
         st.markdown("<hr style='margin-top: 20px; margin-bottom: 10px;'>", unsafe_allow_html=True)
         st.markdown("<div style='height: 20px;'></div>", unsafe_allow_html=True)
+        
+        def add_spec_watermark(pdf):
+            """Add spec1.png at top left of the current page"""
+            spec_path = "spec1.png"
+            if os.path.exists(spec_path):
+                image_width = 20  # Adjust as needed
+                x = 5
+                y = 5  # 30 mm from top; adjust if needed
+                pdf.image(spec_path, x=x, y=y, w=image_width)
+        
         # File generation buttons
         col1, col2, col3, col4, col5 = st.columns([1, 1.5, 1, 1, 1])  # Added a 4th column for preview
         with col1:
             if st.button("📊 Generate Excel File", key="generate_excel"):
-                # Update all items silently
                 update_all_items()
+                from openpyxl import Workbook
+                from openpyxl.styles import Alignment, Border, Side
+                from num2words import num2words
+        
                 wb = Workbook()
                 ws = wb.active
                 ws.title = "Estimate"
                 
-                # Header - Work Description (centered)
-                # Add Head Note (always include the merged cell, even if blank)
-                ws.merge_cells('A1:G1')
+                # Insert file name and date into I1 and I2
+                file_name = st.session_state.get("file_name", "")
+                estimate_date = st.session_state.get("estimate_date", None)
+                date_str = estimate_date.strftime("%d-%m-%Y") if estimate_date else ""
+                
+                ws["I1"] = f"{file_name}"
+                ws["I2"] = f"{date_str}"
+        
+                # Define alignments
+                center_align = Alignment(horizontal='center', vertical='center', wrap_text=True)
+                left_align = Alignment(horizontal='left', vertical='center', wrap_text=True)
+        
+                # === Heading ===
+                ws.merge_cells('A1:H1')
                 ws['A1'] = estimate_heading
-                ws['A1'].alignment = Alignment(horizontal='center', vertical='center')
+                ws['A1'].alignment = center_align
                 ws['A1'].font = ws['A1'].font.copy(bold=True, size=14)
-                ws.merge_cells('A2:G2')  # Ensure merged cell always exists
-                ws['A2'] = st.session_state.get('head_note', '')  # Use empty string if not set
-                ws['A2'].alignment = Alignment(horizontal='center', vertical='center', wrap_text=True)
+        
+                # === Head Note ===
+                head_note = st.session_state.get('head_note', '')
+                ws.merge_cells('A2:H2')
+                ws['A2'] = head_note
+                ws['A2'].alignment = center_align
                 ws['A2'].font = ws['A2'].font.copy(italic=True)
-                ws.row_dimensions[2].height = 15  # Set minimum height; adjust as needed
-                
-                # Add Head Note if it exists (centered)
-                if hasattr(st.session_state, 'head_note') and st.session_state.head_note.strip():
-                    ws.merge_cells('A2:G2')
-                    
-                    ws['A2'] = st.session_state.head_note
-                    ws['A2'].alignment = Alignment(horizontal='center', vertical='center', wrap_text=True)
-                    ws['A2'].font = ws['A2'].font.copy(italic=True)
-                    # Add some space after head note
-                    ws.row_dimensions[2].height = 30  # Adjust height as needed
-                
-                # Table headers
-                headers = ["Sl.No", "Item Name", "Qty", "Unit", "Rate", "Total", "GST"]
+                ws.row_dimensions[2].height = 30 if head_note.strip() else 15
+        
+                # === Table Headers ===
+                headers = ["Sl.No", "Item Name", "Qty", "Unit", "Rate", "Total", "GST", "Remarks"]
                 ws.append(headers)
-                
-                # Add items
+        
+                # === Item Rows ===
                 row_num = 4
                 serial = 1
                 for item in st.session_state.selected_items:
                     if item.get("Type") == "Subheading":
-                        ws.merge_cells(f'A{row_num}:G{row_num}')
+                        ws.merge_cells(f'A{row_num}:H{row_num}')
                         ws[f'A{row_num}'] = f" {item['Item']}"
-                        ws[f'A{row_num}'].alignment = Alignment(horizontal='center', vertical='center')
-                        row_num += 1
-                    elif item.get("Type") == "Other":
-                        remark = item.get('Quantity_Remarks', '')
-                        qty_field = f"{item['Quantity']} ({remark})" if remark else f"{item['Quantity']}"
-                        ws.append([
-                            serial,
-                            item['Item'],
-                            qty_field,
-                            item['Item Unit'],
-                            item['Unit Price'],
-                            item['Cost'],
-                            "Yes" if item.get('GST_Applicable', False) else "No"
-                        ])
-                        serial += 1
+                        ws[f'A{row_num}'].alignment = center_align
                         row_num += 1
                     else:
+                        qty = round(float(item['Quantity']), 2)
+                        rate = round(float(item['Unit Price']), 2)
+                        total_formula = f"=C{row_num}*E{row_num}"
+                        gst_text = "Yes" if item.get("GST_Applicable", False) else "No"
+                        remarks = item.get("Quantity_Remarks", "")
+        
                         ws.append([
                             serial,
                             item['Item'],
-                            f"{round(float(item['Quantity']), 2)} ({item['Quantity_Remarks']})" if item.get('Quantity_Remarks') else round(float(item['Quantity']), 2),
+                            qty,
                             item['Item Unit'],
-                            round(float(item['Unit Price']), 2),
-                            round(float(item['Cost']), 2),
-                            "Yes" if item.get('GST_Applicable', True) else "No"
+                            rate,
+                            total_formula,
+                            gst_text,
+                            remarks
                         ])
                         serial += 1
                         row_num += 1
-            
+        
+                # === Totals with Excel Formulas ===
+                start_data_row = 4
+                end_data_row = row_num - 1
+        
+                # Subtotal
+                ws.merge_cells(f'A{row_num}:E{row_num}')
+                ws[f'A{row_num}'] = "Subtotal"
+                ws[f'F{row_num}'] = f"=SUM(F{start_data_row}:F{end_data_row})"
+                subtotal_row = row_num
+                row_num += 1
+        
+                # GST
+                ws.merge_cells(f'A{row_num}:E{row_num}')
+                ws[f'A{row_num}'] = "GST (18%)"
+                ws[f'F{row_num}'] = f"=F{subtotal_row}*0.18"
+                gst_row = row_num
+                row_num += 1
+        
+                # Unforeseen (use logic if needed)
                 false_unforeseen = final_total - (total_cost + gst)
-                
-                # Add totals
-                for label, val in [
-                    ("Subtotal", total_cost),
-                    ("GST (18%)", gst),
-                    ("Unforeseen", false_unforeseen),
-                    (rounding_label, final_total)
-                ]:
-                    ws.merge_cells(f'A{row_num}:E{row_num}')
-                    ws[f'A{row_num}'] = label
-                    ws[f'A{row_num}'].alignment = Alignment(horizontal='center', vertical='center')
-                    ws[f'F{row_num}'] = val
-                    ws[f'F{row_num}'].alignment = Alignment(horizontal='center', vertical='center')
-                    row_num += 1
-                
-                # Add Amount in Words (centered)
+                ws.merge_cells(f'A{row_num}:E{row_num}')
+                ws[f'A{row_num}'] = "Unforeseen"
+                ws[f'F{row_num}'] = f"{false_unforeseen}"
+                row_num += 1
+        
+                # Final Total
+                ws.merge_cells(f'A{row_num}:E{row_num}')
+                ws[f'A{row_num}'] = rounding_label
+                ws[f'F{row_num}'] = final_total
+                row_num += 1
+        
+                # === Amount in Words ===
                 if final_total > 0:
                     amount_words = num2words(int(round(float(final_total))), lang='en_IN').title() + " Rupees Only"
-                    ws.merge_cells(f'A{row_num}:G{row_num}')
+                    ws.merge_cells(f'A{row_num}:H{row_num}')
                     ws[f'A{row_num}'] = f"Amount in Words: {amount_words}"
-                    ws[f'A{row_num}'].alignment = Alignment(horizontal='center', vertical='center')
+                    ws[f'A{row_num}'].alignment = center_align
                     ws[f'A{row_num}'].font = ws[f'A{row_num}'].font.copy(bold=True)
                     row_num += 1
-                
-                # Add ISI Clause (centered)
-                ws.merge_cells(f'A{row_num}:G{row_num}')
+        
+                # === ISI Clause ===
+                ws.merge_cells(f'A{row_num}:H{row_num}')
                 ws[f'A{row_num}'] = "All Items should be as per ISI Standards"
-                ws[f'A{row_num}'].alignment = Alignment(horizontal='center', vertical='center')
+                ws[f'A{row_num}'].alignment = center_align
                 ws[f'A{row_num}'].font = ws[f'A{row_num}'].font.copy(italic=True)
                 row_num += 1
-                
-                # Add Estimate Note if it exists (centered)
+        
+                # === Estimate Note (if any) ===
                 if hasattr(st.session_state, 'estimate_note') and st.session_state.estimate_note.strip():
-                    ws.merge_cells(f'A{row_num}:G{row_num}')
+                    ws.merge_cells(f'A{row_num}:H{row_num}')
                     ws[f'A{row_num}'] = st.session_state.estimate_note
-                    ws[f'A{row_num}'].alignment = Alignment(horizontal='center', vertical='center', wrap_text=True)
-                    # Adjust row height for note
+                    ws[f'A{row_num}'].alignment = center_align
                     note_lines = len(st.session_state.estimate_note.split('\n')) + 1
-                    ws.row_dimensions[row_num].height = note_lines * 15  # 15 points per line
-                
-                # Apply styling
+                    ws.row_dimensions[row_num].height = note_lines * 15
+                    row_num += 1
+        
+                # === Styling Borders ===
                 thin_border = Border(
                     left=Side(style='thin'),
                     right=Side(style='thin'),
                     top=Side(style='thin'),
                     bottom=Side(style='thin')
                 )
-                
-                # Apply borders to all cells with content
-                for row in ws.iter_rows(min_row=1, max_row=row_num-1, min_col=1, max_col=7):
+        
+                for row in ws.iter_rows(min_row=1, max_row=row_num - 1, min_col=1, max_col=8):
                     for cell in row:
-                        cell.alignment = Alignment(horizontal='center', vertical='center', wrap_text=True)
                         cell.border = thin_border
-                
-                # Special alignment for item names (left-aligned)
-                for row in ws.iter_rows():
-                    if row[1].value:  # Column B (Item Name)
-                        row[1].alignment = Alignment(horizontal='left', vertical='center', wrap_text=True)
-                
-                # Set column widths
+                        cell.alignment = center_align
+        
+                # Left align Item Names (Column B)
+                for row in ws.iter_rows(min_row=4, max_row=row_num - 1):
+                    row[1].alignment = left_align  # B column
+        
+                # === Set Column Widths ===
                 ws.column_dimensions['A'].width = 8    # Sl.No
                 ws.column_dimensions['B'].width = 60   # Item Name
                 ws.column_dimensions['C'].width = 12   # Qty
@@ -2210,10 +2284,20 @@ def main_app():
                 ws.column_dimensions['E'].width = 12   # Rate
                 ws.column_dimensions['F'].width = 15   # Total
                 ws.column_dimensions['G'].width = 8    # GST
+                ws.column_dimensions['H'].width = 25   # Remarks
+        
+                # === Download Excel ===
+                file_name_input = st.session_state.get("file_name", "").strip()
+                work_desc_input = st.session_state.get("work_desc", "").strip()
                 
-                excel_file = "estimate.xlsx"
+                # Combine file name + work description
+                combined_name = f"{file_name_input} {work_desc_input}".strip()
+                
+                # Sanitize combined name
+                safe_filename = re.sub(r'[\\/*?:\"<>|]', '_', combined_name)
+                excel_file = f"{safe_filename or 'Estimate'}.xlsx"
                 wb.save(excel_file)
-            
+        
                 with open(excel_file, "rb") as f:
                     st.download_button(
                         "⬇️ Download Excel",
@@ -2222,8 +2306,10 @@ def main_app():
                         mime="application/vnd.ms-excel",
                         key="download_excel"
                     )
+
         with col2:
             if st.button("📕 Generate PDF File"):
+                from num2words import num2words
                 # Update all items silently
                 update_all_items()
                 from fpdf import FPDF
@@ -2265,12 +2351,22 @@ def main_app():
                 pdf.set_auto_page_break(auto=True, margin=15)
                 pdf.add_page()
                 add_watermark(pdf)
+                add_spec_watermark(pdf)
                 
                 # In the PDF generation section, replace the work description and head note handling with this:
 
                 # Main content
                 pdf.set_font("Arial", 'B', 16)
                 pdf.set_text_color(0, 0, 0)
+                
+                # Add file info at top left (same formatting as user_info)
+                pdf.set_font("Arial", '', 10)
+                file_name = st.session_state.get("file_name", "")
+                estimate_date = st.session_state.get("estimate_date", None)
+                date_str = estimate_date.strftime("%d-%m-%Y") if estimate_date else ""
+                file_info = f"File: {file_name}\nDate: {date_str}"
+                pdf.set_xy(10, 15)  # Top left margin (same Y level as user_info)
+                pdf.multi_cell(60, 5, file_info, 0, 'L')
                 
                 # Add user info at top right
                 pdf.set_font("Arial", '', 10)
@@ -2346,6 +2442,7 @@ def main_app():
                         if pdf.get_y() + head_note_height > pdf.h - 30:
                             pdf.add_page()
                             add_watermark(pdf)
+                            add_spec_watermark(pdf)
                             pdf.set_y(40)  # Reset Y position after new page
                         
                         # Draw head note box with border
@@ -2429,6 +2526,7 @@ def main_app():
                     if pdf.get_y() + 20 > pdf.h - 30:  # Increased buffer to 20
                         pdf.add_page()
                         add_watermark(pdf)
+                        add_spec_watermark(pdf)
                         draw_table_header()
                         pdf.set_font("Arial", '', 10)  # Reset font after header
             
@@ -2442,6 +2540,7 @@ def main_app():
                         if pdf.get_y() + subheading_height > pdf.h - 30:
                             pdf.add_page()
                             add_watermark(pdf)
+                            add_spec_watermark(pdf)
                             draw_table_header()
                         
                         # Draw border
@@ -2509,6 +2608,7 @@ def main_app():
                     if pdf.get_y() + row_height > pdf.h - 30:
                         pdf.add_page()
                         add_watermark(pdf)
+                        add_spec_watermark(pdf)
                         draw_table_header()
                         pdf.set_font("Arial", '', 10)
                         x_row_start = left_margin
@@ -2589,6 +2689,7 @@ def main_app():
                 if available_space < total_block_height:
                     pdf.add_page()
                     add_watermark(pdf)
+                    add_spec_watermark(pdf)
                     pdf.ln(10)  # optional margin on new page
 
                 # Summary Section
@@ -2606,6 +2707,7 @@ def main_app():
                     if pdf.get_y() + row_height > pdf.h - 30:
                         pdf.add_page()
                         add_watermark(pdf)
+                        add_spec_watermark(pdf)
                         pdf.set_font("Arial", '', 10)  # Reset the correct font and size
                 
                     x = left_margin
@@ -2629,6 +2731,7 @@ def main_app():
                 if pdf.get_y() + row_height > pdf.h - 30:
                     pdf.add_page()
                     add_watermark(pdf)
+                    add_spec_watermark(pdf)
                 
                 # Set x position to left margin to center the cell
                 pdf.set_x(left_margin)
@@ -2651,6 +2754,7 @@ def main_app():
                 if pdf.get_y() + required_height > pdf.h - 30:
                     pdf.add_page()
                     add_watermark(pdf)
+                    add_spec_watermark(pdf)
                     pdf.set_x(left_margin)
                 
                 # Now actually draw the cell with the correct height
@@ -2708,6 +2812,7 @@ def main_app():
                 if signature_y + st.session_state.signature_block_height > pdf.h - st.session_state.bottom_margin:
                     pdf.add_page()
                     add_watermark(pdf)
+                    add_spec_watermark(pdf)
                     signature_y = pdf.get_y()
                 
                 # Signature labels with equal spacing
@@ -2745,7 +2850,17 @@ def main_app():
 
                 
                 # Save and offer download
-                pdf_file = "estimate.pdf"
+                file_name_input = st.session_state.get("file_name", "").strip()
+                work_desc_input = st.session_state.get("work_desc", "").strip()
+                
+                # Combine File Name + Work Description
+                combined_name = f"{file_name_input} {work_desc_input}".strip()
+                
+                # Sanitize for filename use
+                safe_filename = re.sub(r'[\\/*?:\"<>|]', '_', combined_name)
+                
+                # Create PDF file
+                pdf_file = f"{safe_filename or 'Estimate'}.pdf"
                 pdf.output(pdf_file)
             
                 with open(pdf_file, "rb") as f:
