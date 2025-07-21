@@ -362,7 +362,7 @@ def show_item_wizard(items_df, add_callback, selected_items=None):
                         st.session_state.show_wizard = False
                         if 'show_wizard_for_edit' in st.session_state:
                             st.session_state.show_wizard_for_edit = None
-                        st.rerun()        
+                        st.rerun()       
             
             # Calculate which items to show
             start_idx = (st.session_state.current_page - 1) * PAGE_SIZE
@@ -458,14 +458,21 @@ def show_item_wizard(items_df, add_callback, selected_items=None):
                     is_restricted = isinstance(sub1, str) and sub1.startswith('*') and sub1.endswith('*')
                     
                     if not is_restricted:
-                        # Change button style and text if item is already selected
-                        btn_text = "Remove" if is_selected else "Add"
-                        btn_class = "add-btn" if is_selected else "add-btn"
+                        # Check if we're in edit mode
+                        is_edit_mode = 'show_wizard_for_edit' in st.session_state and st.session_state.show_wizard_for_edit is not None
+                        
+                        # Change button text based on mode
+                        if is_edit_mode:
+                            btn_text = "Update" if is_selected else "Replace"
+                            btn_color = "#2196F3"  # Blue for update/replace
+                        else:
+                            btn_text = "Remove" if is_selected else "Add"
+                            btn_color = "#f44336" if is_selected else "#4CAF50"  # Red for remove, green for add
                         
                         st.markdown(f"""
                             <style>
                                 #{btn_text}_{idx} {{
-                                    background-color: {'#f44336' if is_selected else '#4CAF50'} !important;
+                                    background-color: {btn_color} !important;
                                     color: white !important;
                                     border: none !important;
                                 }}
@@ -473,7 +480,7 @@ def show_item_wizard(items_df, add_callback, selected_items=None):
                         """, unsafe_allow_html=True)
                         
                         if st.button(btn_text, key=f"{btn_text}_{idx}"):
-                            if is_selected:
+                            if is_selected and not is_edit_mode:
                                 # Find and remove the item from selected_items
                                 for i, item in enumerate(selected_items):
                                     if isinstance(item, dict) and item.get('Item') == row['Item Name']:

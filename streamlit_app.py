@@ -141,7 +141,7 @@ def authenticate(username, password, credentials_df):
 @st.cache_data
 def load_main_items(username):
     try:
-        data = pd.read_excel("items.xltm", sheet_name=username)
+        data = pd.read_excel("Data Base/items.xltm", sheet_name=username)
         return data['Item Name'].tolist(), data['Unit Price'].tolist(), data['Item Unit'].tolist(), data
     except Exception as e:
         st.error(f"Error loading main items data for {username}: {str(e)}")
@@ -152,7 +152,7 @@ def load_templates():
     try:
         import os
         template_data = {}
-        templates_dir = "Templates"
+        templates_dir = "Data Base/Global Templates"
         
         if os.path.exists(templates_dir) and os.path.isdir(templates_dir):
             # Get all Excel files in the Templates directory
@@ -181,7 +181,7 @@ def load_local_templates(username):
     try:
         import os
         template_data = {}
-        templates_dir = os.path.join("Local Templates", username)
+        templates_dir = os.path.join("Data Base/Local Templates", username)
         
         if os.path.exists(templates_dir) and os.path.isdir(templates_dir):
             # Get all Excel files in the user's Local Templates directory
@@ -208,7 +208,7 @@ def load_local_templates(username):
 @st.cache_data
 def load_wizard_items(username):
     try:
-        wizard_data = pd.read_excel("items.xltm", sheet_name=username)
+        wizard_data = pd.read_excel("Data Base/items.xltm", sheet_name=username)
         return wizard_data
     except Exception as e:
         st.error(f"Error loading wizard items data for {username}: {str(e)}")
@@ -218,13 +218,11 @@ def load_wizard_items(username):
 import streamlit as st
 
 # Load the banner image and encode it as base64
-with open("banner.png", "rb") as image_file:
+with open("Icons/banner.png", "rb") as image_file:
     encoded_banner = base64.b64encode(image_file.read()).decode()
     
-with open("swet.png", "rb") as image_file:
-    encoded_logoswet = base64.b64encode(image_file.read()).decode()  
     
-with open("spec1.png", "rb") as image_file:
+with open("Icons/spec1.png", "rb") as image_file:
     encoded_logospec = base64.b64encode(image_file.read()).decode() 
 
 def login_page(credentials_df):
@@ -266,48 +264,29 @@ def login_page(credentials_df):
                 st.error("Invalid username or password")
     with col2:
         st.markdown(f"""
-            <div style='margin-bottom: 5px;'>
+            <div style='text-align: center; margin-top: 10px; margin-bottom: 5px;'>
                 <img src='data:image/png;base64,{encoded_logospec}' 
-                     style='width: 100%; max-height: 150px; object-fit: contain; border-radius: 8px;' />
-            </div>
-        """, unsafe_allow_html=True)
-    
-        st.markdown("""
-            <link href="https://fonts.googleapis.com/css2?family=Merriweather:wght@700&display=swap" rel="stylesheet">
-            <style>
-                .gradient-text {
+                     style='width: auto; max-height: 80px; object-fit: contain; border-radius: 8px; margin-bottom: 8px;' />
+                <h2 style='
                     font-family: "Merriweather", serif;
-                    font-size: 100px;  /* Reduced from 60px */
+                    font-size: 26px;
                     font-weight: 700;
-                    background: linear-gradient(90deg, #007cf0, #00dfd8, #ff0080, #7928ca);
-                    background-size: 300% 300%;
-                    -webkit-background-clip: text;
-                    -webkit-text-fill-color: transparent;
-                    animation: gradientMove 6s ease infinite;
-                    letter-spacing: 0px;
+                    color: #1a4c74;
                     margin: 0;
-                }
-    
-                @keyframes gradientMove {
-                    0% { background-position: 0% 50%; }
-                    50% { background-position: 100% 50%; }
-                    100% { background-position: 0% 50%; }
-                }
-            </style>
-    
-            <div style='text-align: center; margin: 5px 0;'>
-                <h1 class='gradient-text'>Standardised Project Estimation Console</h1>
+                '>
+                    Standardised Project Estimation Console
+                </h2>
                 <p style='
                     font-family: "Segoe UI", sans-serif;
-                    font-size: 16px;  /* Reduced from 20px */
+                    font-size: 14px;
                     color: #39779a;
-                    margin-top: 6px;
+                    margin-top: 4px;
                 '>
                     Powered by DSR 2021
                 </p>
             </div>
-            
         """, unsafe_allow_html=True)
+
 
 def set_rounding_option(option):
     """Handle mutually exclusive rounding options"""
@@ -509,11 +488,11 @@ def main_app():
         </style>
     """, unsafe_allow_html=True)
     
-    # Add Title row with File Name (left), Heading (center), and Date (right)
+    # Add Title row with File Name (left), Heading (center), Date (right), and Clear button
     col1, col2, col3 = st.columns([2, 6, 2])
     
     with col1:
-        st.markdown("<div style='padding-top: 12px;'></div>", unsafe_allow_html=True)
+        st.markdown("<div style='padding-top: 6px;'></div>", unsafe_allow_html=True)
         st.session_state.file_name = st.text_input(
             label="File No",
             value=st.session_state.get("file_name", ""),
@@ -523,17 +502,25 @@ def main_app():
         )
     
     with col2:
-        st.markdown("<h3 style='text-align: center; color: #3f7f94; font-size: 125%; margin-top: 2px;'>Add Title</h3>", unsafe_allow_html=True)
+        st.markdown(
+            "<h4 style='text-align: center; color: #3f7f94; font-size: 125%; margin-top: 14px;'>Add Title</h4>",
+            unsafe_allow_html=True
+        )
     
     with col3:
-        st.markdown("<div style='padding-top: 12px;'></div>", unsafe_allow_html=True)
-        st.session_state.estimate_date = st.date_input(
+        st.markdown("<div style='padding-top: 6px;'></div>", unsafe_allow_html=True)
+        
+        # Make sure session state has a default key
+        if "estimate_date" not in st.session_state:
+            st.session_state.estimate_date = None
+    
+        st.date_input(
             label="Estimate Date",
-            value=st.session_state.get("estimate_date"),
+            value=st.session_state.estimate_date,
             key="estimate_date_input",
             label_visibility="collapsed"
         )
-
+    
     
     estimate_heading = st.text_area(
         "", 
@@ -544,7 +531,7 @@ def main_app():
     if 'head_note' not in st.session_state:  # Add this line
         st.session_state.head_note = ""  
     # Add this section for head note
-    st.markdown("<h3 style='text-align: center; color: #3f7f94; font-size: 125%;'>Add Head Note</h3>", unsafe_allow_html=True)
+    st.markdown("<h5 style='text-align: center;margin-bottom: 0px; color: #3f7f94; font-size: 125%;'>Add Head Note</h5>", unsafe_allow_html=True)
     head_note_container = st.container()
     with head_note_container:
         st.session_state.head_note = st.text_area(
@@ -773,9 +760,11 @@ def main_app():
                 'Quantity_Remarks': existing_remarks
             }
             
+            # Close the wizard only when editing an item
             st.session_state.show_wizard = False
             st.session_state.show_wizard_for_edit = None
             st.success(f"Item updated to '{selected_item}' successfully!")
+            st.rerun()
         else:
             # Original code for adding new items
             wizard_item = wizard_data[wizard_data['Item Name'] == selected_item].iloc[0]
@@ -802,10 +791,9 @@ def main_app():
                 'GST_Applicable': True,
                 'Quantity_Remarks': ""
             })
-            st.session_state.show_wizard = False
             st.success(f"Item '{selected_item}' added successfully!")
-        
-        st.rerun()
+            # Don't close the wizard when adding new items
+            st.rerun()
 
     # Display added items and subheadings
     for idx, item in enumerate(st.session_state.selected_items):
@@ -1294,7 +1282,7 @@ def main_app():
                     with cols[j]:
                         if st.button(f"{template_name}", key=f"template_btn_{template_name}"):
                             from openpyxl import load_workbook
-                            template_path = f"Templates/{template_name}.xlsx"
+                            template_path = f"Data Base/Global Templates/{template_name}.xlsx"
                             wb = load_workbook(template_path)
                             ws = wb.active
     
@@ -1401,7 +1389,7 @@ def main_app():
                     with cols[j]:
                         if st.button(f"📝 {template_name}", key=f"local_template_btn_{template_name}"):
                             from openpyxl import load_workbook
-                            template_path = os.path.join("Local Templates", username, f"{template_name}.xlsx")
+                            template_path = os.path.join("Data Base/Local Templates", username, f"{template_name}.xlsx")
                             wb = load_workbook(template_path)
                             ws = wb.active
     
@@ -1492,7 +1480,7 @@ def main_app():
     # Excel upload section
     if st.session_state.get('show_upload', False):
         try:
-            sample_data = base64.b64encode(open("Sample.xlsx", "rb").read()).decode("utf-8")
+            sample_data = base64.b64encode(open("Side Bar Files/Sample.xlsx", "rb").read()).decode("utf-8")
         except FileNotFoundError:
             st.error("Sample file not found")
             sample_data = ""
@@ -2123,8 +2111,8 @@ def main_app():
         st.markdown("<div style='height: 20px;'></div>", unsafe_allow_html=True)
         
         def add_spec_watermark(pdf):
-            """Add spec1.png at top left of the current page"""
-            spec_path = "spec1.png"
+            """Add Icons/spec1.png at top left of the current page"""
+            spec_path = "Icons/spec1.png"
             if os.path.exists(spec_path):
                 image_width = 20  # Adjust as needed
                 x = 5
@@ -3016,7 +3004,7 @@ if 'authenticated' not in st.session_state:
 
 # Load credentials
 try:
-    credentials_df = load_credentials("items.xltm")
+    credentials_df = load_credentials("Data Base/items.xltm")
 except Exception as e:
     st.error(f"Error loading credentials: {str(e)}")
     st.stop()
@@ -3100,7 +3088,7 @@ if st.session_state.get('authenticated', False):
         volume = st.sidebar.selectbox("Select Volume", ["Vol 1", "Vol 2"])
         
         # Construct the file path
-        file_path = f"DSR/{selected_year}/{doc_type}/{volume}.pdf"
+        file_path = f"Side Bar Files/DSR/{selected_year}/{doc_type}/{volume}.pdf"
         
         # Display download button
         try:
@@ -3125,7 +3113,7 @@ if st.session_state.get('authenticated', False):
 
     if st.session_state.get('show_price_options', False):
         try:
-            with open("PRICE Rates (DSR 21).xlsx", "rb") as file:
+            with open("Side Bar Files/PRICE Rates (DSR 21).xlsx", "rb") as file:
                 st.sidebar.download_button(
                     label="⬇️ Download PRICE Rates (DSR 21) Excel",
                     data=file,
@@ -3148,7 +3136,7 @@ if st.session_state.get('authenticated', False):
     
     if st.session_state.get('show_dsr21basicrates_options', False):
         try:
-            with open("DSR 21 Basic Rates.xlsx", "rb") as file:
+            with open("Side Bar Files/DSR 21 Basic Rates.xlsx", "rb") as file:
                 st.sidebar.download_button(
                     label="⬇️ Download Basic Rates (DSR 21) Excel",
                     data=file,
@@ -3160,7 +3148,7 @@ if st.session_state.get('authenticated', False):
         except Exception as e:
             st.sidebar.error(f"Error downloading DSR 21 Basic Rates: {str(e)}")
         try:
-            with open("DSR 21 Basic Rates.pdf", "rb") as file:
+            with open("Side Bar Files/DSR 21 Basic Rates.pdf", "rb") as file:
                 st.sidebar.download_button(
                     label="⬇️ Download Basic Rates (DSR 21) PDF",
                     data=file,
@@ -3182,7 +3170,7 @@ if st.session_state.get('authenticated', False):
     
     if st.session_state.get('show_priceapprovedmr_options', False):
         try:
-            with open("PRICE Approved MR.pdf", "rb") as file:
+            with open("Side Bar Files/PRICE Approved MR.pdf", "rb") as file:
                 st.sidebar.download_button(
                     label="⬇️ Download PRICE Approved MR PDF",
                     data=file,
@@ -3206,7 +3194,7 @@ if st.session_state.get('authenticated', False):
     
     if st.session_state.get('show_costindex_options', False):
         try:
-            with open("Cost Index 2021.pdf", "rb") as file:
+            with open("Side Bar Files/Cost Index 2021.pdf", "rb") as file:
                 st.sidebar.download_button(
                     label="⬇️ Download Cost Index 2021 PDF",
                     data=file,
@@ -3231,7 +3219,7 @@ if st.session_state.get('authenticated', False):
             # List files in the GWD Data directory
             import os
             gwd_files = []
-            gwd_dir = "GWD Data"
+            gwd_dir = "Side Bar Files/GWD Data"
             
             if os.path.exists(gwd_dir) and os.path.isdir(gwd_dir):
                 gwd_files = [f for f in os.listdir(gwd_dir) if os.path.isfile(os.path.join(gwd_dir, f))]
@@ -3289,7 +3277,7 @@ if st.session_state.get('authenticated', False):
             # List files in the Templates directory
             import os
             template_files = []
-            templates_dir = "Templates"
+            templates_dir = "Data Base/Global Templates"
             
             if os.path.exists(templates_dir) and os.path.isdir(templates_dir):
                 template_files = [f for f in os.listdir(templates_dir) if os.path.isfile(os.path.join(templates_dir, f))]
