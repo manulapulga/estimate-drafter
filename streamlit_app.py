@@ -515,7 +515,7 @@ def main_app():
             value=st.session_state.get("file_name", ""),
             key="file_name_input",
             label_visibility="collapsed",
-            placeholder="File Name"
+            placeholder="File No"
         )
     
     with col2:
@@ -529,14 +529,17 @@ def main_app():
         
         # Make sure session state has a default key
         if "estimate_date" not in st.session_state:
-            st.session_state.estimate_date = None
-    
-        st.date_input(
+            st.session_state.estimate_date = ""
+        
+        st.session_state.estimate_date = st.text_input(
             label="Estimate Date",
             value=st.session_state.estimate_date,
-            key="estimate_date_input",
-            label_visibility="collapsed"
+            key="estimate_date_input_text",
+            label_visibility="collapsed",
+            placeholder="Enter date (DD/MM/YY)"
         )
+
+
     
     
     estimate_heading = st.text_area(
@@ -1557,13 +1560,9 @@ def main_app():
                     date_cell = ws["I2"].value
                     
                     file_name = str(file_cell).strip() if file_cell else ""
-                    estimate_date = None
+                    estimate_date = str(date_cell).strip() if date_cell else ""
                     
-                    if date_cell:
-                        try:
-                            estimate_date = pd.to_datetime(str(date_cell).strip(), dayfirst=True).date()
-                        except Exception:
-                            pass
+                    
                     st.session_state.uploaded_excel_data = {
                         'work_desc': str(ws['A1'].value) if ws['A1'].value else "",
                         'head_note': str(ws['A2'].value) if ws['A2'].value else "",
@@ -2117,7 +2116,7 @@ def main_app():
             note_container = st.container()
             with note_container:
                 st.session_state.estimate_note = st.text_area(
-                    "Add a note to appear at the bottm of the estimate",
+                    "Add a note to appear at the bottom of the estimate",
                     value=st.session_state.estimate_note,
                     key="estimate_note_input",
                     height=150,
@@ -2152,10 +2151,9 @@ def main_app():
                 # Insert file name and date into I1 and I2
                 file_name = st.session_state.get("file_name", "")
                 estimate_date = st.session_state.get("estimate_date", None)
-                date_str = estimate_date.strftime("%d-%m-%Y") if estimate_date else ""
-                
+
                 ws["I1"] = f"{file_name}"
-                ws["I2"] = f"{date_str}"
+                ws["I2"] = f"{estimate_date}"
         
                 # Define alignments
                 center_align = Alignment(horizontal='center', vertical='center', wrap_text=True)
@@ -2368,8 +2366,7 @@ def main_app():
                 pdf.set_font("Arial", '', 10)
                 file_name = st.session_state.get("file_name", "")
                 estimate_date = st.session_state.get("estimate_date", None)
-                date_str = estimate_date.strftime("%d-%m-%Y") if estimate_date else ""
-                file_info = f"File: {file_name}\nDate: {date_str}"
+                file_info = f"File No: {file_name}\nDate: {estimate_date}"
                 pdf.set_xy(10, 15)  # Top left margin (same Y level as user_info)
                 pdf.multi_cell(60, 5, file_info, 0, 'L')
                 
