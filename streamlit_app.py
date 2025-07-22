@@ -17,8 +17,25 @@ getcontext().prec = 10  # Increase precision
 
 
 # Set page config
-st.set_page_config(layout="wide")
+st.set_page_config(
+    page_title="Estimate Drafter",
+    layout="wide",
+    initial_sidebar_state="collapsed"
+)
 
+# Hide default Streamlit sidebar navigation
+st.markdown("""
+    <style>
+        [data-testid="stSidebarNav"] {
+            display: none;
+        }
+    </style>
+""", unsafe_allow_html=True)
+
+# Auto-open wizard if flagged
+if st.session_state.get("wizard_target_index") is not None:
+    st.switch_page("pages/wizard.py")
+    
 st.markdown("""
     <style>
     /* Make all buttons stretch full width of their container */
@@ -997,10 +1014,10 @@ def main_app():
                     
                     with col1b:
                         st.markdown("<div style='height:28px;'></div>", unsafe_allow_html=True)
-                        if st.button("🔍 Smart Filter View", key=f"smart_filter_{idx}"):
-                            st.session_state.show_wizard_for_edit = idx  # Track which item we're editing
-                            st.session_state.show_wizard = True
-                            st.rerun()
+                        if st.button("🔍 Change Item", key=f"smart_filter_{idx}"):
+                            st.session_state["wizard_target_index"] = idx
+                            st.switch_page("pages/wizard.py")
+
                             
                 with col2:
                     quantity = st.text_input(

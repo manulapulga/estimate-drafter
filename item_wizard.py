@@ -1,7 +1,56 @@
 import pandas as pd
 import streamlit as st
 from streamlit.components.v1 import html
+from difflib import SequenceMatcher
 
+
+from difflib import SequenceMatcher
+
+def compute_relevance_score(row, search_phrase, search_terms):
+    text = ' '.join([
+        str(row['Item Name']).lower(),
+        str(row['Main Category']).lower(),
+        str(row['Sub Category 1']).lower(),
+        str(row['Sub Category 2']).lower()
+    ])
+    text = ' '.join(text.split())  # normalize spaces
+
+    score = 0
+
+    # High boost for exact phrase
+    if search_phrase in text:
+        score += 5
+
+    # Boost for individual term presence
+    score += sum(1 for term in search_terms if term in text)
+
+    # Extra boost for important phrase (example: "2 hp")
+    if "2 hp" in search_phrase and "2 hp" in text:
+        score += 3
+
+    # Add fuzzy similarity
+    similarity = SequenceMatcher(None, search_phrase, text).ratio()
+    score += similarity  # typically 0–1
+
+    return score
+
+def smart_search_match(row, search_phrase, search_terms, strict=False, fuzzy=False):
+    combined_text = ' '.join([
+        str(row['Item Name']).lower(),
+        str(row['Main Category']).lower(),
+        str(row['Sub Category 1']).lower(),
+        str(row['Sub Category 2']).lower()
+    ])
+    combined_text = ' '.join(combined_text.split())  # Normalize spacing
+
+    if strict:
+        return search_phrase in combined_text
+
+    if fuzzy:
+        ratio = SequenceMatcher(None, search_phrase, combined_text).ratio()
+        return ratio > 0.5  # Threshold can be tuned
+
+    return all(term in combined_text for term in search_terms)
 
 # 2. ITEM WIZARD COMPONENT
 def show_item_wizard(items_df, add_callback, selected_items=None):
@@ -303,22 +352,27 @@ def show_item_wizard(items_df, add_callback, selected_items=None):
                 ]
             
             # Search filter
+            # Improved intelligent search
             if search_term:
-                search_terms = search_term.lower().split()
-                
-                def search_match(row):
-                    # Combine all relevant fields into one searchable string
-                    search_text = ' '.join([
-                        str(row['Item Name']).lower(),
-                        str(row['Main Category']).lower(),
-                        str(row['Sub Category 1']).lower(),
-                        str(row['Sub Category 2']).lower()
-                    ])
-                    
-                    # Check if all search terms appear in any order
-                    return all(term in search_text for term in search_terms)
-                
-                filtered_items = filtered_items[filtered_items.apply(search_match, axis=1)]
+                search_input = search_term.strip().lower()
+                search_terms = search_input.split()
+                search_phrase = ' '.join(search_terms)
+            
+                # Add score column
+                filtered_items['__score__'] = filtered_items.apply(
+                    lambda row: compute_relevance_score(row, search_phrase, search_terms), axis=1
+                )
+            
+                # Filter items with any match
+                filtered_items = filtered_items[filtered_items['__score__'] > 0]
+            
+                # Sort by descending score
+                filtered_items = filtered_items.sort_values(by='__score__', ascending=False)
+            
+                # Remove helper column
+                filtered_items.drop(columns='__score__', inplace=True)
+            
+            
             
             # PAGINATION CONTROLS
             PAGE_SIZE = 30
@@ -359,10 +413,14 @@ def show_item_wizard(items_df, add_callback, selected_items=None):
                         st.rerun()
                 with col5:
                     if st.button("✕ Close", key="close_wizard2", type="primary"):
-                        st.session_state.show_wizard = False
-                        if 'show_wizard_for_edit' in st.session_state:
-                            st.session_state.show_wizard_for_edit = None
-                        st.rerun()       
+                        if st.session_state.get("wizard_target_index") is not None:
+                            st.session_state["wizard_target_index"] = None
+                            st.switch_page("streamlit_app.py")  # Redirect to main page
+                        else:
+                            st.session_state.show_wizard = False
+                            st.session_state.pop("show_wizard_for_edit", None)
+                            st.rerun()
+       
             
             # Calculate which items to show
             start_idx = (st.session_state.current_page - 1) * PAGE_SIZE
@@ -459,7 +517,7 @@ def show_item_wizard(items_df, add_callback, selected_items=None):
                     
                     if not is_restricted:
                         # Check if we're in edit mode
-                        is_edit_mode = 'show_wizard_for_edit' in st.session_state and st.session_state.show_wizard_for_edit is not None
+                        is_edit_mode = st.session_state.get("wizard_target_index") is not None
                         
                         # Change button text based on mode
                         if is_edit_mode:
@@ -522,10 +580,14 @@ def show_item_wizard(items_df, add_callback, selected_items=None):
                         st.rerun()
                 with col5:
                     if st.button("✕ Close", key="close_wizard3", type="primary"):
-                        st.session_state.show_wizard = False
-                        if 'show_wizard_for_edit' in st.session_state:
-                            st.session_state.show_wizard_for_edit = None
-                        st.rerun()        
+                        if st.session_state.get("wizard_target_index") is not None:
+                            st.session_state["wizard_target_index"] = None
+                            st.switch_page("streamlit_app.py")  # Redirect to main page
+                        else:
+                            st.session_state.show_wizard = False
+                            st.session_state.pop("show_wizard_for_edit", None)
+                            st.rerun()
+        
 # 3. EXAMPLE USAGE
 if __name__ == "__main__":
     st.title("Item Selection Demo")
