@@ -354,6 +354,9 @@ def main_app():
     user_row = credentials_df[credentials_df['username'] == username]
     cost_index = f"{user_row.iloc[0]['index'] + 1:.4f}" if not user_row.empty and 'index' in user_row.columns else "N/A"
     
+    with open("Icons/spec2.png", "rb") as image_file:
+        encoded_logo2spec = base64.b64encode(image_file.read()).decode()
+    
     st.markdown(f"""
         <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500&display=swap" rel="stylesheet">
         <style>
@@ -398,15 +401,28 @@ def main_app():
                 letter-spacing: 1px;
                 color: #003344;
                 white-space: nowrap;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                gap: 10px;
+            }}
+    
+            .ribbon-center img {{
+                height: 28px;
+                vertical-align: middle;
             }}
         </style>
     
         <div class="ribbon-bar">
             <div class="ribbon-left">Logged in as: {username}</div>
-            <div class="ribbon-center">SPEC Estimate Drafter</div>
+            <div class="ribbon-center">
+                <img src="data:image/png;base64,{encoded_logo2spec}" alt="logo">
+                Estimate Drafter
+            </div>
             <div class="ribbon-right">Cost Index: {cost_index}</div>
         </div>
     """, unsafe_allow_html=True)
+    
 
 
 
