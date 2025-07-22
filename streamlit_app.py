@@ -536,7 +536,7 @@ def main_app():
             value=st.session_state.estimate_date,
             key="estimate_date_input_text",
             label_visibility="collapsed",
-            placeholder="Enter date (DD/MM/YY)"
+            placeholder="DD/MM/YYYY"
         )
 
 
@@ -2116,11 +2116,12 @@ def main_app():
             note_container = st.container()
             with note_container:
                 st.session_state.estimate_note = st.text_area(
-                    "Add a note to appear at the bottom of the estimate",
+                    "",
                     value=st.session_state.estimate_note,
                     key="estimate_note_input",
                     height=150,
                     max_chars=7000,  # Approx 1000 words
+                    placeholder="Add a note to appear at the bottom of the estimate"
                 )
             
         st.markdown("<hr style='margin-top: 20px; margin-bottom: 10px;'>", unsafe_allow_html=True)
