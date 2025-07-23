@@ -243,35 +243,77 @@ with open("Icons/spec1.png", "rb") as image_file:
     encoded_logospec = base64.b64encode(image_file.read()).decode() 
 
 def login_page(credentials_df):
+    import base64
+
+    # Load banner and logo
+    with open("Icons/banner.png", "rb") as image_file:
+        encoded_banner = base64.b64encode(image_file.read()).decode()
+    with open("Icons/spec1.png", "rb") as image_file:
+        encoded_logospec = base64.b64encode(image_file.read()).decode()
+
+     # Inject CSS to remove top space
+    st.markdown("""
+        <style>
+        html, body, .stApp {
+            margin-top: 0 !important;
+            padding-top: 0 !important;
+        }
+        [data-testid="stVerticalBlock"] {
+            margin-top: 0 !important;
+            padding-top: 0 !important;
+        }
+        .block-container {
+            padding-top: 0rem !important;
+        }
+        </style>
+    """, unsafe_allow_html=True)
     
-    
+    # Banner section - Half width
     st.markdown(f"""
         <div style='
             background: linear-gradient(135deg, #e0f7fa, #b2ebf2);
-            padding: 15px;
+            padding: 0px;
             border-radius: 12px;
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
             text-align: center;
-            margin-bottom: 20px;
+            margin-bottom: 1px;
+            margin-top: 0px;
+            width: 50%;
+            margin-left: auto;
+            margin-right: auto;
         '>
             <img src='data:image/png;base64,{encoded_banner}' 
-                 style='width: 100%; max-height: 100px; object-fit: contain; border-radius: 8px;' />
+                 style='width: 100%; max-height: 80px; object-fit: contain; border-radius: 8px;' />
         </div>
     """, unsafe_allow_html=True)
-    
-    # Optional spacing below the banner
-    st.markdown("<div style='height: 20px;'></div>", unsafe_allow_html=True)
-    
-    # Create columns to control the width of the input fields
-    col1, col2 = st.columns([1, 3])  # 50% width for each input field
 
-    with col1:
-        st.markdown("<div style='height: 20px;'></div>", unsafe_allow_html=True)
-        st.markdown("<div style='height: 20px;'></div>", unsafe_allow_html=True)
-        username_input = st.text_input("Username", key="username_input")
-        password_input = st.text_input("Password", type="password", key="password_input")
-    
-    # Login button logic
+
+    # Heading + logo section
+    st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)    
+
+    st.markdown(f"""
+        <div style='text-align: center; margin-top: 0px; margin-bottom: 0px;'>
+            <img src='data:image/png;base64,{encoded_logospec}' 
+                 style='width: auto; max-height: 80px; object-fit: contain; border-radius: 8px; margin-bottom: 0px;' />
+            <h2 style='
+                font-family: "Merriweather", serif;
+                font-size: 20px;
+                font-weight: 700;
+                color: #1a4c74;
+                margin: 0;
+            '>
+                Standardised Project Estimation Console
+            </h2>
+        </div>
+    """, unsafe_allow_html=True)
+
+    # Center login inputs
+    col1, col2, col3 = st.columns([2, 1, 2])
+
+    with col2:
+        username_input = st.text_input("", key="username_input", placeholder="Username", label_visibility="collapsed")
+        password_input = st.text_input("", type="password", key="password_input", placeholder="Password", label_visibility="collapsed")
+
         if st.button("Login"):
             if authenticate(username_input, password_input, credentials_df):
                 st.session_state.logged_in_username = username_input
@@ -279,30 +321,19 @@ def login_page(credentials_df):
                 st.rerun()
             else:
                 st.error("Invalid username or password")
-    with col2:
-        st.markdown(f"""
-            <div style='text-align: center; margin-top: 10px; margin-bottom: 5px;'>
-                <img src='data:image/png;base64,{encoded_logospec}' 
-                     style='width: auto; max-height: 80px; object-fit: contain; border-radius: 8px; margin-bottom: 8px;' />
-                <h2 style='
-                    font-family: "Merriweather", serif;
-                    font-size: 26px;
-                    font-weight: 700;
-                    color: #1a4c74;
-                    margin: 0;
-                '>
-                    Standardised Project Estimation Console
-                </h2>
-                <p style='
-                    font-family: "Segoe UI", sans-serif;
-                    font-size: 14px;
-                    color: #39779a;
-                    margin-top: 4px;
-                '>
-                    Powered by DSR 2021
-                </p>
-            </div>
-        """, unsafe_allow_html=True)
+    # Heading + logo section
+    st.markdown(f"""
+        <div style='text-align: center; margin-top: 0px; margin-bottom: 5px;'>
+            <p style='
+                font-family: "Segoe UI", sans-serif;
+                font-size: 13px;
+                color: #39779a;
+                margin-top: 2px;
+            '>
+                Powered by DSR 2021
+            </p>
+        </div>
+    """, unsafe_allow_html=True)
 
 
 def set_rounding_option(option):
@@ -354,8 +385,25 @@ def main_app():
     user_row = credentials_df[credentials_df['username'] == username]
     cost_index = f"{user_row.iloc[0]['index'] + 1:.4f}" if not user_row.empty and 'index' in user_row.columns else "N/A"
     
-    with open("Icons/spec2.png", "rb") as image_file:
+    with open("Icons/spec1.png", "rb") as image_file:
         encoded_logo2spec = base64.b64encode(image_file.read()).decode()
+    
+    # Inject CSS to remove top space
+    st.markdown("""
+        <style>
+        html, body, .stApp {
+            margin-top: 0 !important;
+            padding-top: 0 !important;
+        }
+        [data-testid="stVerticalBlock"] {
+            margin-top: 0 !important;
+            padding-top: 0 !important;
+        }
+        .block-container {
+            padding-top: 1rem !important;
+        }
+        </style>
+    """, unsafe_allow_html=True)
     
     st.markdown(f"""
         <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500&display=swap" rel="stylesheet">
@@ -374,7 +422,10 @@ def main_app():
                 display: flex;
                 align-items: center;
                 padding: 14px 24px;
-                border-radius: 12px;
+                border-top-left-radius: 0px;
+                border-top-right-radius: 0px;
+                border-bottom-left-radius: 18px;
+                border-bottom-right-radius: 18px;
                 font-family: "Poppins", sans-serif;
                 font-weight: 500;
                 font-size: 17px;
@@ -417,16 +468,10 @@ def main_app():
             <div class="ribbon-left">Logged in as: {username}</div>
             <div class="ribbon-center">
                 <img src="data:image/png;base64,{encoded_logo2spec}" alt="logo">
-                Estimate Drafter
             </div>
             <div class="ribbon-right">Cost Index: {cost_index}</div>
         </div>
     """, unsafe_allow_html=True)
-    
-
-
-
-
     
     st.markdown("""
         <style>
@@ -520,12 +565,42 @@ def main_app():
             }
         </style>
     """, unsafe_allow_html=True)
-    
     # Add Title row with File Name (left), Heading (center), Date (right), and Clear button
-    col1, col2, col3 = st.columns([2, 6, 2])
+    st.markdown("""
+        <style>
+        .thin-banner {
+            background: #5d89a3;
+            padding: 2px 0px !important;
+            border-top-left-radius: 13px;
+            border-top-right-radius: 13px;
+            border-bottom-left-radius: 0px;
+            border-bottom-right-radius: 0px;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+            margin: 0px 0 6px 0;
+            text-align: center;
+            height: 30px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .thin-banner h4 {
+            color: white;
+            font-size: 20px;
+            font-weight: 600;
+            margin: 0 !important;
+            padding: 0 !important;
+            line-height: 1;
+        }
+        </style>
+        <div class="thin-banner">
+            <h4>ADD DETAILS</h4>
+        </div>
+    """, unsafe_allow_html=True)
     
+        
+    col1, col2, col3, col4 = st.columns([1, 2, 2, 2])
     with col1:
-        st.markdown("<div style='padding-top: 6px;'></div>", unsafe_allow_html=True)
+        st.markdown("<div style='height: 30px;'></div>", unsafe_allow_html=True)
         st.session_state.file_name = st.text_input(
             label="File No",
             value=st.session_state.get("file_name", ""),
@@ -533,20 +608,9 @@ def main_app():
             label_visibility="collapsed",
             placeholder="File No"
         )
-    
-    with col2:
-        st.markdown(
-            "<h4 style='text-align: center; color: #3f7f94; font-size: 125%; margin-top: 14px;'>Add Title</h4>",
-            unsafe_allow_html=True
-        )
-    
-    with col3:
-        st.markdown("<div style='padding-top: 6px;'></div>", unsafe_allow_html=True)
-        
         # Make sure session state has a default key
         if "estimate_date" not in st.session_state:
             st.session_state.estimate_date = ""
-        
         st.session_state.estimate_date = st.text_input(
             label="Estimate Date",
             value=st.session_state.estimate_date,
@@ -554,33 +618,72 @@ def main_app():
             label_visibility="collapsed",
             placeholder="DD/MM/YYYY"
         )
-
-
-    
-    
-    estimate_heading = st.text_area(
-        "", 
-        placeholder="Enter work description (press Enter for new lines)",
-        key="work_desc",
-        height=100  # Adjust height as needed
-    )
-    if 'head_note' not in st.session_state:  # Add this line
-        st.session_state.head_note = ""  
-    # Add this section for head note
-    st.markdown("<h5 style='text-align: center;margin-bottom: 0px; color: #3f7f94; font-size: 125%;'>Add Head Note</h5>", unsafe_allow_html=True)
-    head_note_container = st.container()
-    with head_note_container:
-        st.session_state.head_note = st.text_area(
-            "",
-            value=st.session_state.head_note,
-            key="head_note_input",
-            height=100,
-            max_chars=2000,
-            placeholder="Enter any special instructions or notes that should appear at the top of the estimate"
+    with col2:  
+        estimate_heading = st.text_area(
+            "", 
+            placeholder="Enter work description",
+            key="work_desc",
+            height=100  # Adjust height as needed
         )
-    st.markdown("<hr style='margin-top: 20px; margin-bottom: 10px;'>", unsafe_allow_html=True)
-    st.markdown("<div style='height: 20px;'></div>", unsafe_allow_html=True)
-    st.markdown("<h3 style='text-align: center; color: #3f7f94; font-size: 125%;'>Add Items</h3>", unsafe_allow_html=True)
+    with col3:    
+        if 'head_note' not in st.session_state:  # Add this line
+            st.session_state.head_note = ""  
+        # Add this section for head note
+        head_note_container = st.container()
+        with head_note_container:
+            st.session_state.head_note = st.text_area(
+                "",
+                value=st.session_state.head_note,
+                key="head_note_input",
+                height=100,
+                max_chars=2000,
+                placeholder="Enter Head Note"
+            )
+    with col4:    
+        if 'estimate_note' not in st.session_state:  # Add this line
+            st.session_state.estimate_note = ""  
+        # Add this section for head note
+        estimate_note_container = st.container()
+        with estimate_note_container:
+            st.session_state.estimate_note = st.text_area(
+                "",
+                value=st.session_state.estimate_note,
+                key="estimate_note_input",
+                height=100,
+                max_chars=2000,
+                placeholder="Enter Foot Note"
+            ) 
+    st.markdown("<div style='height: 25px;'></div>", unsafe_allow_html=True)        
+    st.markdown("""
+        <style>
+        .thin-banner {
+            background: #5d89a3;
+            padding: 2px 0px !important;
+            border-top-left-radius: 13px;
+            border-top-right-radius: 13px;
+            border-bottom-left-radius: 0px;
+            border-bottom-right-radius: 0px;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+            margin: 0px 0 6px 0;
+            text-align: center;
+            height: 30px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .thin-banner h4 {
+            color: white;
+            font-size: 20px;
+            font-weight: 600;
+            margin: 0 !important;
+            padding: 0 !important;
+            line-height: 1;
+        }
+        </style>
+        <div class="thin-banner">
+            <h4>ADD ITEMS</h4>
+        </div>
+    """, unsafe_allow_html=True)
     st.markdown("<div style='height: 20px;'></div>", unsafe_allow_html=True)
     # Initialize session state
     if 'selected_items' not in st.session_state:
@@ -609,8 +712,15 @@ def main_app():
     if 'manual_final_total' not in st.session_state:
         st.session_state.manual_final_total = None
     if 'edit_final_total' not in st.session_state:
-        st.session_state.edit_final_total = False    
-        
+        st.session_state.edit_final_total = False
+    if 'signature_height' not in st.session_state:
+        st.session_state.signature_height = 20  # or whatever default you want
+    if 'signature_block_height' not in st.session_state:
+        st.session_state.signature_block_height = 30 
+    if 'signature_block_height' not in st.session_state:
+        st.session_state.signature_block_height = 35
+    if 'bottom_margin' not in st.session_state:
+        st.session_state.bottom_margin = 20  # or any appropriate default value in mm    
     # Functions
     def update_all_items():
         selected_items = st.session_state.selected_items.copy()
@@ -799,7 +909,6 @@ def main_app():
             # Close the wizard only when editing an item
             st.session_state.show_wizard = False
             st.session_state.show_wizard_for_edit = None
-            st.success(f"Item updated to '{selected_item}' successfully!")
             st.rerun()
         else:
             # Original code for adding new items
@@ -827,7 +936,6 @@ def main_app():
                 'GST_Applicable': True,
                 'Quantity_Remarks': ""
             })
-            st.success(f"Item '{selected_item}' added successfully!")
             # Don't close the wizard when adding new items
             st.rerun()
 
@@ -849,7 +957,6 @@ def main_app():
                         if new_heading.strip():
                             st.session_state.selected_items[idx]['Item'] = new_heading.strip()
                             st.session_state[f"expander_{idx}"] = False  # Collapse the expander
-                            st.success("Subheading updated successfully!")
                             st.rerun()
                 with col2:
                     if st.button(f"❌ Remove", key=f"remove_sub_{idx}"):
@@ -982,7 +1089,6 @@ def main_app():
                                         'show_remark_input': False
                                     }
                                     st.session_state[f"expander_{idx}"] = False
-                                    st.success("Custom item updated successfully!")
                                     st.rerun()
                             except ValueError:
                                 st.error("Please enter valid numbers for quantity and rate")
@@ -1100,7 +1206,6 @@ def main_app():
                                         'show_remark_input': False  # Add this line
                                     }
                                     st.session_state[f"expander_{idx}"] = False  # Add this line to collapse
-                                    st.success("Item updated successfully!")
                                     st.rerun()
                             except ValueError:
                                 st.error("Please enter a valid quantity")
@@ -1214,10 +1319,6 @@ def main_app():
             if st.button("🔁 Update All Items", key="update_all2", 
                         help="Update all items with current values"):
                 updated_count = update_all_items()
-                if updated_count > 0:
-                    st.success(f"Updated {updated_count} items successfully!")
-                else:
-                    st.info("No changes detected in any items")
                 st.rerun()        
     # Show Add Item section if toggled on
     if st.session_state.get('show_add_item', False):
@@ -1280,7 +1381,6 @@ def main_app():
                                     'Quantity_Remarks': ""
                                 })
                                 st.session_state.show_add_item = False
-                                st.success(f"Item '{item_name}' added successfully!")
                                 st.rerun()
                         except ValueError:
                             st.error("Please enter a valid quantity")
@@ -1305,7 +1405,6 @@ def main_app():
     if st.session_state.get('show_templates', False):
         template_data = load_templates()
         template_names = list(template_data.keys())
-        st.markdown("<hr style='margin-top: 20px; margin-bottom: 10px;'>", unsafe_allow_html=True)
         st.markdown("<div style='height: 20px;'></div>", unsafe_allow_html=True)
         st.markdown("### 🌐 Global Templates")
         st.markdown("<div style='height: 20px;'></div>", unsafe_allow_html=True)
@@ -1402,7 +1501,6 @@ def main_app():
                             st.session_state.show_templates = False
                             st.rerun()
     
-        st.divider()
         if st.button("✕ Cancel", key="cancel_template", type="primary"):
             st.session_state.show_templates = False
             st.rerun()
@@ -1412,10 +1510,8 @@ def main_app():
     if st.session_state.get('show_local_templates', False):
         template_data = load_local_templates(username)
         template_names = list(template_data.keys())
-        st.markdown("<hr style='margin-top: 20px; margin-bottom: 10px;'>", unsafe_allow_html=True)
         st.markdown("<div style='height: 20px;'></div>", unsafe_allow_html=True)
         st.markdown("### 🏠 Your Local Templates")
-        st.markdown("<hr style='margin-top: 20px; margin-bottom: 10px;'>", unsafe_allow_html=True)
         num_columns = 3
         for i in range(0, len(template_names), num_columns):
             cols = st.columns(num_columns)
@@ -1509,7 +1605,6 @@ def main_app():
                             st.session_state.show_local_templates = False
                             st.rerun()
     
-            st.divider()
             if st.button("✕ Cancel", key="cancel_local_template", type="primary"):
                 st.session_state.show_local_templates = False
                 st.rerun()
@@ -1520,7 +1615,7 @@ def main_app():
         except FileNotFoundError:
             st.error("Sample file not found")
             sample_data = ""
-        
+        st.markdown("<div style='height: 20px;'></div>", unsafe_allow_html=True)
         st.markdown(f"""
         <div style="background-color:#f0f2f6; padding:12px; border-radius:8px; margin-bottom:16px;">
             <p style="margin:0 0 12px 0; font-size:14px; color:#333;">
@@ -1895,27 +1990,27 @@ def main_app():
                 item_name = st.text_input(
                     "Item Description", 
                     key=f"other_item_name",
-                    placeholder="Enter custom item description"
+                    placeholder="Enter Item Name"
                 )
             with col2:
                 quantity = st.text_input(
                     "Quantity", 
                     value="1",
                     key=f"other_item_qty",
-                    placeholder="Enter quantity"
+                    placeholder="Quantity"
                 )
                 
             with col3:
                 unit = st.text_input(
                     "Unit", 
                     key=f"other_item_unit",
-                    placeholder="e.g., meter, each, kg"
+                    placeholder="Unit"
                 )
             with col4:
                 unit_price = st.text_input(
                     "Unit Rate (₹)", 
                     key=f"other_item_rate",
-                    placeholder="Enter rate per unit"
+                    placeholder="Unit Rate"
                 )
                 
             # Calculate and display total
@@ -1935,7 +2030,7 @@ def main_app():
     
             col1a, col2a = st.columns([1, 1])
             with col1a:
-                if st.button(f"Add Custom Item", key=f"add_other_item"):
+                if st.button(f"Add Custom Item", key=f"add_other_item", use_container_width=True):
                     if item_name and quantity and unit and unit_price:
                         try:
                             qty = float(quantity)
@@ -1951,13 +2046,11 @@ def main_app():
                                     'GST_Applicable': gst_applicable
                                 })
                                 st.session_state.show_add_other = False
-                                st.success(f"Custom item '{item_name}' added successfully!")
                                 st.rerun()
                         except ValueError:
                             st.error("Please enter valid numbers for quantity and rate")
             with col2a:
-                if st.button("✕ Cancel", key=f"cancel_other_item", type="primary", 
-                            help="Close without adding item"):
+                if st.button("✕ Cancel", key=f"cancel_other_item", type="primary", help="Close without adding item", use_container_width=True):
                     st.session_state.show_add_other = False
                     st.rerun()
             st.markdown("</div>", unsafe_allow_html=True)
@@ -1990,11 +2083,38 @@ def main_app():
         # Initialize or get current unforeseen amount
         if 'unforeseen_amount' not in st.session_state:
             st.session_state.unforeseen_amount = default_unforeseen
-        
-        st.markdown("<hr style='margin-top: 20px; margin-bottom: 10px;'>", unsafe_allow_html=True)
+        st.markdown("<div style='height: 25px;'></div>", unsafe_allow_html=True)
+        st.markdown("""
+        <style>
+        .thin-banner {
+            background: #5d89a3;
+            padding: 2px 0px !important;
+            border-top-left-radius: 13px;
+            border-top-right-radius: 13px;
+            border-bottom-left-radius: 0px;
+            border-bottom-right-radius: 0px;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+            margin: 0px 0 6px 0;
+            text-align: center;
+            height: 30px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .thin-banner h4 {
+            color: white;
+            font-size: 20px;
+            font-weight: 600;
+            margin: 0 !important;
+            padding: 0 !important;
+            line-height: 1;
+        }
+        </style>
+        <div class="thin-banner">
+            <h4>SUMMARY</h4>
+        </div>
+    """, unsafe_allow_html=True)
         st.markdown("<div style='height: 20px;'></div>", unsafe_allow_html=True)
-        st.markdown("<h3 style='text-align: center; color: #3f7f94; font-size: 125%;'>Summary</h3>", unsafe_allow_html=True)
-        st.subheader("Estimate Breakdown")
         st.write(f"Subtotal: ₹{total_cost:,.2f}")
         st.write(f"GST (18% on taxable items): ₹{gst:,.2f}")
         
@@ -2116,45 +2236,19 @@ def main_app():
             # Reset to calculated total when toggle is off
             if st.session_state.manual_final_total is not None:
                 st.session_state.manual_final_total = None
-  
-        
-       
-        # Replace the existing note input section with this:
-        if any(i.get("Type") != "Subheading" for i in st.session_state.selected_items):
-            # Initialize note in session state if not exists
-            if 'estimate_note' not in st.session_state:
-                st.session_state.estimate_note = ""
-            st.markdown("<hr style='margin-top: 20px; margin-bottom: 10px;'>", unsafe_allow_html=True)
-            # Add note input area with increased limit
-            st.markdown("<div style='height: 20px;'></div>", unsafe_allow_html=True)
-            st.markdown("<h3 style='text-align: center; color: #3f7f94; font-size: 125%;'>Add Foot Note</h3>", unsafe_allow_html=True)
-            
-            note_container = st.container()
-            with note_container:
-                st.session_state.estimate_note = st.text_area(
-                    "",
-                    value=st.session_state.estimate_note,
-                    key="estimate_note_input",
-                    height=150,
-                    max_chars=7000,  # Approx 1000 words
-                    placeholder="Add a note to appear at the bottom of the estimate"
-                )
-            
-        st.markdown("<hr style='margin-top: 20px; margin-bottom: 10px;'>", unsafe_allow_html=True)
-        st.markdown("<div style='height: 20px;'></div>", unsafe_allow_html=True)
-        
+
         def add_spec_watermark(pdf):
             """Add Icons/spec1.png at top left of the current page"""
             spec_path = "Icons/spec1.png"
             if os.path.exists(spec_path):
-                image_width = 20  # Adjust as needed
+                image_width = 10  # Adjust as needed
                 x = 5
                 y = 5  # 30 mm from top; adjust if needed
                 pdf.image(spec_path, x=x, y=y, w=image_width)
         
         # File generation buttons
-        col1, col2, col3, col4, col5 = st.columns([1, 1.5, 1, 1, 1])  # Added a 4th column for preview
-        with col1:
+        col1, col2, col3, col4, col5 = st.columns([1.5, 1, 1, 1, 1])  # Added a 4th column for preview
+        with col2:
             if st.button("📊 Generate Excel File", key="generate_excel"):
                 update_all_items()
                 from openpyxl import Workbook
@@ -2331,7 +2425,7 @@ def main_app():
                         key="download_excel"
                     )
 
-        with col2:
+        with col1:
             if st.button("📕 Generate PDF File"):
                 from num2words import num2words
                 # Update all items silently
@@ -2896,51 +2990,54 @@ def main_app():
                         file_name=pdf_file,
                         mime="application/pdf"
                     )
-            st.markdown("PDF Signature Area Settings")
-        
-            # Create three equal-width columns below the button
-            pdf_param_col1, pdf_param_col2, pdf_param_col3 = st.columns(3)
+            # Toggle button to show/hide signature area settings
+            show_signature_settings = st.toggle("Show PDF Signature Area Settings")
             
-            # Initialize parameters if not in session state
-            if 'signature_height' not in st.session_state:
-                st.session_state.signature_height = 30
-            if 'signature_block_height' not in st.session_state:
-                st.session_state.signature_block_height = 35
-            if 'bottom_margin' not in st.session_state:
-                st.session_state.bottom_margin = 20
+            if show_signature_settings:
+                # Create three equal-width columns
+                pdf_param_col1, pdf_param_col2, pdf_param_col3 = st.columns(3)
             
-            with pdf_param_col1:
-                st.session_state.signature_height = st.number_input(
-                    " ",
-                    min_value=5,
-                    max_value=100,
-                    value=st.session_state.signature_height,
-                    step=5,
-                    key="signature_height_input",
-                    help="Vertical space before signatures (mm)"
-                )
+                # Initialize parameters if not in session state
+                if 'signature_height' not in st.session_state:
+                    st.session_state.signature_height = 30
+                if 'signature_block_height' not in st.session_state:
+                    st.session_state.signature_block_height = 35
+                if 'bottom_margin' not in st.session_state:
+                    st.session_state.bottom_margin = 20
             
-            with pdf_param_col2:
-                st.session_state.signature_block_height = st.number_input(
-                    " ",
-                    min_value=5,
-                    max_value=100,
-                    value=st.session_state.signature_block_height,
-                    step=5,
-                    key="signature_block_height_input",
-                    help="Height of signature block (mm)"
-                )
+                with pdf_param_col1:
+                    st.session_state.signature_height = st.number_input(
+                        " ",
+                        min_value=5,
+                        max_value=100,
+                        value=st.session_state.signature_height,
+                        step=5,
+                        key="signature_height_input",
+                        help="Vertical space before signatures (mm)"
+                    )
             
-            with pdf_param_col3:
-                st.session_state.bottom_margin = st.number_input(
-                    " ",
-                    min_value=5,
-                    max_value=50,
-                    value=st.session_state.bottom_margin,
-                    step=5,
-                    key="bottom_margin_input",
-                    help="Page bottom margin (mm)"
-                )
+                with pdf_param_col2:
+                    st.session_state.signature_block_height = st.number_input(
+                        " ",
+                        min_value=5,
+                        max_value=100,
+                        value=st.session_state.signature_block_height,
+                        step=5,
+                        key="signature_block_height_input",
+                        help="Height of signature block (mm)"
+                    )
+            
+                with pdf_param_col3:
+                    st.session_state.bottom_margin = st.number_input(
+                        " ",
+                        min_value=5,
+                        max_value=50,
+                        value=st.session_state.bottom_margin,
+                        step=5,
+                        key="bottom_margin_input",
+                        help="Page bottom margin (mm)"
+                    )
+
         
 
         with col3:
@@ -2970,17 +3067,42 @@ def main_app():
             if st.button("🔁 Update All Items", key="update_all1", 
                         help="Update all items with current values"):
                 updated_count = update_all_items()
-                if updated_count > 0:
-                    st.success(f"Updated {updated_count} items successfully!")
-                else:
-                    st.info("No changes detected in any items")
                 st.rerun()
             
         
     # Add this right after the totals section but before the "else" for "No items added"
     if st.session_state.get('show_preview', False) and any(i.get("Type") != "Subheading" for i in st.session_state.selected_items):
-        st.markdown("---")
-        st.subheader("Estimate Preview")
+        st.markdown("""
+        <style>
+        .thin-banner {
+            background: #5d89a3;
+            padding: 2px 0px !important;
+            border-top-left-radius: 13px;
+            border-top-right-radius: 13px;
+            border-bottom-left-radius: 0px;
+            border-bottom-right-radius: 0px;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+            margin: 0px 0 6px 0;
+            text-align: center;
+            height: 30px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .thin-banner h4 {
+            color: white;
+            font-size: 20px;
+            font-weight: 600;
+            margin: 0 !important;
+            padding: 0 !important;
+            line-height: 1;
+        }
+        </style>
+        <div class="thin-banner">
+            <h4>PREVIEW</h4>
+        </div>
+    """, unsafe_allow_html=True)
+        st.markdown("<div style='height: 25px;'></div>", unsafe_allow_html=True)
         
         # Create a preview dataframe
         preview_data = []
@@ -3029,12 +3151,14 @@ def main_app():
         **Subtotal:** ₹{total_cost:,.2f}  
         **GST (18%):** ₹{gst:,.2f}  
         **Unforeseen (max 2.5%):** ₹{unforeseen:,.2f}  
-        **Final Total Rounded to Next 100:** ₹{final_total:,.2f}
+        **{rounding_label}: ₹{final_total:,.3f}**
         """)
         
-        if st.button("Close Preview", key="close_preview"):
-            st.session_state.show_preview = False
-            st.rerun()
+        col1, col2= st.columns([1, 4])
+        with col1:
+            if st.button("Close Preview", key="close_preview"):
+                st.session_state.show_preview = False
+                st.rerun()
 # Check authentication
 if 'authenticated' not in st.session_state:
     st.session_state.authenticated = False
@@ -3052,19 +3176,31 @@ if st.session_state.authenticated:
 else:
     login_page(credentials_df)
     
+# Replace the existing sidebar CSS with this:
 st.sidebar.markdown("""
 <style>
-    /* Main buttons - keep existing style */
-    section[data-testid="stSidebar"] button:not(.stDownloadButton button, .pump-selector-btn button) {
+    /* Remove the arrow button styling */
+    section[data-testid="stSidebar"] div[data-testid="stToolbar"] {
+        display: none !important;
+    }
+    
+    /* Main container styling */
+    section[data-testid="stSidebar"] > div {
+        padding-top: 0 !important;
+    }
+    
+    /* Button styling - compact and professional */
+    section[data-testid="stSidebar"] button {
         width: 100% !important;
-        margin: 5px 0 !important;
-        padding: 10px !important;
+        margin: 0px 0 !important;
+        padding: 0px !important;
         font-size: 14px !important;
-        border-radius: 5px !important;
+        border-radius: 4px !important;
         border: 1px solid #2387eb !important;
         background-color: #e8f2fc !important;
-        color: black !important;
-        transition: all 0.3s !important;
+        color: #333 !important;
+        transition: all 0.2s !important;
+        box-shadow: none !important;
     }
     
     /* Download/secondary buttons - green style */
@@ -3073,36 +3209,52 @@ st.sidebar.markdown("""
         background-color: #4CAF50 !important;
         color: white !important;
         border: 1px solid #2E7D32 !important;
-        width: 100% !important;
-        margin: 5px 0 !important;
-        padding: 10px !important;
-        font-size: 14px !important;
-        border-radius: 5px !important;
-        transition: all 0.3s !important;
     }
     
     /* Hover states */
-    section[data-testid="stSidebar"] button:not(.stDownloadButton button, .pump-selector-btn button):hover {
-        color: white !important;
-        background-color: #154c79 !important;
-        border-color: #154c79 !important;
+    section[data-testid="stSidebar"] button:hover:not(.stDownloadButton button, .pump-selector-btn button) {
+        background-color: #d0e3f7 !important;
+        border-color: #1a6fbb !important;
     }
     
     section[data-testid="stSidebar"] .stDownloadButton button:hover,
     section[data-testid="stSidebar"] .pump-selector-btn button:hover {
-        background-color: #388E3C !important;
-        border-color: #1B5E20 !important;
+        background-color: #43a047 !important;
+        border-color: #1b5e20 !important;
     }
     
     /* Active states */
-    section[data-testid="stSidebar"] button:not(.stDownloadButton button, .pump-selector-btn button):active {
-        background-color: #103f66 !important;
-        border-color: #103f66 !important;
+    section[data-testid="stSidebar"] button:active:not(.stDownloadButton button, .pump-selector-btn button) {
+        background-color: #b8d4f0 !important;
     }
     
     section[data-testid="stSidebar"] .stDownloadButton button:active,
     section[data-testid="stSidebar"] .pump-selector-btn button:active {
-        background-color: #2E7D32 !important;
+        background-color: #388e3c !important;
+    }
+    
+    /* Dropdown styling */
+    section[data-testid="stSidebar"] .stSelectbox select {
+        padding: 0px 0px !important;
+        font-size: 14px !important;
+        margin: 0px 0 0px 0 !important;
+    }
+    
+    /* Section headers */
+    section[data-testid="stSidebar"] .st-expanderHeader {
+        padding: 6px 8px !important;
+        margin: 2px 0 !important;
+    }
+    
+    /* Remove extra padding around buttons */
+    section[data-testid="stSidebar"] > div > div > div > div {
+        padding: 0 !important;
+    }
+    
+    /* Pump selector link button */
+    .pump-selector-btn button {
+        margin-top: 0px !important;
+        margin-bottom: 0px !important;
     }
 </style>
 """, unsafe_allow_html=True)
