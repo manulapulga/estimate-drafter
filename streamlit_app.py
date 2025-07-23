@@ -2311,7 +2311,11 @@ def main_app():
                 work_desc_input = st.session_state.get("work_desc", "").strip()
                 
                 # Combine file name + work description
-                combined_name = f"{file_name_input} {work_desc_input}".strip()
+                # Remove newlines and other problematic characters
+                sanitized_work_desc = re.sub(r'[\n\r\\/*?:"<>|]', ' ', work_desc_input).strip()
+                combined_name = f"{file_name_input} {sanitized_work_desc}".strip()
+                safe_filename = re.sub(r'[\\/*?:"<>|]', '_', combined_name)
+                excel_file = f"{safe_filename or 'Estimate'}.xlsx"
                 
                 # Sanitize combined name
                 safe_filename = re.sub(r'[\\/*?:\"<>|]', '_', combined_name)
@@ -2873,7 +2877,10 @@ def main_app():
                 work_desc_input = st.session_state.get("work_desc", "").strip()
                 
                 # Combine File Name + Work Description
-                combined_name = f"{file_name_input} {work_desc_input}".strip()
+                sanitized_work_desc = re.sub(r'[\n\r\\/*?:"<>|]', ' ', work_desc_input).strip()
+                combined_name = f"{file_name_input} {sanitized_work_desc}".strip()
+                safe_filename = re.sub(r'[\\/*?:"<>|]', '_', combined_name)
+                pdf_file = f"{safe_filename or 'Estimate'}.pdf"
                 
                 # Sanitize for filename use
                 safe_filename = re.sub(r'[\\/*?:\"<>|]', '_', combined_name)
