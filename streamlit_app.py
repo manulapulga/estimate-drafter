@@ -2249,6 +2249,9 @@ def main_app():
                 x = 5
                 y = 5  # 30 mm from top; adjust if needed
                 pdf.image(spec_path, x=x, y=y, w=image_width)
+                pdf.set_font('Arial', 'I', 8)
+                pdf.cell(0, 5, f'{pdf.page_no()}', 0, 0, 'R')
+
         
         # File generation buttons
         col1, col2, col3, col4, col5 = st.columns([1.5, 1, 1, 1, 1])  # Added a 4th column for preview
@@ -2468,11 +2471,6 @@ def main_app():
                     
                     pdf.set_text_color(0, 0, 0)  # Black color for the main content
                     
-                    # Add page number at the top right corner
-                    pdf.set_font('Arial', 'I', 8)
-                    pdf.set_y(2)  # 5mm from top
-                    pdf.set_x(pdf.w - 5)  # 20mm from right edge
-                    pdf.cell(0, 10, f'Page {pdf.page_no()}', 0, 0, 'R')
                 
                 # Replace the PDF head note section with this more robust version:
 
