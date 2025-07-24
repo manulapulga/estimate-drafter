@@ -598,7 +598,7 @@ def main_app():
     """, unsafe_allow_html=True)
     
         
-    col1, col2, col3, col4 = st.columns([1, 2, 2, 2])
+    col1, col2, col3, col4 = st.columns([0.5, 2, 2, 2])
     with col1:
         st.markdown("<div style='height: 30px;'></div>", unsafe_allow_html=True)
         st.session_state.file_name = st.text_input(
@@ -1001,58 +1001,61 @@ def main_app():
                     
             if item_type == 'Other':
                 # Enhanced display for "Other" type items with editing capability
-                col1, col2 = st.columns([3, 1])
+                col1, col2, col3 = st.columns([5, 1, 1])
                 with col1:
                     # Editable item description
-                    new_desc = st.text_input(
-                        "Item Description", 
+                    new_desc = st.text_area(
+                        "Item Description",
+                        placeholder="Enter Item Name",
                         value=item['Item'],
-                        key=f"other_desc_{idx}"
+                        key=f"other_desc_{idx}",
+                        label_visibility="collapsed",
+                        height=150  # Adjust height as needed
                     )
                 with col2:
                     # Editable quantity
                     new_qty = st.text_input(
-                        "Quantity", 
+                        "Quantity",
+                        placeholder="Quantity",
                         value=f"{item['Quantity']}",
-                        key=f"other_qty_{idx}"
+                        key=f"other_qty_{idx}",
+                        label_visibility="collapsed"
                     )
-                    
-                col1, col2 = st.columns([1, 1])
-                with col1:
                     # Editable unit
                     new_unit = st.text_input(
-                        "Unit", 
+                        "Unit",
+                        placeholder="Unit",
                         value=item.get('Item Unit', ''),
-                        key=f"other_unit_{idx}"
+                        key=f"other_unit_{idx}",
+                        label_visibility="collapsed"
                     )
-                with col2:
                     # Editable unit rate
                     new_rate = st.text_input(
-                        "Unit Rate (₹)", 
+                        "Unit Rate (₹)",
+                        placeholder="Unit Rate (₹)",
                         value=f"{item.get('Unit Price', 0):.2f}",
-                        key=f"other_rate_{idx}"
+                        key=f"other_rate_{idx}",
+                        label_visibility="collapsed"
                     )
-                    
-                # Calculate and display total
-                try:
-                    qty = float(new_qty) if new_qty else 0
-                    rate = float(new_rate) if new_rate else 0
-                    total = qty * rate
-                    st.markdown(f"**Total: ₹{total:,.2f}**")
-                except ValueError:
-                    st.warning("Please enter valid numbers for quantity and rate")
-                    
-                # Editable GST checkbox
-                new_gst = st.checkbox(
-                    "GST Applicable?", 
-                    value=item.get('GST_Applicable', False),
-                    key=f"other_gst_{idx}"
-                )
+                with col3:    
+                    # Calculate and display total
+                    try:
+                        qty = float(new_qty) if new_qty else 0
+                        rate = float(new_rate) if new_rate else 0
+                        total = qty * rate
+                        st.markdown(f"**Total: ₹{total:,.2f}**")
+                    except ValueError:
+                        st.warning("Please enter valid numbers for quantity and rate")
+                        
+                    # Editable GST checkbox
+                    new_gst = st.checkbox(
+                        "GST Applicable?", 
+                        value=item.get('GST_Applicable', False),
+                        key=f"other_gst_{idx}"
+                    )
                 
-                # Remark Section for 'Other' Items
-                remark = item.get('Quantity_Remarks', '')
-                col1, col2 = st.columns([1, 4.5])
-                with col1:
+                    # Remark Section for 'Other' Items
+                    remark = item.get('Quantity_Remarks', '')
                     button_label = "✏️ Edit Remark" if remark else "➕ Add Remark"
                     
                     if st.button(button_label, key=f"edit_remark_other_{idx}"):
@@ -1274,7 +1277,7 @@ def main_app():
             st.rerun()
     with button_col5:
         if st.button("🧩 Custom Items", key="add_other_btn", type="secondary", 
-                    help="Add custom items not in database"):
+                    help="Add custom items not in database", use_container_width=True):
             # Toggle other items section and hide others
             st.session_state.show_add_other = not st.session_state.get('show_add_other', False)
             st.session_state.show_add_item = False
@@ -1386,7 +1389,7 @@ def main_app():
                             st.error("Please enter a valid quantity")
             with col2:
                 if st.button("✕ Cancel", key=f"cancel_add_{idx}", type="primary", 
-                            help="Close without adding item"):
+                            help="Close without adding item", use_container_width=True):
                     st.session_state.show_add_item = False
                     st.rerun()
             st.markdown("</div>", unsafe_allow_html=True)
@@ -1962,7 +1965,7 @@ def main_app():
                 st.rerun()  
     # Show Subheading section if toggled on
     if st.session_state.get('adding_subheading', False):
-        subheading = st.text_input("Enter Subheading", key="new_subheading")
+        subheading = st.text_area("Enter Subheading", key="new_subheading")
         col1, col2 = st.columns([1, 1])
         with col1:
             if st.button("Add Subheading to Estimate", key="confirm_subheading"):
@@ -1985,48 +1988,49 @@ def main_app():
     if st.session_state.get('show_add_other', False):
         with st.container():
             st.markdown(f"<div class='estimate-item'>", unsafe_allow_html=True)
-            col1, col2, col3, col4 = st.columns([5, 1, 1, 1])
+            col1, col2, col3 = st.columns([5, 1, 1])
             with col1:
-                item_name = st.text_input(
+                item_name = st.text_area(
                     "Item Description", 
                     key=f"other_item_name",
-                    placeholder="Enter Item Name"
+                    placeholder="Enter Item Name",
+                    label_visibility="collapsed",
+                    height=150  # Adjust height as needed
                 )
             with col2:
                 quantity = st.text_input(
                     "Quantity", 
-                    value="1",
                     key=f"other_item_qty",
-                    placeholder="Quantity"
+                    placeholder="Quantity",
+                    label_visibility="collapsed"
                 )
-                
-            with col3:
                 unit = st.text_input(
                     "Unit", 
                     key=f"other_item_unit",
-                    placeholder="Unit"
+                    placeholder="Unit",
+                    label_visibility="collapsed"
                 )
-            with col4:
                 unit_price = st.text_input(
                     "Unit Rate (₹)", 
                     key=f"other_item_rate",
-                    placeholder="Unit Rate"
+                    placeholder="Unit Rate",
+                    label_visibility="collapsed"
                 )
-                
-            # Calculate and display total
-            try:
-                qty = float(quantity) if quantity else 0
-                rate = float(unit_price) if unit_price else 0
-                total = qty * rate
-                st.markdown(f"**Total: ₹{total:,.2f}**")
-            except ValueError:
-                st.warning("Please enter valid numbers for quantity and rate")
-                
-            gst_applicable = st.checkbox(
-                "GST Applicable?", 
-                value=True,
-                key=f"other_item_gst"
-            )
+            with col3:    
+                # Calculate and display total
+                try:
+                    qty = float(quantity) if quantity else 0
+                    rate = float(unit_price) if unit_price else 0
+                    total = qty * rate
+                    st.markdown(f"**Total: ₹{total:,.2f}**")
+                except ValueError:
+                    st.warning("Please enter valid numbers for quantity and rate")
+                    
+                gst_applicable = st.checkbox(
+                    "GST Applicable?", 
+                    value=True,
+                    key=f"other_item_gst"
+                )
     
             col1a, col2a = st.columns([1, 1])
             with col1a:
@@ -2119,7 +2123,7 @@ def main_app():
         st.write(f"GST (18% on taxable items): ₹{gst:,.2f}")
         
         # Create columns to control the input field width
-        col1, col2, col3 = st.columns([5, 1.5, 13.5])  # Slightly adjusted column widths
+        col1, col2, col3 = st.columns([1.5, 1, 16])  # Slightly adjusted column widths
 
         with col1:
             unforeseen_input = st.text_input(
@@ -2463,6 +2467,12 @@ def main_app():
                     pdf.rotate(0)
                     
                     pdf.set_text_color(0, 0, 0)  # Black color for the main content
+                    
+                    # Add page number at the top right corner
+                    pdf.set_font('Arial', 'I', 8)
+                    pdf.set_y(2)  # 5mm from top
+                    pdf.set_x(pdf.w - 5)  # 20mm from right edge
+                    pdf.cell(0, 10, f'Page {pdf.page_no()}', 0, 0, 'R')
                 
                 # Replace the PDF head note section with this more robust version:
 
@@ -3037,16 +3047,13 @@ def main_app():
                         key="bottom_margin_input",
                         help="Page bottom margin (mm)"
                     )
-
-        
-
         with col3:
             if st.button("👁️Estimate  Preview", key="preview_estimate"):
                 st.session_state.show_preview = not st.session_state.get('show_preview', False)
                 st.rerun()
         with col4:
             if st.button("🗑️ Clear All Content", key="clear_all", 
-                        help="Remove all items and start fresh"):
+                        help="Remove all items and start fresh", use_container_width=True):
                 st.session_state.selected_items = []
                 st.session_state.item_count = 0
                 st.session_state.adding_subheading = False
@@ -3065,7 +3072,7 @@ def main_app():
               
         with col5:
             if st.button("🔁 Update All Items", key="update_all1", 
-                        help="Update all items with current values"):
+                        help="Update all items with current values", use_container_width=True):
                 updated_count = update_all_items()
                 st.rerun()
             

@@ -152,6 +152,89 @@ def show_item_wizard(items_df, add_callback, selected_items=None):
         .add-btn.added {
             background-color: #f44336 !important;
         }
+        .filter-dropdown {
+        font-weight: bold;
+        padding: 0.5rem;
+        margin: 0.3rem 0;
+        background-color: #f0f0f0;
+        border-radius: 0.3rem;
+        cursor: pointer;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        }
+        
+        .filter-dropdown:hover {
+            background-color: #e0e0e0;
+        }
+        
+        .filter-dropdown:after {
+            content: "▼";
+            font-size: 0.8rem;
+        }
+        
+        .filter-dropdown.collapsed:after {
+            content: "▶";
+        }
+        
+        .filter-options {
+            padding: 0.5rem;
+            background-color: #f8f8f8;
+            border-radius: 0.3rem;
+            margin-bottom: 0.5rem;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .filter-options.collapsed {
+            display: none;
+        }
+    </style>
+    """, unsafe_allow_html=True)
+    st.markdown("""
+    <style>
+        /* ... existing styles ... */
+        
+        .filter-dropdown-btn {
+            width: 100% !important;
+            text-align: left;
+            font-weight: bold;
+            padding: 0.5rem;
+            margin: 0.3rem 0;
+            background-color: #f0f0f0;
+            border-radius: 0.3rem;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border: none;
+        }
+        
+        .filter-dropdown-btn:hover {
+            background-color: #e0e0e0;
+        }
+        
+        .filter-dropdown-btn:after {
+            content: "▼";
+            font-size: 0.8rem;
+        }
+        
+        .filter-dropdown-btn.collapsed:after {
+            content: "▶";
+        }
+        
+        .filter-options {
+            padding: 0.5rem;
+            background-color: #f8f8f8;
+            border-radius: 0.3rem;
+            margin-bottom: 0.5rem;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .filter-options.collapsed {
+            display: none;
+        }
     </style>
     """, unsafe_allow_html=True)
 
@@ -170,7 +253,7 @@ def show_item_wizard(items_df, add_callback, selected_items=None):
             
             
             # Search box
-            search_term = st.text_input("🔍 Search items", key="wizard_search")
+            search_term = st.text_area("🔍 Search items", key="wizard_search")
             
             # In the FILTERS COLUMN section, replace the sort_options and selected_sort with this:
             sort_options = {
@@ -219,104 +302,156 @@ def show_item_wizard(items_df, add_callback, selected_items=None):
                     
                 st.session_state.current_page = 1
                 st.rerun()
-            # Replace the checkbox sections in your code with these versions:
+            # Replace the MAIN CATEGORY FILTER section with this:
             # MAIN CATEGORY FILTER
-            st.markdown("<div class='filter-section'>", unsafe_allow_html=True)
-            st.markdown("<div class='filter-header'>Main Categories</div>", unsafe_allow_html=True)
-            main_categories = sorted(items_df['Main Category'].dropna().unique().tolist())
+
+            # Initialize dropdown states if not exists
+            if 'main_cat_expanded' not in st.session_state:
+                st.session_state.main_cat_expanded = False
             
-            def update_main_category(category):
-                if category not in st.session_state.wizard_filters['main_categories']:
-                    st.session_state.wizard_filters['main_categories'].append(category)
-                else:
-                    st.session_state.wizard_filters['main_categories'].remove(category)
-                st.session_state.current_page = 1  # Reset to first page when filters change
+            # Dropdown toggle
+            main_cat_expanded = st.session_state.main_cat_expanded
+            toggle_main = st.button(
+                "▸ Main Categories" if not main_cat_expanded else "▾ Main Categories",
+                key="toggle_main_cat",
+                help="Click to expand/collapse main categories"
+            )
             
-            for category in main_categories:
-                st.checkbox(
-                    category,
-                    key=f"main_{category}",
-                    value=category in st.session_state.wizard_filters['main_categories'],
-                    on_change=update_main_category,
-                    args=(category,),
-                    kwargs=None
-                )
+            if toggle_main:
+                st.session_state.main_cat_expanded = not st.session_state.main_cat_expanded
+                st.rerun()
+            
+            if st.session_state.main_cat_expanded:
+                st.markdown("<div class='filter-options'>", unsafe_allow_html=True)
+                main_categories = sorted(items_df['Main Category'].dropna().unique().tolist())
+                
+                def update_main_category(category):
+                    if category not in st.session_state.wizard_filters['main_categories']:
+                        st.session_state.wizard_filters['main_categories'].append(category)
+                    else:
+                        st.session_state.wizard_filters['main_categories'].remove(category)
+                    st.session_state.current_page = 1
+                
+                for category in main_categories:
+                    st.checkbox(
+                        category,
+                        key=f"main_{category}",
+                        value=category in st.session_state.wizard_filters['main_categories'],
+                        on_change=update_main_category,
+                        args=(category,)
+                    )
+                st.markdown("</div>", unsafe_allow_html=True)
+            
             st.markdown("</div>", unsafe_allow_html=True)
             
+            # Replace the SUB CATEGORY 1 FILTER section with this:
             # SUB CATEGORY 1 FILTER
-            st.markdown("<div class='filter-section'>", unsafe_allow_html=True)
-            st.markdown("<div class='filter-header'>Sub Categories 1</div>", unsafe_allow_html=True)
-            
-            def update_sub1_category(sub1):
-                if sub1 not in st.session_state.wizard_filters['sub1_categories']:
-                    st.session_state.wizard_filters['sub1_categories'].append(sub1)
-                else:
-                    st.session_state.wizard_filters['sub1_categories'].remove(sub1)
-                st.session_state.current_page = 1
-            
-            if st.session_state.wizard_filters['main_categories']:
-                sub1_options = items_df[
-                    items_df['Main Category'].isin(st.session_state.wizard_filters['main_categories'])
-                ]['Sub Category 1'].dropna().unique().tolist()
-            else:
-                sub1_options = items_df['Sub Category 1'].dropna().unique().tolist()
-            
-            import re
 
-            def extract_prefix_number(s):
-                match = re.match(r"^\s*(\d+)\.", s)
-                return int(match.group(1)) if match else float('inf')  # Non-numbered items go last
+            # Initialize dropdown state
+            if 'sub1_cat_expanded' not in st.session_state:
+                st.session_state.sub1_cat_expanded = False
             
-            # Sort using the numeric prefix
-            sorted_sub1 = sorted(sub1_options, key=extract_prefix_number)
+            # Dropdown toggle
+            sub1_cat_expanded = st.session_state.sub1_cat_expanded
+            toggle_sub1 = st.button(
+                "▸ Sub Categories 1" if not sub1_cat_expanded else "▾ Sub Categories 1",
+                key="toggle_sub1_cat",
+                help="Click to expand/collapse sub categories 1"
+            )
             
-            for sub1 in sorted_sub1:
-                label = f"{sub1}".replace(" ", "\u00A0")  # Preserve spacing in UI
-                st.checkbox(
-                    label,
-                    key=f"sub1_{sub1}",
-                    value=sub1 in st.session_state.wizard_filters['sub1_categories'],
-                    on_change=update_sub1_category,
-                    args=(sub1,)
-                )
+            if toggle_sub1:
+                st.session_state.sub1_cat_expanded = not st.session_state.sub1_cat_expanded
+                st.rerun()
+            
+            if st.session_state.sub1_cat_expanded:
+                st.markdown("<div class='filter-options'>", unsafe_allow_html=True)
+                
+                def update_sub1_category(sub1):
+                    if sub1 not in st.session_state.wizard_filters['sub1_categories']:
+                        st.session_state.wizard_filters['sub1_categories'].append(sub1)
+                    else:
+                        st.session_state.wizard_filters['sub1_categories'].remove(sub1)
+                    st.session_state.current_page = 1
+                
+                if st.session_state.wizard_filters['main_categories']:
+                    sub1_options = items_df[
+                        items_df['Main Category'].isin(st.session_state.wizard_filters['main_categories'])
+                    ]['Sub Category 1'].dropna().unique().tolist()
+                else:
+                    sub1_options = items_df['Sub Category 1'].dropna().unique().tolist()
+                
+                import re
+                def extract_prefix_number(s):
+                    match = re.match(r"^\s*(\d+)\.", s)
+                    return int(match.group(1)) if match else float('inf')
+                
+                sorted_sub1 = sorted(sub1_options, key=extract_prefix_number)
+                
+                for sub1 in sorted_sub1:
+                    label = f"{sub1}".replace(" ", "\u00A0")
+                    st.checkbox(
+                        label,
+                        key=f"sub1_{sub1}",
+                        value=sub1 in st.session_state.wizard_filters['sub1_categories'],
+                        on_change=update_sub1_category,
+                        args=(sub1,)
+                    )
+                
+                st.markdown("</div>", unsafe_allow_html=True)
             
             st.markdown("</div>", unsafe_allow_html=True)
             
+            # Replace the SUB CATEGORY 2 FILTER section with this:
             # SUB CATEGORY 2 FILTER
-            st.markdown("<div class='filter-section'>", unsafe_allow_html=True)
-            st.markdown("<div class='filter-header'>Sub Categories 2</div>", unsafe_allow_html=True)
-            
-            def update_sub2_category(sub2):
-                if sub2 not in st.session_state.wizard_filters['sub2_categories']:
-                    st.session_state.wizard_filters['sub2_categories'].append(sub2)
-                else:
-                    st.session_state.wizard_filters['sub2_categories'].remove(sub2)
-                st.session_state.current_page = 1
-            
-            # Create a base query for Sub Category 2 filtering
-            base_query = items_df.copy()
-            
-            # Apply Main Category filter if any are selected
-            if st.session_state.wizard_filters['main_categories']:
-                base_query = base_query[base_query['Main Category'].isin(st.session_state.wizard_filters['main_categories'])]
-            
-            # Apply Sub Category 1 filter if any are selected
-            if st.session_state.wizard_filters['sub1_categories']:
-                base_query = base_query[base_query['Sub Category 1'].isin(st.session_state.wizard_filters['sub1_categories'])]
-            
-            # Get the filtered Sub Category 2 options
-            sub2_options = base_query['Sub Category 2'].dropna().unique().tolist()
-            
-            for sub2 in sorted(sub2_options):
-                st.checkbox(
-                    sub2,
-                    key=f"sub2_{sub2}",
-                    value=sub2 in st.session_state.wizard_filters['sub2_categories'],
-                    on_change=update_sub2_category,
-                    args=(sub2,)
-                )
-            st.markdown("</div>", unsafe_allow_html=True)
 
+            # Initialize dropdown state
+            if 'sub2_cat_expanded' not in st.session_state:
+                st.session_state.sub2_cat_expanded = False
+            
+            # Dropdown toggle
+            sub2_cat_expanded = st.session_state.sub2_cat_expanded
+            toggle_sub2 = st.button(
+                "▸ Sub Categories 2" if not sub2_cat_expanded else "▾ Sub Categories 2",
+                key="toggle_sub2_cat",
+                help="Click to expand/collapse sub categories 2"
+            )
+            
+            if toggle_sub2:
+                st.session_state.sub2_cat_expanded = not st.session_state.sub2_cat_expanded
+                st.rerun()
+            
+            if st.session_state.sub2_cat_expanded:
+                st.markdown("<div class='filter-options'>", unsafe_allow_html=True)
+                
+                def update_sub2_category(sub2):
+                    if sub2 not in st.session_state.wizard_filters['sub2_categories']:
+                        st.session_state.wizard_filters['sub2_categories'].append(sub2)
+                    else:
+                        st.session_state.wizard_filters['sub2_categories'].remove(sub2)
+                    st.session_state.current_page = 1
+                
+                base_query = items_df.copy()
+                if st.session_state.wizard_filters['main_categories']:
+                    base_query = base_query[base_query['Main Category'].isin(
+                        st.session_state.wizard_filters['main_categories'])]
+                if st.session_state.wizard_filters['sub1_categories']:
+                    base_query = base_query[base_query['Sub Category 1'].isin(
+                        st.session_state.wizard_filters['sub1_categories'])]
+                
+                sub2_options = base_query['Sub Category 2'].dropna().unique().tolist()
+                
+                for sub2 in sorted(sub2_options):
+                    st.checkbox(
+                        sub2,
+                        key=f"sub2_{sub2}",
+                        value=sub2 in st.session_state.wizard_filters['sub2_categories'],
+                        on_change=update_sub2_category,
+                        args=(sub2,)
+                    )
+                
+                st.markdown("</div>", unsafe_allow_html=True)
+            
+            st.markdown("</div>", unsafe_allow_html=True)
         # ITEMS COLUMN
         with items_col:
             # Apply filters
@@ -385,7 +520,7 @@ def show_item_wizard(items_df, add_callback, selected_items=None):
             
             # Navigation buttons
             if total_pages > 1:
-                col1, col2, col3, col4, col5 = st.columns([1, 1, 3, 1, 1.5],)
+                col1, col2, col3, col4, col5 = st.columns([1.5, 1.5, 2.7, 1.5, 1.5],)
                 
                 with col1:
                     if st.button("⏮️", disabled=st.session_state.current_page == 1, 
@@ -553,7 +688,7 @@ def show_item_wizard(items_df, add_callback, selected_items=None):
 
             # Navigation buttons
             if total_pages > 1:
-                col1, col2, col3, col4, col5 = st.columns([1, 1, 3, 1, 1.5],)
+                col1, col2, col3, col4, col5 = st.columns([1.5, 1.5, 2.7, 1.5, 1.5],)
                 
                 with col1:
                     if st.button("⏮️", disabled=st.session_state.current_page == 1, 
@@ -580,14 +715,15 @@ def show_item_wizard(items_df, add_callback, selected_items=None):
                         st.session_state.current_page += 1
                         st.rerun()
                 with col5:
-                    if st.button("✕ Close", key="close_wizard3", type="primary"):
-                        if st.session_state.get("wizard_target_index") is not None:
-                            st.session_state["wizard_target_index"] = None
-                            st.switch_page("streamlit_app.py")  # Redirect to main page
-                        else:
-                            st.session_state.show_wizard = False
-                            st.session_state.pop("show_wizard_for_edit", None)
-                            st.rerun()
+                    if is_edit_mode:
+                        if st.button("✕ Close", key="close_wizard3", type="primary"):
+                            if st.session_state.get("wizard_target_index") is not None:
+                                st.session_state["wizard_target_index"] = None
+                                st.switch_page("streamlit_app.py")  # Redirect to main page
+                            else:
+                                st.session_state.show_wizard = False
+                                st.session_state.pop("show_wizard_for_edit", None)
+                                st.rerun()
         
 # 3. EXAMPLE USAGE
 if __name__ == "__main__":
