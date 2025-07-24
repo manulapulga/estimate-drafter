@@ -3147,10 +3147,11 @@ def main_app():
         
         # Add totals to the preview
         total_cost, gst, unforeseen, final_total = calculate_totals()
+        false_unforeseen = final_total - (total_cost + gst)
         st.markdown(f"""
         **Subtotal:** ₹{total_cost:,.2f}  
         **GST (18%):** ₹{gst:,.2f}  
-        **Unforeseen (max 2.5%):** ₹{unforeseen:,.2f}  
+        **Unforeseen (max 2.5%):** ₹{false_unforeseen:,.2f}  
         **{rounding_label}: ₹{final_total:,.3f}**
         """)
         
