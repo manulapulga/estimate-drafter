@@ -1729,7 +1729,7 @@ def main_app():
                                         with btn_col2:
                                             if st.button("🗑️", key=f"delete_{file_name}"):
                                                 db.reference(f'estimates/{username}/{file_name}').delete()
-                                                st.success(f"✅ Deleted: {file_name}")
+                                                st.success(f"❌")
                                                 st.rerun()
                                                 
             if st.session_state.get("show_firebase_load", False):
