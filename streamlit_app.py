@@ -2705,6 +2705,12 @@ def main_app():
                     # ✅ Remove newlines and carriage returns from text_area input
                     work_desc_input = re.sub(r'[\r\n]+', ' ', work_desc_input)
                     
+                    # 🔧 Ensure default filename if file number is blank
+                    file_name_input = st.session_state.get("file_name", "").strip()
+                    if not file_name_input:
+                        file_name_input = "Estimate"
+                    st.session_state["file_name"] = file_name_input  # Optional UI update
+
                     # Combine and sanitize
                     combined_name = f"{file_name_input} {work_desc_input}".strip()
                     safe_base = re.sub(r'[^\w\-]', ' ', combined_name)
