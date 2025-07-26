@@ -1,19 +1,20 @@
+import os
+import io
+import json
+import base64
+import math
+import re
 import pandas as pd
 import streamlit as st
 from fpdf import FPDF
-import math
 from openpyxl import Workbook
 from openpyxl.styles import Alignment, Border, Side
 from item_wizard import show_item_wizard
-import base64
 from decimal import Decimal, ROUND_HALF_UP, getcontext
 from num2words import num2words
-import os
-import re
+import firebase_admin
+from firebase_admin import credentials, db
 
-
-
-getcontext().prec = 10  # Increase precision
 
 
 # Set page config
@@ -22,6 +23,21 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="collapsed"
 )
+
+# Initialize Firebase once
+if not firebase_admin._apps:
+    try:
+        cred = credentials.Certificate("Support/firebase_credentials.json")
+        firebase_admin.initialize_app(cred, {
+            'databaseURL': 'https://spec-files-b881b-default-rtdb.firebaseio.com/'
+        })
+        st.write("✅ Firebase Initialized")
+    except Exception as e:
+        st.error(f"❌ Firebase init failed: {e}")
+
+
+getcontext().prec = 10  # Increase precision
+
 
 # Hide default Streamlit sidebar navigation
 st.markdown("""
@@ -105,6 +121,35 @@ div[data-testid="stExpander"]:not([open]):hover {
 def load_credentials(file_path):
     return pd.read_excel(file_path, sheet_name=1)  # Sheet 2 is index 1
 
+def save_excel_to_firebase(username, filename, excel_io):
+    def get_unique_filename(base_name):
+        existing_files = list_user_files(username).keys()
+        if base_name not in existing_files:
+            return base_name
+        i = 1
+        while f"{base_name}_{i}" in existing_files:
+            i += 1
+        return f"{base_name}_{i}"
+
+    # Ensure file pointer is at start
+    excel_io.seek(0)
+    encoded = base64.b64encode(excel_io.read()).decode()
+
+    unique_filename = get_unique_filename(filename)
+    db.reference(f'estimates/{username}/{unique_filename}').set(encoded)
+    return unique_filename  # optional, useful for UI confirmation
+    
+
+def list_user_files(username):
+    files = db.reference(f'estimates/{username}').get()
+    return files if files else {}
+
+def load_excel_from_firebase(username, filename):
+    encoded = db.reference(f'estimates/{username}/{filename}').get()
+    if encoded:
+        return io.BytesIO(base64.b64decode(encoded))
+    return None
+    
 def break_long_words(text, max_length=8):
     """
     Insert a space after every max_length characters in long unbroken words.
@@ -598,7 +643,7 @@ def main_app():
     """, unsafe_allow_html=True)
     
         
-    col1, col2, col3, col4 = st.columns([0.5, 2, 2, 2])
+    col1, col2, col3, col4 = st.columns([1, 2, 2, 2])
     with col1:
         st.markdown("<div style='height: 30px;'></div>", unsafe_allow_html=True)
         st.session_state.file_name = st.text_input(
@@ -945,7 +990,7 @@ def main_app():
             # Modified expander with controlled state
             expanded = st.session_state.get(f"expander_{idx}", False)
             # Add padding manually using Unicode spaces
-            subheading_title = f"🗂️***{item['Item']}***🗂️"
+            subheading_title = f"📂{item['Item']}📂"
             with st.expander(subheading_title, expanded=expanded):
                 # Editable text input for subheading
                 new_heading = st.text_input("Edit Subheading", value=item['Item'], key=f"edit_subheading_{idx}")
@@ -1637,10 +1682,73 @@ def main_app():
             </div>
         </div>
         """, unsafe_allow_html=True)
-    
-        uploaded_file = st.file_uploader("Choose an Excel file", type=['xlsx'], key="excel_uploader")
+        
+        with st.container():
+            # 🔘 Toggle Firebase file load panel
+            if st.button("☁️ Load From Cloud", key="trigger_load_firebase"):
+                st.session_state["show_firebase_load"] = not st.session_state.get("show_firebase_load", False)
+            
+            
+            
+            # 🔄 Show Firebase file cards only when toggled on
+            if st.session_state.get("show_firebase_load", False):
+                username = st.session_state.get("logged_in_username")
+                files = list_user_files(username)
+            
+                if not files:
+                    st.warning("No saved Excel files found.")
+                else:
+                    st.markdown("**📂 Saved Estimates**")
+                    file_names = list(files.keys())
+                    cards_per_row = 4
+            
+                    for i in range(0, len(file_names), cards_per_row):
+                        cols = st.columns(cards_per_row)
+                        for j in range(cards_per_row):
+                            if i + j < len(file_names):
+                                file_name = file_names[i + j]
+                                with cols[j]:
+                                    with st.container(border=True):
+                                        st.markdown(f"🚰 {file_name}", unsafe_allow_html=True)
+                                        btn_col1, btn_col2 = st.columns([2, 1])
+                                        with btn_col1:
+                                            if st.button("📥 Load", key=f"open_{file_name}"):
+                                                excel_io = load_excel_from_firebase(username, file_name)
+                                                if excel_io:
+                                                    st.session_state["excel_uploader"] = excel_io
+                                                    st.session_state["uploaded_file_name"] = file_name
+                                                    st.session_state["show_firebase_load"] = False
+                                                    st.rerun()
+                                                else:
+                                                    st.error("❌ Failed to load file from Firebase.")
+                                        with btn_col2:
+                                            if st.button("🗑️", key=f"delete_{file_name}"):
+                                                db.reference(f'estimates/{username}/{file_name}').delete()
+                                                st.success(f"✅ Deleted: {file_name}")
+                                                st.rerun()
+                                                
+            if st.session_state.get("show_firebase_load", False):
+                if st.button("❌ Close", key="close_firebase_view"):
+                    st.session_state["show_firebase_load"] = False
+                    st.rerun()        
+                            
+        # 🔁 Check if a file is loaded from Firebase
+        uploaded_file = st.session_state.get("excel_uploader")
+        
+        # If not loaded from Firebase, fallback to manual upload
+        if not uploaded_file:
+            # ✅ Use Firebase-loaded file if available
+            uploaded_file = st.session_state.get("excel_uploader")
+            
+            # ✅ Otherwise show upload widget
+            if not uploaded_file:
+                uploaded_file = st.file_uploader("Choose an Excel file", type=["xlsx"], key="manual_upload")
+                if uploaded_file:
+                    st.session_state["uploaded_file_name"] = uploaded_file.name
+
         
         if uploaded_file is not None:
+            st.success(f"📄 Using: {st.session_state.get('uploaded_file_name', 'Loaded File')}")
             try:
                 from openpyxl import load_workbook
                 wb = load_workbook(uploaded_file, data_only=True)
@@ -2123,7 +2231,7 @@ def main_app():
         st.write(f"GST (18% on taxable items): ₹{gst:,.2f}")
         
         # Create columns to control the input field width
-        col1, col2, col3 = st.columns([1.5, 1, 16])  # Slightly adjusted column widths
+        col1, col2, col3 = st.columns([2.5, 1.5, 18])  # Slightly adjusted column widths
 
         with col1:
             unforeseen_input = st.text_input(
@@ -2254,9 +2362,9 @@ def main_app():
 
         
         # File generation buttons
-        col1, col2, col3, col4, col5 = st.columns([1.5, 1, 1, 1, 1])  # Added a 4th column for preview
-        with col2:
-            if st.button("📊 Generate Excel File", key="generate_excel"):
+        col1, col2, col3, col4, col5, col6 = st.columns([1, 1.5, 1.2, 1, 1, 1])  # Added a 4th column for preview
+        with col3:
+            if st.button("📊 Generate Excel", key="generate_excel", use_container_width=True):
                 update_all_items()
                 from openpyxl import Workbook
                 from openpyxl.styles import Alignment, Border, Side
@@ -2413,6 +2521,7 @@ def main_app():
                 
                 # Combine file name + work description
                 # Remove newlines and other problematic characters
+                import re
                 sanitized_work_desc = re.sub(r'[\n\r\\/*?:"<>|]', ' ', work_desc_input).strip()
                 combined_name = f"{file_name_input} {sanitized_work_desc}".strip()
                 safe_filename = re.sub(r'[\\/*?:"<>|]', '_', combined_name)
@@ -2433,7 +2542,179 @@ def main_app():
                     )
 
         with col1:
-            if st.button("📕 Generate PDF File"):
+            if st.button("💾 Save to Cloud", use_container_width=True):
+                try:
+                    # 🔧 Define the Excel generation logic inline
+                    from openpyxl import Workbook
+                    from openpyxl.styles import Alignment, Border, Side
+                    from num2words import num2words
+                    import re
+            
+                    update_all_items()
+            
+                    wb = Workbook()
+                    ws = wb.active
+                    ws.title = "Estimate"
+            
+                    # Extract values
+                    file_name = st.session_state.get("file_name", "")
+                    estimate_date = st.session_state.get("estimate_date", "")
+                    head_note = st.session_state.get('head_note', '')
+                    estimate_note = st.session_state.get('estimate_note', '')
+                    final_total = st.session_state.get('final_total', 0)
+                    total_cost = st.session_state.get('total_cost', 0)
+                    gst = st.session_state.get('gst', 0)
+                    rounding_label = st.session_state.get('rounding_label', 'Final Total')
+            
+                    center_align = Alignment(horizontal='center', vertical='center', wrap_text=True)
+                    left_align = Alignment(horizontal='left', vertical='center', wrap_text=True)
+            
+                    ws["I1"] = file_name
+                    ws["I2"] = estimate_date
+            
+                    ws.merge_cells('A1:H1')
+                    ws['A1'] = estimate_heading
+                    ws['A1'].alignment = center_align
+                    ws['A1'].font = ws['A1'].font.copy(bold=True, size=14)
+            
+                    ws.merge_cells('A2:H2')
+                    ws['A2'] = head_note
+                    ws['A2'].alignment = center_align
+                    ws['A2'].font = ws['A2'].font.copy(italic=True)
+                    ws.row_dimensions[2].height = 30 if head_note.strip() else 15
+            
+                    headers = ["Sl.No", "Item Name", "Qty", "Unit", "Rate", "Total", "GST", "Remarks"]
+                    ws.append(headers)
+            
+                    row_num = 4
+                    serial = 1
+                    for item in st.session_state.selected_items:
+                        if item.get("Type") == "Subheading":
+                            ws.merge_cells(f'A{row_num}:H{row_num}')
+                            ws[f'A{row_num}'] = f" {item['Item']}"
+                            ws[f'A{row_num}'].alignment = center_align
+                            row_num += 1
+                        else:
+                            qty = round(float(item['Quantity']), 2)
+                            rate = round(float(item['Unit Price']), 2)
+                            total_formula = f"=C{row_num}*E{row_num}"
+                            gst_text = "Yes" if item.get("GST_Applicable", False) else "No"
+                            remarks = item.get("Quantity_Remarks", "")
+            
+                            ws.append([
+                                serial,
+                                item['Item'],
+                                qty,
+                                item['Item Unit'],
+                                rate,
+                                total_formula,
+                                gst_text,
+                                remarks
+                            ])
+                            serial += 1
+                            row_num += 1
+            
+                    start_data_row = 4
+                    end_data_row = row_num - 1
+            
+                    ws.merge_cells(f'A{row_num}:E{row_num}')
+                    ws[f'A{row_num}'] = "Subtotal"
+                    ws[f'F{row_num}'] = f"=SUM(F{start_data_row}:F{end_data_row})"
+                    subtotal_row = row_num
+                    row_num += 1
+            
+                    ws.merge_cells(f'A{row_num}:E{row_num}')
+                    ws[f'A{row_num}'] = "GST (18%)"
+                    ws[f'F{row_num}'] = f"=F{subtotal_row}*0.18"
+                    gst_row = row_num
+                    row_num += 1
+            
+                    unforeseen = final_total - (total_cost + gst)
+                    ws.merge_cells(f'A{row_num}:E{row_num}')
+                    ws[f'A{row_num}'] = "Unforeseen"
+                    ws[f'F{row_num}'] = f"{unforeseen}"
+                    row_num += 1
+            
+                    ws.merge_cells(f'A{row_num}:E{row_num}')
+                    ws[f'A{row_num}'] = rounding_label
+                    ws[f'F{row_num}'] = final_total
+                    row_num += 1
+            
+                    if final_total > 0:
+                        amount_words = num2words(int(round(float(final_total))), lang='en_IN').title() + " Rupees Only"
+                        ws.merge_cells(f'A{row_num}:H{row_num}')
+                        ws[f'A{row_num}'] = f"Amount in Words: {amount_words}"
+                        ws[f'A{row_num}'].alignment = center_align
+                        ws[f'A{row_num}'].font = ws[f'A{row_num}'].font.copy(bold=True)
+                        row_num += 1
+            
+                    ws.merge_cells(f'A{row_num}:H{row_num}')
+                    ws[f'A{row_num}'] = "All Items should be as per ISI Standards"
+                    ws[f'A{row_num}'].alignment = center_align
+                    ws[f'A{row_num}'].font = ws[f'A{row_num}'].font.copy(italic=True)
+                    row_num += 1
+            
+                    if estimate_note.strip():
+                        ws.merge_cells(f'A{row_num}:H{row_num}')
+                        ws[f'A{row_num}'] = estimate_note
+                        ws[f'A{row_num}'].alignment = center_align
+                        note_lines = len(estimate_note.split('\n')) + 1
+                        ws.row_dimensions[row_num].height = note_lines * 15
+                        row_num += 1
+            
+                    thin_border = Border(
+                        left=Side(style='thin'),
+                        right=Side(style='thin'),
+                        top=Side(style='thin'),
+                        bottom=Side(style='thin')
+                    )
+            
+                    for row in ws.iter_rows(min_row=1, max_row=row_num - 1, min_col=1, max_col=8):
+                        for cell in row:
+                            cell.border = thin_border
+                            cell.alignment = center_align
+            
+                    for row in ws.iter_rows(min_row=4, max_row=row_num - 1):
+                        row[1].alignment = left_align  # B column
+            
+                    ws.column_dimensions['A'].width = 8
+                    ws.column_dimensions['B'].width = 60
+                    ws.column_dimensions['C'].width = 12
+                    ws.column_dimensions['D'].width = 8
+                    ws.column_dimensions['E'].width = 12
+                    ws.column_dimensions['F'].width = 15
+                    ws.column_dimensions['G'].width = 8
+                    ws.column_dimensions['H'].width = 25
+            
+                    # 🔽 Now save to Firebase
+                    output = io.BytesIO()
+                    wb.save(output)
+                    output.seek(0)
+            
+                    username = st.session_state.logged_in_username
+                    import re
+
+                    file_name_input = st.session_state.get("file_name", "").strip()
+                    work_desc_input = st.session_state.get("work_desc", "").strip()
+                    
+                    # ✅ Remove newlines and carriage returns from text_area input
+                    work_desc_input = re.sub(r'[\r\n]+', ' ', work_desc_input)
+                    
+                    # Combine and sanitize
+                    combined_name = f"{file_name_input} {work_desc_input}".strip()
+                    safe_base = re.sub(r'[^\w\-]', ' ', combined_name)
+                    filename_no_ext = f"{safe_base}"  # No .xlsx here
+                    full_filename = f"{filename_no_ext}.xlsx"
+                    
+                    # Use filename_no_ext for Firebase path
+                    save_excel_to_firebase(username, filename_no_ext, output)
+                    
+                    st.success(f"✅ Saved ")
+            
+                except Exception as e:
+                    st.error(f"❌ Save failed: {e}")
+        with col2:
+            if st.button("📕 Generate PDF File", use_container_width=True):
                 from num2words import num2words
                 # Update all items silently
                 update_all_items()
@@ -2979,6 +3260,7 @@ def main_app():
                 work_desc_input = st.session_state.get("work_desc", "").strip()
                 
                 # Combine File Name + Work Description
+                import re
                 sanitized_work_desc = re.sub(r'[\n\r\\/*?:"<>|]', ' ', work_desc_input).strip()
                 combined_name = f"{file_name_input} {sanitized_work_desc}".strip()
                 safe_filename = re.sub(r'[\\/*?:"<>|]', '_', combined_name)
@@ -3045,12 +3327,12 @@ def main_app():
                         key="bottom_margin_input",
                         help="Page bottom margin (mm)"
                     )
-        with col3:
-            if st.button("👁️Estimate  Preview", key="preview_estimate"):
+        with col4:
+            if st.button("👁️ Preview", key="preview_estimate", use_container_width=True):
                 st.session_state.show_preview = not st.session_state.get('show_preview', False)
                 st.rerun()
-        with col4:
-            if st.button("🗑️ Clear All Content", key="clear_all", 
+        with col5:
+            if st.button("🗑️ Clear All", key="clear_all", 
                         help="Remove all items and start fresh", use_container_width=True):
                 st.session_state.selected_items = []
                 st.session_state.item_count = 0
@@ -3068,8 +3350,8 @@ def main_app():
                 })
                 st.rerun()
               
-        with col5:
-            if st.button("🔁 Update All Items", key="update_all1", 
+        with col6:
+            if st.button("🔁 Update All", key="update_all1", 
                         help="Update all items with current values", use_container_width=True):
                 updated_count = update_all_items()
                 st.rerun()
