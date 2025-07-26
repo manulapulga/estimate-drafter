@@ -27,19 +27,14 @@ st.set_page_config(
 # Initialize Firebase once
 if not firebase_admin._apps:
     try:
-        # Load Firebase credentials from .streamlit/secrets.toml
-        firebase_config = st.secrets["firebase"]
-        firebase_json = json.loads(json.dumps(firebase_config))  # Convert TOML to dict
-        
-        # Initialize Firebase
-        cred = credentials.Certificate(firebase_json)
+        cred = credentials.Certificate("Support/firebase_credentials.json")
         firebase_admin.initialize_app(cred, {
-            'databaseURL': firebase_config["databaseURL"]
+            'databaseURL': 'https://spec-files-b881b-default-rtdb.firebaseio.com/'
         })
-
         st.write("✅ Firebase Initialized")
     except Exception as e:
         st.error(f"❌ Firebase init failed: {e}")
+
 
 getcontext().prec = 10  # Increase precision
 
