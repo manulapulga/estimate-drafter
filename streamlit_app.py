@@ -27,14 +27,14 @@ st.set_page_config(
 # Initialize Firebase once
 if not firebase_admin._apps:
     try:
-        # Load Firebase credentials from .streamlit/secrets.toml
-        firebase_config = st.secrets["firebase"]
-        firebase_json = json.loads(json.dumps(firebase_config))  # Convert TOML to dict
-        
+        # Convert st.secrets.AttrDict to a normal JSON-serializable dict
+        firebase_dict = dict(st.secrets["firebase"])
+        firebase_json = json.loads(json.dumps(firebase_dict))  # now it's safe for Certificate()
+
         # Initialize Firebase
         cred = credentials.Certificate(firebase_json)
         firebase_admin.initialize_app(cred, {
-            'databaseURL': firebase_config["databaseURL"]
+            'databaseURL': firebase_json["databaseURL"]
         })
 
         st.write("✅ Firebase Initialized")
