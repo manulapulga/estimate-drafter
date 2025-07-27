@@ -649,15 +649,26 @@ def main_app():
     
         
     col1, col2, col3, col4 = st.columns([1, 2, 2, 2])
+    import re
     with col1:
         st.markdown("<div style='height: 30px;'></div>", unsafe_allow_html=True)
-        st.session_state.file_name = st.text_input(
+    
+        raw_file_name = st.text_input(
             label="File No",
             value=st.session_state.get("file_name", ""),
             key="file_name_input",
             label_visibility="collapsed",
             placeholder="File No"
         )
+    
+        # Remove invalid characters
+        sanitized_file_name = re.sub(r'[\\/*?:"<>|]', '', raw_file_name)
+    
+        # Show warning if characters were removed
+        if raw_file_name != sanitized_file_name:
+            st.warning("File name cannot contain characters like / \\ : * ? \" < > |")
+    
+        st.session_state.file_name = sanitized_file_name
         # Make sure session state has a default key
         if "estimate_date" not in st.session_state:
             st.session_state.estimate_date = ""
