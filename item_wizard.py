@@ -253,7 +253,7 @@ def show_item_wizard(items_df, add_callback, selected_items=None):
             
             
             # Search box
-            search_term = st.text_area("🔍 Search items", key="wizard_search")
+            search_term = st.text_input("🔍 Search items", key="wizard_search")
             
             # In the FILTERS COLUMN section, replace the sort_options and selected_sort with this:
             sort_options = {
