@@ -257,7 +257,7 @@ def show_item_wizard(items_df, add_callback, selected_items=None):
                 <style>
                 div[data-testid="stTextInput"] input {
                     font-size: 15px;  /* Adjust as needed */
-                    padding: 1px 1px;  /* Optional: smaller padding */
+                    padding: 2px 2px;  /* Optional: smaller padding */
                 }
                 </style>
             """, unsafe_allow_html=True)
