@@ -252,7 +252,17 @@ def show_item_wizard(items_df, add_callback, selected_items=None):
         with filter_col:
             
             
-            # Search box
+            # Inject CSS to reduce the font size of the text input
+            st.markdown("""
+                <style>
+                div[data-testid="stTextInput"] input {
+                    font-size: 12px;  /* Adjust as needed */
+                    padding: 4px 8px;  /* Optional: smaller padding */
+                }
+                </style>
+            """, unsafe_allow_html=True)
+            
+            # Your search box
             search_term = st.text_input("🔍 Search items", key="wizard_search")
             
             # In the FILTERS COLUMN section, replace the sort_options and selected_sort with this:
