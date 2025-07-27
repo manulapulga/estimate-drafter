@@ -256,8 +256,8 @@ def show_item_wizard(items_df, add_callback, selected_items=None):
             st.markdown("""
                 <style>
                 div[data-testid="stTextInput"] input {
-                    font-size: 12px;  /* Adjust as needed */
-                    padding: 4px 8px;  /* Optional: smaller padding */
+                    font-size: 15px;  /* Adjust as needed */
+                    padding: 1px 1px;  /* Optional: smaller padding */
                 }
                 </style>
             """, unsafe_allow_html=True)
