@@ -324,11 +324,10 @@ def login_page(credentials_df):
             background: linear-gradient(135deg, #e0f7fa, #b2ebf2);
             padding: 0px;
             border-radius: 12px;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
             text-align: center;
             margin-bottom: 1px;
             margin-top: 0px;
-            width: 50%;
+            width: 40%;
             margin-left: auto;
             margin-right: auto;
         '>
@@ -344,7 +343,7 @@ def login_page(credentials_df):
     st.markdown(f"""
         <div style='text-align: center; margin-top: 0px; margin-bottom: 0px;'>
             <img src='data:image/png;base64,{encoded_logospec}' 
-                 style='width: auto; max-height: 80px; object-fit: contain; border-radius: 8px; margin-bottom: 0px;' />
+                 style='width: auto; max-height: 60px; object-fit: contain; border-radius: 8px; margin-bottom: 0px;' />
             <h2 style='
                 font-family: "Merriweather", serif;
                 font-size: 20px;
