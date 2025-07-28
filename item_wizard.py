@@ -204,9 +204,6 @@ def show_item_wizard(items_df, add_callback, selected_items=None):
                     'sub2_categories': []
                 }
                 
-                # Clear search term
-                st.session_state["wizard_search"] = ""
-                
                 # Clear all checkbox states
                 main_categories = sorted(items_df['Main Category'].dropna().unique().tolist())
                 for category in main_categories:
