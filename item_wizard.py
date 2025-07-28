@@ -435,12 +435,15 @@ def show_item_wizard(items_df, add_callback, selected_items=None):
                 # Prepare the texts
                 text1 = item_name
                 text2 = f"{item_name}\t{unit_price}\t{item_unit}"
-                text3 = str(unit_price)  # ensure it's string
+                text3 = str(unit_price)
             
-                # Escape quotes
-                escaped_text1 = text1.replace('"', '\\"').replace("'", "\\'")
-                escaped_text2 = text2.replace('"', '\\"').replace("'", "\\'")
-                escaped_text3 = text3.replace('"', '\\"').replace("'", "\\'")
+                # Escape backticks and backslashes to use safely in JavaScript backtick strings
+                def js_escape(text):
+                    return text.replace('\\', '\\\\').replace('`', '\\`')
+            
+                escaped_text1 = js_escape(text1)
+                escaped_text2 = js_escape(text2)
+                escaped_text3 = js_escape(text3)
             
                 st.components.v1.html(f"""
                     <style>
@@ -468,17 +471,15 @@ def show_item_wizard(items_df, add_callback, selected_items=None):
                     }}
                     </script>
                     <div style="display: flex; flex-direction: row; gap: 8px; margin-top: 5px;">
-                        <button type="button" onclick='copyToClipboard("{escaped_text1}")'
-                                class="copy-btn"
-                                title="Copy Item Name">⧉ Copy Name</button>
-                        <button type="button" onclick='copyToClipboard("{escaped_text2}")'
-                                class="copy-btn"
-                                title="Copy All Details">📋 Copy Details</button>
-                        <button type="button" onclick='copyToClipboard("{escaped_text3}")'
-                                class="copy-btn"
-                                title="Copy Item Price">₹ Copy Price</button>        
+                        <button type="button" onclick="copyToClipboard(`{escaped_text1}`)"
+                                class="copy-btn" title="Copy Item Name">⧉ Copy Name</button>
+                        <button type="button" onclick="copyToClipboard(`{escaped_text2}`)"
+                                class="copy-btn" title="Copy All Details">📋 Copy Details</button>
+                        <button type="button" onclick="copyToClipboard(`{escaped_text3}`)"
+                                class="copy-btn" title="Copy Item Price">₹ Copy Price</button>        
                     </div>
                 """, height=70)
+
             
             # DISPLAY ITEMS
             for idx in range(start_idx, end_idx):
