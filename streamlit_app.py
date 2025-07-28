@@ -2712,11 +2712,11 @@ def main_app():
                     work_desc_input = st.session_state.get("work_desc", "").strip()
                     
                     # ✅ Sanitize work description
-                    sanitized_work_desc = re.sub(r'[\n\r\\/*?:"<>|]', '-', work_desc_input).strip()
+                    sanitized_work_desc = re.sub(r'[.\n\r\\/*?:"<>|]', '-', work_desc_input).strip()
                     
                     # ✅ Combine and sanitize full filename (same as download logic)
                     combined_name = f"{file_name_input} {sanitized_work_desc}".strip()
-                    safe_filename = re.sub(r'[\\/*?:"<>|]', '-', combined_name)
+                    safe_filename = re.sub(r'[.\\/*?:"<>|]', '-', combined_name)
                     filename_no_ext = safe_filename or "Estimate"  # Final fallback only if everything is blank
                     
                     # ✅ Save to Firebase using consistent filename
