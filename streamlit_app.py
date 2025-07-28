@@ -2544,8 +2544,7 @@ def main_app():
                 
                 # Sanitize combined name
                 safe_filename = re.sub(r'[\\/*?:\"<>|]', '-', combined_name)
-                filename_no_ext = (safe_filename[:50]).strip() or "Estimate"
-                excel_file = f"{filename_no_ext or 'Estimate'}.xlsx"
+                excel_file = f"{safe_filename or 'Estimate'}.xlsx"
                 wb.save(excel_file)
         
                 with open(excel_file, "rb") as f:
@@ -2720,7 +2719,7 @@ def main_app():
                     # ✅ Combine and sanitize full filename (same as download logic)
                     combined_name = f"{file_name_input} {sanitized_work_desc}".strip()
                     safe_filename = re.sub(r'[.\\/*?:"<>|]', '-', combined_name)
-                    filename_no_ext = (safe_filename[:50]).strip() or "Estimate"
+                    filename_no_ext = safe_filename or "Estimate"  # Final fallback only if everything is blank
                     
                     # ✅ Save to Firebase using consistent filename
                     save_excel_to_firebase(username, filename_no_ext, output)
@@ -3285,10 +3284,9 @@ def main_app():
                 
                 # Sanitize for filename use
                 safe_filename = re.sub(r'[\\/*?:\"<>|]', '-', combined_name)
-                filename_no_ext = (safe_filename[:50]).strip() or "Estimate"
                 
                 # Create PDF file
-                pdf_file = f"{filename_no_ext or 'Estimate'}.pdf"
+                pdf_file = f"{safe_filename or 'Estimate'}.pdf"
                 pdf.output(pdf_file)
             
                 with open(pdf_file, "rb") as f:
