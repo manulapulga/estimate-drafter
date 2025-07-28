@@ -652,22 +652,15 @@ def main_app():
     with col1:
         st.markdown("<div style='height: 30px;'></div>", unsafe_allow_html=True)
     
-        raw_file_name = st.text_input(
+        file_name = st.text_input(
             label="File No",
             value=st.session_state.get("file_name", ""),
             key="file_name_input",
             label_visibility="collapsed",
             placeholder="File No"
         )
-    
-        # Remove invalid characters
-        sanitized_file_name = re.sub(r'[\\/*?:"<>|]', '', raw_file_name)
-    
-        # Show warning if characters were removed
-        if raw_file_name != sanitized_file_name:
-            st.warning("File name cannot contain characters like / \\ : * ? \" < > |")
-    
-        st.session_state.file_name = sanitized_file_name
+        st.session_state.file_name = file_name  # No sanitization
+        
         # Make sure session state has a default key
         if "estimate_date" not in st.session_state:
             st.session_state.estimate_date = ""
@@ -679,12 +672,17 @@ def main_app():
             placeholder="DD/MM/YYYY"
         )
     with col2:  
+        import re
+
         estimate_heading = st.text_area(
             "", 
             placeholder="Enter work description",
-            key="work_desc",
-            height=100  # Adjust height as needed
+            value=st.session_state.get("work_desc", ""),
+            key="work_desc_raw",
+            height=100
         )
+        st.session_state.work_desc = estimate_heading
+        
     with col3:    
         if 'head_note' not in st.session_state:  # Add this line
             st.session_state.head_note = ""  
@@ -2538,13 +2536,13 @@ def main_app():
                 # Combine file name + work description
                 # Remove newlines and other problematic characters
                 import re
-                sanitized_work_desc = re.sub(r'[\n\r\\/*?:"<>|]', ' ', work_desc_input).strip()
+                sanitized_work_desc = re.sub(r'[\n\r\\/*?:"<>|]', '-', work_desc_input).strip()
                 combined_name = f"{file_name_input} {sanitized_work_desc}".strip()
-                safe_filename = re.sub(r'[\\/*?:"<>|]', '_', combined_name)
+                safe_filename = re.sub(r'[\\/*?:"<>|]', '-', combined_name)
                 excel_file = f"{safe_filename or 'Estimate'}.xlsx"
                 
                 # Sanitize combined name
-                safe_filename = re.sub(r'[\\/*?:\"<>|]', '_', combined_name)
+                safe_filename = re.sub(r'[\\/*?:\"<>|]', '-', combined_name)
                 excel_file = f"{safe_filename or 'Estimate'}.xlsx"
                 wb.save(excel_file)
         
@@ -2713,25 +2711,18 @@ def main_app():
                     file_name_input = st.session_state.get("file_name", "").strip()
                     work_desc_input = st.session_state.get("work_desc", "").strip()
                     
-                    # ✅ Remove newlines and carriage returns from text_area input
-                    work_desc_input = re.sub(r'[\r\n]+', ' ', work_desc_input)
+                    # ✅ Sanitize work description
+                    sanitized_work_desc = re.sub(r'[\n\r\\/*?:"<>|]', '-', work_desc_input).strip()
                     
-                    # 🔧 Ensure default filename if file number is blank
-                    file_name_input = st.session_state.get("file_name", "").strip()
-                    if not file_name_input:
-                        file_name_input = "Estimate"
-                    st.session_state["file_name"] = file_name_input  # Optional UI update
-
-                    # Combine and sanitize
-                    combined_name = f"{file_name_input} {work_desc_input}".strip()
-                    safe_base = re.sub(r'[^\w\-]', ' ', combined_name)
-                    filename_no_ext = f"{safe_base}"  # No .xlsx here
-                    full_filename = f"{filename_no_ext}.xlsx"
+                    # ✅ Combine and sanitize full filename (same as download logic)
+                    combined_name = f"{file_name_input} {sanitized_work_desc}".strip()
+                    safe_filename = re.sub(r'[\\/*?:"<>|]', '-', combined_name)
+                    filename_no_ext = safe_filename or "Estimate"  # Final fallback only if everything is blank
                     
-                    # Use filename_no_ext for Firebase path
+                    # ✅ Save to Firebase using consistent filename
                     save_excel_to_firebase(username, filename_no_ext, output)
                     
-                    st.success(f"✅ Saved ")
+                    st.success("✅ Saved")
             
                 except Exception as e:
                     st.error(f"❌ Save failed: {e}")
@@ -3283,13 +3274,13 @@ def main_app():
                 
                 # Combine File Name + Work Description
                 import re
-                sanitized_work_desc = re.sub(r'[\n\r\\/*?:"<>|]', ' ', work_desc_input).strip()
+                sanitized_work_desc = re.sub(r'[\n\r\\/*?:"<>|]', '-', work_desc_input).strip()
                 combined_name = f"{file_name_input} {sanitized_work_desc}".strip()
-                safe_filename = re.sub(r'[\\/*?:"<>|]', '_', combined_name)
+                safe_filename = re.sub(r'[\\/*?:"<>|]', '-', combined_name)
                 pdf_file = f"{safe_filename or 'Estimate'}.pdf"
                 
                 # Sanitize for filename use
-                safe_filename = re.sub(r'[\\/*?:\"<>|]', '_', combined_name)
+                safe_filename = re.sub(r'[\\/*?:\"<>|]', '-', combined_name)
                 
                 # Create PDF file
                 pdf_file = f"{safe_filename or 'Estimate'}.pdf"
