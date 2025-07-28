@@ -584,9 +584,7 @@ def show_item_wizard(items_df, add_callback, selected_items=None):
             
                 # Escape backticks and backslashes to use safely in JavaScript backtick strings
                 def js_escape(text):
-                    return (text.replace('\\', '\\\\')
-                                .replace('`', '\\`')
-                                .replace('${', '\\${}'))  # prevent accidental interpolation
+                    return text.replace('\\', '\\\\').replace('`', '\\`')
 
             
                 escaped_text1 = js_escape(text1)
