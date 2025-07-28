@@ -323,7 +323,7 @@ def login_page(credentials_df):
         <div style='
             background: linear-gradient(135deg, #e0f7fa, #b2ebf2);
             padding: 0px;
-            border-radius: 12px;
+            border-radius: 0px;
             text-align: center;
             margin-bottom: 1px;
             margin-top: 0px;
