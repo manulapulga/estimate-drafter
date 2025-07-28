@@ -2,8 +2,6 @@ import pandas as pd
 import streamlit as st
 from streamlit.components.v1 import html
 from difflib import SequenceMatcher
-
-
 from difflib import SequenceMatcher
 
 def compute_relevance_score(row, search_phrase, search_terms):
@@ -438,8 +436,15 @@ def show_item_wizard(items_df, add_callback, selected_items=None):
                 text3 = str(unit_price)
             
                 # Escape backticks and backslashes to use safely in JavaScript backtick strings
+                import html
+                import json
+                
                 def js_escape(text):
-                    return text.replace('\\', '\\\\').replace('`', '\\`')
+                    # Escape for HTML (prevents breaking HTML attributes)
+                    html_escaped = html.escape(text)
+                    # Escape for JavaScript (within backtick string)
+                    return json.dumps(html_escaped)[1:-1]
+                
             
                 escaped_text1 = js_escape(text1)
                 escaped_text2 = js_escape(text2)
