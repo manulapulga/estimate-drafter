@@ -410,6 +410,15 @@ def main_app():
     item_names, unit_prices, item_units, data = load_main_items(username)
     wizard_data = load_wizard_items(username)
         
+    # Pre-load work_desc, head_note, estimate_note, file_name, and estimate_date from uploaded_excel_data if available
+    if 'uploaded_excel_data' in st.session_state:
+        preload = st.session_state.uploaded_excel_data
+        st.session_state.work_desc = preload.get("work_desc", "")
+        st.session_state.head_note = preload.get("head_note", "")
+        st.session_state.estimate_note = preload.get("estimate_note", "")
+        st.session_state.file_name = preload.get("file_name", "")
+        st.session_state.estimate_date = preload.get("estimate_date", None)
+        del st.session_state.uploaded_excel_data  # Ensure one-time application
 
     # Handle clear all functionality using new query_params API
     if st.query_params.get("clear_all", "") == "true":
@@ -1790,7 +1799,7 @@ def main_app():
                     estimate_date = str(date_cell).strip() if date_cell else ""
                     
                     
-                    st.session_state.uploaded_excel_preview_data = {
+                    st.session_state.uploaded_excel_data = {
                         'work_desc': str(ws['A1'].value) if ws['A1'].value else "",
                         'head_note': str(ws['A2'].value) if ws['A2'].value else "",
                         'estimate_note': estimate_note,
@@ -2002,19 +2011,6 @@ def main_app():
                 col1, col2 = st.columns([1, 1])
                 with col1:
                     if st.button("Add Uploaded Items", key="add_uploaded_items"):
-                        preview_data = st.session_state.get("uploaded_excel_preview_data", {})
-  
-                        st.session_state.work_desc = preview_data.get("work_desc", "")
-                        st.session_state.head_note = preview_data.get("head_note", "")
-                        st.session_state.estimate_note = preview_data.get("estimate_note", "")
-                        st.session_state.file_name = preview_data.get("file_name", "")
-                        st.session_state.estimate_date = preview_data.get("estimate_date", "")
-                    
-                        st.session_state.uploaded_excel_preview_data = None
-                        st.session_state.excel_uploader = None
-                        st.session_state.uploaded_file_name = None
-                        st.session_state.show_upload = False
-                        st.rerun()
                         main_items_data = data
                         added_count = 0
                         
