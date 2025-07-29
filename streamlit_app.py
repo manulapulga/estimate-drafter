@@ -14,6 +14,8 @@ from decimal import Decimal, ROUND_HALF_UP, getcontext
 from num2words import num2words
 import firebase_admin
 from firebase_admin import credentials, db
+import tempfile
+from io import BytesIO
 
 
 
@@ -41,22 +43,44 @@ if not firebase_admin._apps:
     except Exception as e:
         st.error(f"❌ Firebase init failed: {e}")
 
-def save_progress_to_firebase(username):
-    progress_data = {key: value for key, value in st.session_state.items()
-                     if not key.startswith("_") and key != "authenticated"}  # skip internal/session keys
-    db.reference(f'progress/{username}').set(progress_data)
-    st.success("✅ Progress saved successfully!")
+def save_progress(username):
+    progress_key = f"progress_{username}"
 
+    # 1. Save session_state
+    session_data = {k: v for k, v in st.session_state.items() if not callable(v)}
+    db.reference(progress_key).set(session_data)
 
-def load_progress_from_firebase(username):
-    saved_data = db.reference(f'progress/{username}').get()
-    if saved_data:
-        for key, value in saved_data.items():
-            st.session_state[key] = value
-        st.success("✅ Progress loaded successfully!")
-        st.rerun()
+    # 2. Generate Excel file
+    excel_bytes = generate_excel()
+
+    # 3. Upload Excel to Firebase Storage
+    excel_path = f"progress_excels/{progress_key}.xlsx"
+    bucket = storage.bucket()
+    blob = bucket.blob(excel_path)
+    blob.upload_from_string(excel_bytes.getvalue(), content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+
+    st.success("Progress saved successfully!")
+
+def load_progress(username):
+    progress_key = f"progress_{username}"
+
+    # 1. Load session_state from Firebase
+    session_data = db.reference(progress_key).get()
+    if session_data:
+        for k, v in session_data.items():
+            st.session_state[k] = v
+        st.success("Session data loaded.")
+
+    # 2. Load Excel file from Firebase Storage
+    excel_path = f"progress_excels/{progress_key}.xlsx"
+    bucket = storage.bucket()
+    blob = bucket.blob(excel_path)
+    if blob.exists():
+        excel_bytes = blob.download_as_bytes()
+        st.session_state['excel_file'] = BytesIO(excel_bytes)
+        st.success("Excel file loaded.")
     else:
-        st.warning("⚠️ No saved progress found.")
+        st.warning("Excel file not found.")
 
 getcontext().prec = 10  # Increase precision
 
@@ -1334,6 +1358,12 @@ def main_app():
             st.session_state.show_add_item = False
             st.session_state.show_add_other = False
             st.rerun()
+    with col2:
+        if st.button("💾 Save Progress"):
+            save_progress(username)
+    with col3:
+        if st.button("📥 Load Progress"):
+            load_progress(username)        
     # Add New Item or Subheading buttons
     button_col1, button_col2, button_col3, button_col4, button_col5, button_col6, button_col7,button_col8  = st.columns([2, 2, 2, 2, 2, 2, 2, 2])
     with button_col7:
@@ -2597,7 +2627,10 @@ def main_app():
                         mime="application/vnd.ms-excel",
                         key="download_excel"
                     )
-
+                output = BytesIO()
+                wb.save(output)
+                output.seek(0)
+                return output  
         with col1:
             if st.button("💾 Save to Cloud", use_container_width=True):
                 try:
