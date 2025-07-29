@@ -14,6 +14,7 @@ from decimal import Decimal, ROUND_HALF_UP, getcontext
 from num2words import num2words
 import firebase_admin
 from firebase_admin import credentials, db
+import time
 
 
 
@@ -40,6 +41,61 @@ if not firebase_admin._apps:
         st.write("✅ Firebase Initialized")
     except Exception as e:
         st.error(f"❌ Firebase init failed: {e}")
+
+def save_progress_to_firebase(username):
+    try:
+        # Convert session state to regular dict and remove unserializable items
+        state_to_save = {
+            k: v for k, v in st.session_state.items()
+            if isinstance(v, (str, int, float, bool, list, dict, type(None)))
+        }
+        db.reference(f'progress/{username}').set(state_to_save)
+        # Show temporary success message
+        msg = st.empty()
+        msg.success("✅ Progress saved successfully!")
+        time.sleep(3)  # visible for 3 seconds
+        msg.empty()
+    except Exception as e:
+        st.error(f"❌ Failed to save progress: {e}")
+
+def load_progress_from_firebase(username):
+    try:
+        # Check if user has unsaved progress in session
+        dirty = (
+            st.session_state.get("selected_items") or
+            st.session_state.get("file_name") or
+            st.session_state.get("estimate_date") or
+            st.session_state.get("work_desc") or
+            st.session_state.get("head_note") or
+            st.session_state.get("estimate_note")
+        )
+
+        if dirty:
+            st.warning("⚠️ Please clear all data before loading progress.")
+            return
+
+        # Proceed with loading
+        saved_state = db.reference(f'progress/{username}').get()
+        if saved_state:
+            # Restore basic fields immediately
+            safe_keys = ['file_name', 'estimate_date', 'work_desc', 'head_note', 'estimate_note']
+            for k in safe_keys:
+                if k in saved_state:
+                    st.session_state[k] = saved_state[k]
+
+            # Restore items progressively
+            if "selected_items" in saved_state:
+                st.session_state["__pending_restore_items__"] = saved_state["selected_items"]
+                st.session_state["__restore_index__"] = 0
+
+            st.success("⏳ Restoring... please wait.")
+            st.rerun()
+        else:
+            st.warning("⚠️ No saved progress found.")
+    except Exception as e:
+        st.error(f"❌ Failed to load progress: {e}")
+
+
 
 getcontext().prec = 10  # Increase precision
 
@@ -407,6 +463,30 @@ def set_rounding_option(option):
 def main_app():
     # Load data
     username = st.session_state.logged_in_username
+    
+    
+    
+    # --- Step 1: Start progressive item restoration ---
+    if "__pending_restore_items__" in st.session_state:
+        items = st.session_state["__pending_restore_items__"]
+        idx = st.session_state.get("__restore_index__", 0)
+    
+        if idx < len(items):
+            if "selected_items" not in st.session_state:
+                st.session_state.selected_items = []
+    
+            st.session_state.selected_items.append(items[idx])
+            st.session_state["__restore_index__"] = idx + 1
+            st.rerun()
+        else:
+            # Cleanup after all items are restored
+            del st.session_state["__pending_restore_items__"]
+            del st.session_state["__restore_index__"]
+
+
+
+
+    
     item_names, unit_prices, item_units, data = load_main_items(username)
     wizard_data = load_wizard_items(username)
         
@@ -711,15 +791,31 @@ def main_app():
                 placeholder="Enter Foot Note"
             )
     
-    col1, col2, col3, col4 = st.columns([1, 2, 2, 2])
+    col1, col2, col3, col4 = st.columns([1, 1, 1, 1])
+    with col2: 
+        if st.button("🗑 Clear Items", use_container_width=True):
+            st.session_state.selected_items = []
+            st.session_state.item_count = 0
+            st.session_state.adding_subheading = False
+            st.session_state.show_wizard = False
+            st.session_state.show_add_item = False
+            st.session_state.show_add_other = False
+            st.rerun()
+    with col3:
+        if st.button("💾 Save Progress", use_container_width=True):
+            save_progress_to_firebase(st.session_state.logged_in_username)
+    with col4:
+        if st.button("📂 Load Progress", use_container_width=True):
+            load_progress_from_firebase(st.session_state.logged_in_username)
     with col1:        
-        if st.button("🗑 Clear Details", key="clear_text_fields", help="Clear File No, Date, Description, Head Note, Foot Note", use_container_width=True):
+        if st.button("🗑 Clear Details", use_container_width=True):
             st.session_state.file_name = ""
             st.session_state.estimate_date = ""
             st.session_state.work_desc = ""
             st.session_state.head_note = ""
             st.session_state.estimate_note = ""
-            st.rerun()     
+            st.rerun()
+        
     st.markdown("""
         <style>
         .thin-banner {
@@ -1306,17 +1402,9 @@ def main_app():
                                 st.warning("Invalid position number.")
                         except ValueError:
                             st.error("Please enter a valid number.")        
-    col1, col2, col3, col4 = st.columns([1, 2, 2, 2])
-    with col1: 
-        if st.button("🗑 Clear Items", key="clear_items_only", 
-                     help="Remove all added items", use_container_width=True):
-            st.session_state.selected_items = []
-            st.session_state.item_count = 0
-            st.session_state.adding_subheading = False
-            st.session_state.show_wizard = False
-            st.session_state.show_add_item = False
-            st.session_state.show_add_other = False
-            st.rerun()
+    
+    if st.button("☁️ Save Progress", use_container_width=True):
+            save_progress_to_firebase(st.session_state.logged_in_username)
     # Add New Item or Subheading buttons
     button_col1, button_col2, button_col3, button_col4, button_col5, button_col6, button_col7,button_col8  = st.columns([2, 2, 2, 2, 2, 2, 2, 2])
     with button_col7:

@@ -14,6 +14,7 @@ from decimal import Decimal, ROUND_HALF_UP, getcontext
 from num2words import num2words
 import firebase_admin
 from firebase_admin import credentials, db
+import time
 
 
 
@@ -34,6 +35,60 @@ if not firebase_admin._apps:
         st.write("✅ Firebase Initialized")
     except Exception as e:
         st.error(f"❌ Firebase init failed: {e}")
+
+def save_progress_to_firebase(username):
+    try:
+        # Convert session state to regular dict and remove unserializable items
+        state_to_save = {
+            k: v for k, v in st.session_state.items()
+            if isinstance(v, (str, int, float, bool, list, dict, type(None)))
+        }
+        db.reference(f'progress/{username}').set(state_to_save)
+        # Show temporary success message
+        msg = st.empty()
+        msg.success("✅ Progress saved successfully!")
+        time.sleep(3)  # visible for 3 seconds
+        msg.empty()
+    except Exception as e:
+        st.error(f"❌ Failed to save progress: {e}")
+
+def load_progress_from_firebase(username):
+    try:
+        # Check if user has unsaved progress in session
+        dirty = (
+            st.session_state.get("selected_items") or
+            st.session_state.get("file_name") or
+            st.session_state.get("estimate_date") or
+            st.session_state.get("work_desc") or
+            st.session_state.get("head_note") or
+            st.session_state.get("estimate_note")
+        )
+
+        if dirty:
+            st.warning("⚠️ Please clear all data before loading progress.")
+            return
+
+        # Proceed with loading
+        saved_state = db.reference(f'progress/{username}').get()
+        if saved_state:
+            # Restore basic fields immediately
+            safe_keys = ['file_name', 'estimate_date', 'work_desc', 'head_note', 'estimate_note']
+            for k in safe_keys:
+                if k in saved_state:
+                    st.session_state[k] = saved_state[k]
+
+            # Restore items progressively
+            if "selected_items" in saved_state:
+                st.session_state["__pending_restore_items__"] = saved_state["selected_items"]
+                st.session_state["__restore_index__"] = 0
+
+            st.success("⏳ Restoring... please wait.")
+            st.rerun()
+        else:
+            st.warning("⚠️ No saved progress found.")
+    except Exception as e:
+        st.error(f"❌ Failed to load progress: {e}")
+
 
 
 getcontext().prec = 10  # Increase precision
@@ -318,12 +373,11 @@ def login_page(credentials_df):
         <div style='
             background: linear-gradient(135deg, #e0f7fa, #b2ebf2);
             padding: 0px;
-            border-radius: 12px;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            border-radius: 0px;
             text-align: center;
             margin-bottom: 1px;
             margin-top: 0px;
-            width: 50%;
+            width: 40%;
             margin-left: auto;
             margin-right: auto;
         '>
@@ -339,7 +393,7 @@ def login_page(credentials_df):
     st.markdown(f"""
         <div style='text-align: center; margin-top: 0px; margin-bottom: 0px;'>
             <img src='data:image/png;base64,{encoded_logospec}' 
-                 style='width: auto; max-height: 80px; object-fit: contain; border-radius: 8px; margin-bottom: 0px;' />
+                 style='width: auto; max-height: 60px; object-fit: contain; border-radius: 8px; margin-bottom: 0px;' />
             <h2 style='
                 font-family: "Merriweather", serif;
                 font-size: 20px;
@@ -399,29 +453,34 @@ def set_rounding_option(option):
     
     # Force immediate update
     st.rerun()    
-def save_progress_to_firebase(username):
-    progress_data = {key: value for key, value in st.session_state.items()
-                     if not key.startswith("_") and key != "authenticated"}  # skip internal/session keys
-    db.reference(f'progress/{username}').set(progress_data)
-    st.success("✅ Progress saved successfully!")
-
-
-def load_progress_from_firebase(username):
-    saved_data = db.reference(f'progress/{username}').get()
-    if saved_data:
-        for key, value in saved_data.items():
-            st.session_state[key] = value
-        st.success("✅ Progress loaded successfully!")
-        st.rerun()
-    else:
-        st.warning("⚠️ No saved progress found.")
-
-
-
 # Main app
 def main_app():
     # Load data
     username = st.session_state.logged_in_username
+    
+    
+    
+    # --- Step 1: Start progressive item restoration ---
+    if "__pending_restore_items__" in st.session_state:
+        items = st.session_state["__pending_restore_items__"]
+        idx = st.session_state.get("__restore_index__", 0)
+    
+        if idx < len(items):
+            if "selected_items" not in st.session_state:
+                st.session_state.selected_items = []
+    
+            st.session_state.selected_items.append(items[idx])
+            st.session_state["__restore_index__"] = idx + 1
+            st.rerun()
+        else:
+            # Cleanup after all items are restored
+            del st.session_state["__pending_restore_items__"]
+            del st.session_state["__restore_index__"]
+
+
+
+
+    
     item_names, unit_prices, item_units, data = load_main_items(username)
     wizard_data = load_wizard_items(username)
         
@@ -661,17 +720,20 @@ def main_app():
         </div>
     """, unsafe_allow_html=True)
     
-        
     col1, col2, col3, col4 = st.columns([1, 2, 2, 2])
+    import re
     with col1:
         st.markdown("<div style='height: 30px;'></div>", unsafe_allow_html=True)
-        st.session_state.file_name = st.text_input(
+    
+        file_name = st.text_input(
             label="File No",
             value=st.session_state.get("file_name", ""),
             key="file_name_input",
             label_visibility="collapsed",
             placeholder="File No"
         )
+        st.session_state.file_name = file_name  # No sanitization
+        
         # Make sure session state has a default key
         if "estimate_date" not in st.session_state:
             st.session_state.estimate_date = ""
@@ -683,12 +745,17 @@ def main_app():
             placeholder="DD/MM/YYYY"
         )
     with col2:  
+        import re
+
         estimate_heading = st.text_area(
             "", 
             placeholder="Enter work description",
-            key="work_desc",
-            height=100  # Adjust height as needed
+            value=st.session_state.get("work_desc", ""),
+            key="work_desc_raw",
+            height=100
         )
+        st.session_state.work_desc = estimate_heading
+        
     with col3:    
         if 'head_note' not in st.session_state:  # Add this line
             st.session_state.head_note = ""  
@@ -716,8 +783,33 @@ def main_app():
                 height=100,
                 max_chars=2000,
                 placeholder="Enter Foot Note"
-            ) 
-    st.markdown("<div style='height: 25px;'></div>", unsafe_allow_html=True)        
+            )
+    
+    col1, col2, col3, col4 = st.columns([1, 1, 1, 1])
+    with col2: 
+        if st.button("🗑 Clear Items", use_container_width=True):
+            st.session_state.selected_items = []
+            st.session_state.item_count = 0
+            st.session_state.adding_subheading = False
+            st.session_state.show_wizard = False
+            st.session_state.show_add_item = False
+            st.session_state.show_add_other = False
+            st.rerun()
+    with col3:
+        if st.button("💾 Save Progress", use_container_width=True):
+            save_progress_to_firebase(st.session_state.logged_in_username)
+    with col4:
+        if st.button("📂 Load Progress", use_container_width=True):
+            load_progress_from_firebase(st.session_state.logged_in_username)
+    with col1:        
+        if st.button("🗑 Clear Details", use_container_width=True):
+            st.session_state.file_name = ""
+            st.session_state.estimate_date = ""
+            st.session_state.work_desc = ""
+            st.session_state.head_note = ""
+            st.session_state.estimate_note = ""
+            st.rerun()
+        
     st.markdown("""
         <style>
         .thin-banner {
@@ -1304,6 +1396,9 @@ def main_app():
                                 st.warning("Invalid position number.")
                         except ValueError:
                             st.error("Please enter a valid number.")        
+    
+    if st.button("☁️ Save Progress", use_container_width=True):
+            save_progress_to_firebase(st.session_state.logged_in_username)
     # Add New Item or Subheading buttons
     button_col1, button_col2, button_col3, button_col4, button_col5, button_col6, button_col7,button_col8  = st.columns([2, 2, 2, 2, 2, 2, 2, 2])
     with button_col7:
@@ -1387,16 +1482,6 @@ def main_app():
                         help="Update all items with current values"):
                 updated_count = update_all_items()
                 st.rerun()        
-    # Add Save/Load Progress Buttons
-    col_save, col_load = st.columns(2)
-    with col_save:
-        if st.button("💾 Save Progress"):
-            save_progress_to_firebase(st.session_state.logged_in_username)
-    
-    with col_load:
-        if st.button("📂 Load Progress"):
-            load_progress_from_firebase(st.session_state.logged_in_username)
-    
     # Show Add Item section if toggled on
     if st.session_state.get('show_add_item', False):
         idx = len([i for i in st.session_state.selected_items if i.get("Type") != "Subheading"])
@@ -1697,8 +1782,9 @@ def main_app():
         <div style="background-color:#f0f2f6; padding:12px; border-radius:8px; margin-bottom:16px;">
             <p style="margin:0 0 12px 0; font-size:14px; color:#333;">
             <b>Upload Guide:</b> You can upload either:<br>
-            1. Estimates generated by this app (auto-detected), OR<br>
-            2. Custom Excel files with item names in first column and quantities in second column</p>
+            1. Estimates saved on Cloud, OR<br>
+            2. Estimates generated by this app (auto-detected), OR<br>
+            3. Custom Excel files with item names in first column and quantities in second column</p>
             <div style="display: flex; align-items: center; gap: 10px;">
                 <span style="font-size:13px; color:#555;">Download sample format:</span>
                 <a href="data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,{sample_data}" 
@@ -1725,7 +1811,7 @@ def main_app():
                 files = list_user_files(username)
             
                 if not files:
-                    st.warning("No saved Excel files found.")
+                    st.warning("No saved estimates found.")
                 else:
                     st.markdown("**📂 Saved Estimates**")
                     file_names = list(files.keys())
@@ -1753,7 +1839,7 @@ def main_app():
                                         with btn_col2:
                                             if st.button("🗑️", key=f"delete_{file_name}"):
                                                 db.reference(f'estimates/{username}/{file_name}').delete()
-                                                st.success(f"✅ Deleted: {file_name}")
+                                                st.success(f"❌")
                                                 st.rerun()
                                                 
             if st.session_state.get("show_firebase_load", False):
@@ -2088,12 +2174,18 @@ def main_app():
                         
                         st.success(f"Added {added_count} items from uploaded file!")
                         st.session_state.show_upload = False
+                        st.session_state["excel_uploader"] = None
+                        st.session_state["uploaded_file_name"] = None
+
                         st.rerun()
                 
                 with col2:
                     if st.button("✕ Cancel", key="cancel_upload", type="primary"):
                         st.session_state.show_upload = False
+                        st.session_state["excel_uploader"] = None
+                        st.session_state["uploaded_file_name"] = None
                         st.rerun()
+                        
             except Exception as e:
                 st.error(f"Error reading Excel file: {str(e)}")
         else:
@@ -2551,13 +2643,14 @@ def main_app():
                 # Combine file name + work description
                 # Remove newlines and other problematic characters
                 import re
-                sanitized_work_desc = re.sub(r'[\n\r\\/*?:"<>|]', ' ', work_desc_input).strip()
+                sanitized_work_desc = re.sub(r'[\n\r\t]+', ' ', work_desc_input)
+                sanitized_work_desc = re.sub(r'[\n\r\\/*?:"<>|]', '-', work_desc_input).strip()
                 combined_name = f"{file_name_input} {sanitized_work_desc}".strip()
-                safe_filename = re.sub(r'[\\/*?:"<>|]', '_', combined_name)
+                safe_filename = re.sub(r'[\\/*?:"<>|]', '-', combined_name)
                 excel_file = f"{safe_filename or 'Estimate'}.xlsx"
                 
                 # Sanitize combined name
-                safe_filename = re.sub(r'[\\/*?:\"<>|]', '_', combined_name)
+                safe_filename = re.sub(r'[\\/*?:\"<>|]', '-', combined_name)
                 excel_file = f"{safe_filename or 'Estimate'}.xlsx"
                 wb.save(excel_file)
         
@@ -2726,19 +2819,19 @@ def main_app():
                     file_name_input = st.session_state.get("file_name", "").strip()
                     work_desc_input = st.session_state.get("work_desc", "").strip()
                     
-                    # ✅ Remove newlines and carriage returns from text_area input
-                    work_desc_input = re.sub(r'[\r\n]+', ' ', work_desc_input)
+                    # ✅ Sanitize work description
+                    sanitized_work_desc = re.sub(r'[\n\r\t]+', ' ', work_desc_input)
+                    sanitized_work_desc = re.sub(r'[.\n\r\\/*?:"<>|]', '-', work_desc_input).strip()
                     
-                    # Combine and sanitize
-                    combined_name = f"{file_name_input} {work_desc_input}".strip()
-                    safe_base = re.sub(r'[^\w\-]', ' ', combined_name)
-                    filename_no_ext = f"{safe_base}"  # No .xlsx here
-                    full_filename = f"{filename_no_ext}.xlsx"
+                    # ✅ Combine and sanitize full filename (same as download logic)
+                    combined_name = f"{file_name_input} {sanitized_work_desc}".strip()
+                    safe_filename = re.sub(r'[.\\/*?:"<>|]', '-', combined_name)
+                    filename_no_ext = safe_filename or "Estimate"  # Final fallback only if everything is blank
                     
-                    # Use filename_no_ext for Firebase path
+                    # ✅ Save to Firebase using consistent filename
                     save_excel_to_firebase(username, filename_no_ext, output)
                     
-                    st.success(f"✅ Saved ")
+                    st.success("✅ Saved")
             
                 except Exception as e:
                     st.error(f"❌ Save failed: {e}")
@@ -3290,13 +3383,14 @@ def main_app():
                 
                 # Combine File Name + Work Description
                 import re
-                sanitized_work_desc = re.sub(r'[\n\r\\/*?:"<>|]', ' ', work_desc_input).strip()
+                sanitized_work_desc = re.sub(r'[\n\r\t]+', ' ', work_desc_input)
+                sanitized_work_desc = re.sub(r'[\n\r\\/*?:"<>|]', '-', work_desc_input).strip()
                 combined_name = f"{file_name_input} {sanitized_work_desc}".strip()
-                safe_filename = re.sub(r'[\\/*?:"<>|]', '_', combined_name)
+                safe_filename = re.sub(r'[\\/*?:"<>|]', '-', combined_name)
                 pdf_file = f"{safe_filename or 'Estimate'}.pdf"
                 
                 # Sanitize for filename use
-                safe_filename = re.sub(r'[\\/*?:\"<>|]', '_', combined_name)
+                safe_filename = re.sub(r'[\\/*?:\"<>|]', '-', combined_name)
                 
                 # Create PDF file
                 pdf_file = f"{safe_filename or 'Estimate'}.pdf"
