@@ -695,7 +695,7 @@ def main_app():
             placeholder="Enter work description",
             value=st.session_state.get("work_desc", ""),
             key="work_desc_raw",
-            height=150
+            height=100
         )
         st.session_state.work_desc = estimate_heading
         
@@ -709,7 +709,7 @@ def main_app():
                 "",
                 value=st.session_state.head_note,
                 key="head_note_input",
-                height=150,
+                height=100,
                 max_chars=2000,
                 placeholder="Enter Head Note"
             )
@@ -723,7 +723,7 @@ def main_app():
                 "",
                 value=st.session_state.estimate_note,
                 key="estimate_note_input",
-                height=150,
+                height=100,
                 max_chars=2000,
                 placeholder="Enter Foot Note"
             )
