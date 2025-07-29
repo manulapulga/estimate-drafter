@@ -64,29 +64,10 @@ def save_progress_to_firebase(username):
     st.success("✅ Progress saved successfully!")
 
 
-def load_progress_from_firebase(username):
-    saved_data = db.reference(f'progress/{username}').get()
-    if saved_data:
-        # Avoid setting keys that match widget keys before those widgets are created
-        widget_prefixes = (
-            "smart_filter_", "edit_item_", "edit_qty_", "new_item_", "edit_subheading_",
-            "move_input_", "move_button_", "add_qty_remark_", "qty_remark_",
-            "remark_input_other_", "save_remark_", "update_", "remove_"
-        )
-
-        for key, value in saved_data.items():
-            # Skip any key that is likely used by a widget
-            if any(key.startswith(prefix) for prefix in widget_prefixes):
-                continue
-            try:
-                st.session_state[key] = value
-            except Exception as e:
-                st.warning(f"⚠️ Could not restore key '{key}': {e}")
-        st.success("✅ Progress loaded successfully!")
-        st.rerun()
-    else:
-        st.warning("⚠️ No saved progress found.")
-
+def trigger_load_progress(username):
+    st.session_state.load_trigger = True
+    st.session_state.load_username = username
+    st.rerun()
 
 
 getcontext().prec = 10  # Increase precision
@@ -455,6 +436,29 @@ def set_rounding_option(option):
 def main_app():
     # Load data
     username = st.session_state.logged_in_username
+    
+    # SAFELY LOAD PROGRESS on rerun
+    if st.session_state.get("load_trigger", False):
+        username_to_load = st.session_state.get("load_username")
+        saved_data = db.reference(f'progress/{username_to_load}').get()
+    
+        if saved_data:
+            widget_prefixes = (
+                "smart_filter_", "edit_item_", "edit_qty_", "new_item_", "edit_subheading_",
+                "move_input_", "move_button_", "add_qty_remark_", "qty_remark_",
+                "remark_input_other_", "save_remark_", "update_", "remove_", "move_up_", "move_down_"
+            )
+            for key, value in saved_data.items():
+                if any(key.startswith(prefix) for prefix in widget_prefixes):
+                    continue  # skip widget keys
+                try:
+                    st.session_state[key] = value
+                except Exception as e:
+                    st.warning(f"⚠️ Could not restore key '{key}': {e}")
+            st.session_state.load_trigger = False
+            st.success("✅ Progress loaded successfully!")
+        
+        
     item_names, unit_prices, item_units, data = load_main_items(username)
     wizard_data = load_wizard_items(username)
         
@@ -1370,8 +1374,8 @@ def main_app():
             save_progress_to_firebase(st.session_state.logged_in_username)
     with col3:
         if st.button("📂 Load Progress"):
-            load_progress_from_firebase(st.session_state.logged_in_username)
-
+            trigger_load_progress(st.session_state.logged_in_username)
+            
     # Add New Item or Subheading buttons
     button_col1, button_col2, button_col3, button_col4, button_col5, button_col6, button_col7,button_col8  = st.columns([2, 2, 2, 2, 2, 2, 2, 2])
     with button_col7:
