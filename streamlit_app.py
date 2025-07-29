@@ -50,9 +50,12 @@ def is_serializable(value):
         return False
 
 def save_progress_to_firebase(username):
+    widget_prefixes = ("smart_filter_", "edit_item_", "edit_qty_", "new_item_", "edit_subheading_", "move_input_", "move_button_")
     safe_keys = {}
     for key, value in st.session_state.items():
         if key.startswith("_") or key in {"uploaded_file", "uploaded_file_name", "excel_uploader"}:
+            continue
+        if any(key.startswith(prefix) for prefix in widget_prefixes):
             continue
         if is_serializable(value):
             safe_keys[key] = value
@@ -60,18 +63,25 @@ def save_progress_to_firebase(username):
     db.reference(f'progress/{username}').set(safe_keys)
     st.success("✅ Progress saved successfully!")
 
+
 def load_progress_from_firebase(username):
     saved_data = db.reference(f'progress/{username}').get()
     if saved_data:
+        # Skip any key used as a widget key (like button_, selectbox_, etc.)
+        widget_prefixes = ("smart_filter_", "edit_item_", "edit_qty_", "new_item_", "edit_subheading_", "move_input_", "move_button_")
+
         for key, value in saved_data.items():
+            if any(key.startswith(prefix) for prefix in widget_prefixes):
+                continue  # Skip widget keys
             try:
                 st.session_state[key] = value
             except Exception as e:
-                st.warning(f"⚠️ Skipped key {key} due to error: {e}")
+                st.warning(f"⚠️ Could not restore key '{key}': {e}")
         st.success("✅ Progress loaded successfully!")
         st.rerun()
     else:
         st.warning("⚠️ No saved progress found.")
+
 
 getcontext().prec = 10  # Increase precision
 
