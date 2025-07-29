@@ -2073,12 +2073,18 @@ def main_app():
                         
                         st.success(f"Added {added_count} items from uploaded file!")
                         st.session_state.show_upload = False
+                        st.session_state["excel_uploader"] = None
+                        st.session_state["uploaded_file_name"] = None
+
                         st.rerun()
                 
                 with col2:
                     if st.button("✕ Cancel", key="cancel_upload", type="primary"):
                         st.session_state.show_upload = False
+                        st.session_state["excel_uploader"] = None
+                        st.session_state["uploaded_file_name"] = None
                         st.rerun()
+                        
             except Exception as e:
                 st.error(f"Error reading Excel file: {str(e)}")
         else:
