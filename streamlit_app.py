@@ -687,6 +687,14 @@ def main_app():
             label_visibility="collapsed",
             placeholder="DD/MM/YYYY"
         )
+        if st.button("🗑 Clear Details", key="clear_text_fields", help="Clear File No, Date, Description, Head Note, Foot Note", use_container_width=True):
+            st.session_state.file_name = ""
+            st.session_state.estimate_date = ""
+            st.session_state.work_desc = ""
+            st.session_state.head_note = ""
+            st.session_state.estimate_note = ""
+            st.rerun()  
+        
     with col2:  
         import re
 
@@ -728,15 +736,6 @@ def main_app():
                 placeholder="Enter Foot Note"
             )
     
-    col1, col2, col3, col4 = st.columns([1, 2, 2, 2])
-    with col1:        
-        if st.button("🗑 Clear Details", key="clear_text_fields", help="Clear File No, Date, Description, Head Note, Foot Note", use_container_width=True):
-            st.session_state.file_name = ""
-            st.session_state.estimate_date = ""
-            st.session_state.work_desc = ""
-            st.session_state.head_note = ""
-            st.session_state.estimate_note = ""
-            st.rerun()     
     st.markdown("""
         <style>
         .thin-banner {
