@@ -41,6 +41,23 @@ if not firebase_admin._apps:
     except Exception as e:
         st.error(f"❌ Firebase init failed: {e}")
 
+def save_progress_to_firebase(username):
+    progress_data = {key: value for key, value in st.session_state.items()
+                     if not key.startswith("_") and key != "authenticated"}  # skip internal/session keys
+    db.reference(f'progress/{username}').set(progress_data)
+    st.success("✅ Progress saved successfully!")
+
+
+def load_progress_from_firebase(username):
+    saved_data = db.reference(f'progress/{username}').get()
+    if saved_data:
+        for key, value in saved_data.items():
+            st.session_state[key] = value
+        st.success("✅ Progress loaded successfully!")
+        st.rerun()
+    else:
+        st.warning("⚠️ No saved progress found.")
+
 getcontext().prec = 10  # Increase precision
 
 
@@ -1317,6 +1334,13 @@ def main_app():
             st.session_state.show_add_item = False
             st.session_state.show_add_other = False
             st.rerun()
+    with col2:
+        if st.button("💾 Save Progress"):
+            save_progress_to_firebase(st.session_state.logged_in_username)
+    with col3:
+        if st.button("📂 Load Progress"):
+            load_progress_from_firebase(st.session_state.logged_in_username)
+
     # Add New Item or Subheading buttons
     button_col1, button_col2, button_col3, button_col4, button_col5, button_col6, button_col7,button_col8  = st.columns([2, 2, 2, 2, 2, 2, 2, 2])
     with button_col7:
