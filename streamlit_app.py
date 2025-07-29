@@ -67,12 +67,17 @@ def save_progress_to_firebase(username):
 def load_progress_from_firebase(username):
     saved_data = db.reference(f'progress/{username}').get()
     if saved_data:
-        # Skip any key used as a widget key (like button_, selectbox_, etc.)
-        widget_prefixes = ("smart_filter_", "edit_item_", "edit_qty_", "new_item_", "edit_subheading_", "move_input_", "move_button_")
+        # Avoid setting keys that match widget keys before those widgets are created
+        widget_prefixes = (
+            "smart_filter_", "edit_item_", "edit_qty_", "new_item_", "edit_subheading_",
+            "move_input_", "move_button_", "add_qty_remark_", "qty_remark_",
+            "remark_input_other_", "save_remark_", "update_", "remove_"
+        )
 
         for key, value in saved_data.items():
+            # Skip any key that is likely used by a widget
             if any(key.startswith(prefix) for prefix in widget_prefixes):
-                continue  # Skip widget keys
+                continue
             try:
                 st.session_state[key] = value
             except Exception as e:
@@ -81,6 +86,7 @@ def load_progress_from_firebase(username):
         st.rerun()
     else:
         st.warning("⚠️ No saved progress found.")
+
 
 
 getcontext().prec = 10  # Increase precision
