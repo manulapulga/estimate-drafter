@@ -710,13 +710,16 @@ def main_app():
                 max_chars=2000,
                 placeholder="Enter Foot Note"
             )
-    if st.button("🗑 Clear Details", key="clear_text_fields", help="Clear File No, Date, Description, Head Note, Foot Note", use_container_width=True):
-        st.session_state.file_name = ""
-        st.session_state.estimate_date = ""
-        st.session_state.work_desc = ""
-        st.session_state.head_note = ""
-        st.session_state.estimate_note = ""
-        st.rerun()     
+    
+    col1, col2, col3, col4 = st.columns([1, 2, 2, 2])
+    with col1:        
+        if st.button("🗑 Clear Details", key="clear_text_fields", help="Clear File No, Date, Description, Head Note, Foot Note", use_container_width=True):
+            st.session_state.file_name = ""
+            st.session_state.estimate_date = ""
+            st.session_state.work_desc = ""
+            st.session_state.head_note = ""
+            st.session_state.estimate_note = ""
+            st.rerun()     
     st.markdown("""
         <style>
         .thin-banner {
@@ -1303,15 +1306,17 @@ def main_app():
                                 st.warning("Invalid position number.")
                         except ValueError:
                             st.error("Please enter a valid number.")        
-    if st.button("🗑 Clear Items", key="clear_items_only", 
-                 help="Remove all added items", use_container_width=True):
-        st.session_state.selected_items = []
-        st.session_state.item_count = 0
-        st.session_state.adding_subheading = False
-        st.session_state.show_wizard = False
-        st.session_state.show_add_item = False
-        st.session_state.show_add_other = False
-        st.rerun()
+    col1, col2, col3, col4 = st.columns([1, 2, 2, 2])
+    with col1: 
+        if st.button("🗑 Clear Items", key="clear_items_only", 
+                     help="Remove all added items", use_container_width=True):
+            st.session_state.selected_items = []
+            st.session_state.item_count = 0
+            st.session_state.adding_subheading = False
+            st.session_state.show_wizard = False
+            st.session_state.show_add_item = False
+            st.session_state.show_add_other = False
+            st.rerun()
     # Add New Item or Subheading buttons
     button_col1, button_col2, button_col3, button_col4, button_col5, button_col6, button_col7,button_col8  = st.columns([2, 2, 2, 2, 2, 2, 2, 2])
     with button_col7:
