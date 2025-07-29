@@ -402,25 +402,7 @@ def set_rounding_option(option):
                 st.session_state[key] = False
     
     # Force immediate update
-    st.rerun()
-    
-def save_progress_to_firebase(username):
-    progress_data = {key: value for key, value in st.session_state.items()
-                     if not key.startswith("_") and key != "authenticated"}  # skip internal/session keys
-    db.reference(f'progress/{username}').set(progress_data)
-    st.success("✅ Progress saved successfully!")
-
-
-def load_progress_from_firebase(username):
-    saved_data = db.reference(f'progress/{username}').get()
-    if saved_data:
-        for key, value in saved_data.items():
-            st.session_state[key] = value
-        st.success("✅ Progress loaded successfully!")
-        st.rerun()
-    else:
-        st.warning("⚠️ No saved progress found.")
-        
+    st.rerun()    
 # Main app
 def main_app():
     # Load data
@@ -1398,16 +1380,7 @@ def main_app():
             if st.button("🔁 Update All Items", key="update_all2", 
                         help="Update all items with current values"):
                 updated_count = update_all_items()
-                st.rerun()
-    # Add Save/Load Progress Buttons
-    col_save, col_load = st.columns(2)
-    with col_save:
-        if st.button("💾 Save Progress"):
-            save_progress_to_firebase(st.session_state.logged_in_username)
-    
-    with col_load:
-        if st.button("📂 Load Progress"):
-            load_progress_from_firebase(st.session_state.logged_in_username)            
+                st.rerun()        
     # Show Add Item section if toggled on
     if st.session_state.get('show_add_item', False):
         idx = len([i for i in st.session_state.selected_items if i.get("Type") != "Subheading"])
