@@ -14,6 +14,7 @@ from decimal import Decimal, ROUND_HALF_UP, getcontext
 from num2words import num2words
 import firebase_admin
 from firebase_admin import credentials, db
+import datetime
 
 
 
@@ -41,18 +42,32 @@ if not firebase_admin._apps:
     except Exception as e:
         st.error(f"❌ Firebase init failed: {e}")
 
-def save_progress_to_firebase(username):
-    progress_data = {key: value for key, value in st.session_state.items()
-                     if not key.startswith("_") and key != "authenticated"}  # skip internal/session keys
-    db.reference(f'progress/{username}').set(progress_data)
-    st.success("✅ Progress saved successfully!")
+def is_serializable(value):
+    try:
+        json.dumps(value)
+        return True
+    except (TypeError, OverflowError):
+        return False
 
+def save_progress_to_firebase(username):
+    safe_keys = {}
+    for key, value in st.session_state.items():
+        if key.startswith("_") or key in {"uploaded_file", "uploaded_file_name", "excel_uploader"}:
+            continue
+        if is_serializable(value):
+            safe_keys[key] = value
+
+    db.reference(f'progress/{username}').set(safe_keys)
+    st.success("✅ Progress saved successfully!")
 
 def load_progress_from_firebase(username):
     saved_data = db.reference(f'progress/{username}').get()
     if saved_data:
         for key, value in saved_data.items():
-            st.session_state[key] = value
+            try:
+                st.session_state[key] = value
+            except Exception as e:
+                st.warning(f"⚠️ Skipped key {key} due to error: {e}")
         st.success("✅ Progress loaded successfully!")
         st.rerun()
     else:
