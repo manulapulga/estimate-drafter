@@ -443,7 +443,7 @@ def login_page(credentials_df):
                 font-size: 20px;
                 font-weight: 500;
                 color: #1a4c74;
-                margin-bottom: 50px;
+                margin-bottom: 30px;
             '>
                 Standardised Project Estimation Console
             </h2>
