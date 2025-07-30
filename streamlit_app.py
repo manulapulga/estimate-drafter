@@ -384,9 +384,9 @@ def login_page(credentials_df):
     
         /* Add soft shadow illusion around center "card" */
         .block-container {
-            max-width: 400px;
-            margin: auto;
-            padding: 0rem;
+            max-width: 350px;
+            margin-top: 80px;
+            padding: 5px;
             box-shadow: 0 0 25px rgba(0,0,0,0.15);
             border-radius: 16px;
             background-color: rgba(255, 255, 255, 0.65); /* optional light tint */
@@ -396,35 +396,14 @@ def login_page(credentials_df):
         input, textarea {
             background-color: rgba(255, 255, 255, 0.9) !important;
             border-radius: 8px !important;
-            padding: 10px !important;
+            padding: 5px !important;
             border: 1px solid #b3cce6 !important;
         }
         </style>
     """, unsafe_allow_html=True)
-
     
-    # Banner section - Half width
-    st.markdown(f"""
-        <div style='
-            background: linear-gradient(135deg, #e0f7fa, #b2ebf2);
-            padding: 0px;
-            border-radius: 0px;
-            text-align: center;
-            margin-bottom: 0px;
-            margin-top: 0px;
-            width: 100%;
-            margin-left: 0px !important;
-            margin-right: 0px !important;
-        '>
-            <img src='data:image/png;base64,{encoded_banner}' 
-                 style='width: 100%; max-height: 80px; object-fit: contain; border-radius: 8px;' />
-        </div>
-    """, unsafe_allow_html=True)
-
 
     # Heading + logo section
-    st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)    
-
     st.markdown(f"""
         <div style='text-align: center; margin-top: 0px; margin-bottom: 0px;'>
             <img src='data:image/png;base64,{encoded_logospec}' 
@@ -442,12 +421,12 @@ def login_page(credentials_df):
     """, unsafe_allow_html=True)
 
     # Center login inputs
-    col1, col2, col3 = st.columns([1, 5, 1])
+    col1, col2, col3 = st.columns([1, 3, 1])
 
     with col2:
         username_input = st.text_input("", key="username_input", placeholder="Username", label_visibility="collapsed")
         password_input = st.text_input("", type="password", key="password_input", placeholder="Password", label_visibility="collapsed")
-    
+
         if st.button("Login"):
             if authenticate(username_input, password_input, credentials_df):
                 st.session_state.logged_in_username = username_input
