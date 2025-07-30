@@ -26,10 +26,16 @@ st.set_page_config(
 # Initialize Firebase once
 if not firebase_admin._apps:
     try:
-        cred = credentials.Certificate("Support/firebase_credentials.json")
+        # Convert st.secrets.AttrDict to a normal JSON-serializable dict
+        firebase_dict = dict(st.secrets["firebase"])
+        firebase_json = json.loads(json.dumps(firebase_dict))  # now it's safe for Certificate()
+
+        # Initialize Firebase
+        cred = credentials.Certificate(firebase_json)
         firebase_admin.initialize_app(cred, {
-            'databaseURL': 'https://spec-files-b881b-default-rtdb.firebaseio.com/'
+            'databaseURL': firebase_json["databaseURL"]
         })
+
         st.write("✅ Firebase Initialized")
     except Exception as e:
         st.error(f"❌ Firebase init failed: {e}")
