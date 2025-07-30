@@ -432,6 +432,23 @@ def login_page(credentials_df):
         }
         </style>
     """, unsafe_allow_html=True)
+    
+    # Heading + logo section
+    st.markdown(f"""
+        <div style='text-align: center; margin-top: 0px; margin-bottom: 0px;'>
+            <img src='data:image/png;base64,{encoded_logospec}' 
+                 style='width: auto; max-height: 60px; object-fit: contain; border-radius: 8px; margin-bottom: 0px; margin-top: 25px;' />
+            <h2 style='
+                font-family: "Merriweather", serif;
+                font-size: 20px;
+                font-weight: 500;
+                color: #1a4c74;
+                margin-bottom: 50px;
+            '>
+                Standardised Project Estimation Console
+            </h2>
+        </div>
+    """, unsafe_allow_html=True)
 
     # Center login inputs
     col1, col2, col3 = st.columns([1, 3, 1])
@@ -447,14 +464,15 @@ def login_page(credentials_df):
                 st.rerun()
             else:
                 st.error("Invalid username or password")
+                
     # Heading + logo section
     st.markdown(f"""
-        <div style='text-align: center; margin-top: 0px; margin-bottom: 5px;'>
+        <div style='text-align: center; margin-top: 0px; margin-bottom: 40px;'>
             <p style='
                 font-family: "Segoe UI", sans-serif;
                 font-size: 13px;
                 color: #39779a;
-                margin-top: 2px;
+                margin-top: 20px;
             '>
                 Powered by DSR 2021
             </p>
