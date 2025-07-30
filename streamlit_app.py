@@ -16,8 +16,6 @@ import firebase_admin
 from firebase_admin import credentials, db
 import time
 
-
-
 # Set page config
 st.set_page_config(
     page_title="Estimate Drafter",
@@ -28,16 +26,10 @@ st.set_page_config(
 # Initialize Firebase once
 if not firebase_admin._apps:
     try:
-        # Convert st.secrets.AttrDict to a normal JSON-serializable dict
-        firebase_dict = dict(st.secrets["firebase"])
-        firebase_json = json.loads(json.dumps(firebase_dict))  # now it's safe for Certificate()
-
-        # Initialize Firebase
-        cred = credentials.Certificate(firebase_json)
+        cred = credentials.Certificate("Support/firebase_credentials.json")
         firebase_admin.initialize_app(cred, {
-            'databaseURL': firebase_json["databaseURL"]
+            'databaseURL': 'https://spec-files-b881b-default-rtdb.firebaseio.com/'
         })
-
         st.write("✅ Firebase Initialized")
     except Exception as e:
         st.error(f"❌ Firebase init failed: {e}")
@@ -340,13 +332,6 @@ def load_wizard_items(username):
 # Login screen
 import streamlit as st
 
-# Load the banner image and encode it as base64
-with open("Icons/banner.png", "rb") as image_file:
-    encoded_banner = base64.b64encode(image_file.read()).decode()
-    
-    
-with open("Icons/spec1.png", "rb") as image_file:
-    encoded_logospec = base64.b64encode(image_file.read()).decode() 
 
 def login_page(credentials_df):
     import base64
@@ -437,13 +422,13 @@ def login_page(credentials_df):
     st.markdown(f"""
         <div style='text-align: center; margin-top: 0px; margin-bottom: 0px;'>
             <img src='data:image/png;base64,{encoded_logospec}' 
-                 style='width: auto; max-height: 60px; object-fit: contain; border-radius: 8px; margin-bottom: 0px; margin-top: 25px;' />
+                 style='width: auto; max-height: 60px; object-fit: contain; border-radius: 8px; margin-bottom: 0px; margin-top: 15px;' />
             <h2 style='
                 font-family: "Merriweather", serif;
                 font-size: 20px;
                 font-weight: 500;
                 color: #1a4c74;
-                margin-bottom: 30px;
+                margin-bottom: 50px;
             '>
                 Standardised Project Estimation Console
             </h2>
