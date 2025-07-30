@@ -381,6 +381,36 @@ def login_page(credentials_df):
             background-attachment: fixed;
             background-size: cover;
         }
+        .st-emotion-cache-46x3d8 {
+            width: 390px;
+            position: relative;
+            display: flex;
+            flex: 1 1 0%;
+            flex-direction: column;
+            gap: 0rem;
+        }
+        .st-emotion-cache-n3bfp {
+            display: inline-flex;
+            -webkit-box-align: center;
+            align-items: center;
+            -webkit-box-pack: center;
+            justify-content: center;
+            font-weight: 400;
+            padding: 0.25rem 0.75rem;
+            border-radius: 0.5rem;
+            min-height: 2.5rem;
+            margin: 0px;
+            line-height: 1.6;
+            text-transform: none;
+            font-size: inherit;
+            font-family: inherit;
+            color: inherit;
+            width: auto;
+            cursor: pointer;
+            user-select: none;
+            background-color: #65d1ea;
+            border: 1px solid rgba(0, 0, 0, 0.2);
+        }
     
         /* Add soft shadow illusion around center "card" */
         .block-container {
@@ -390,33 +420,17 @@ def login_page(credentials_df):
             box-shadow: 0 0 25px rgba(0,0,0,0.15);
             border-radius: 16px;
             background-color: rgba(255, 255, 255, 0.65); /* optional light tint */
+            padding-top: 0px !important;
         }
     
         /* Optional: style input fields to pop more */
         input, textarea {
             background-color: rgba(255, 255, 255, 0.9) !important;
             border-radius: 8px !important;
-            padding: 5px !important;
+            padding: 10px !important;
             border: 1px solid #b3cce6 !important;
         }
         </style>
-    """, unsafe_allow_html=True)
-    
-    # Heading + logo section
-    st.markdown(f"""
-        <div style='text-align: center; margin-top: 0px; margin-bottom: 0px;'>
-            <img src='data:image/png;base64,{encoded_logospec}' 
-                 style='width: auto; max-height: 60px; object-fit: contain; border-radius: 8px; margin-bottom: 0px;' />
-            <h2 style='
-                font-family: "Merriweather", serif;
-                font-size: 20px;
-                font-weight: 500;
-                color: #1a4c74;
-                margin: 0;
-            '>
-                Standardised Project Estimation Console
-            </h2>
-        </div>
     """, unsafe_allow_html=True)
 
     # Center login inputs
