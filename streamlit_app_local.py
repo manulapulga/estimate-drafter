@@ -16,8 +16,6 @@ import firebase_admin
 from firebase_admin import credentials, db
 import time
 
-
-
 # Set page config
 st.set_page_config(
     page_title="Estimate Drafter",
@@ -355,12 +353,12 @@ def login_page(credentials_df):
     st.markdown("""
         <style>
         html, body, .stApp {
-            margin-top: 0 !important;
-            padding-top: 0 !important;
+            margin-top: 0px !important;
+            padding-top: 0px !important;
         }
         [data-testid="stVerticalBlock"] {
-            margin-top: 0 !important;
-            padding-top: 0 !important;
+            margin-top: 0px !important;
+            padding-top: 0px !important;
         }
         .block-container {
             padding-top: 0rem !important;
@@ -378,7 +376,7 @@ def login_page(credentials_df):
     
         /* Add soft shadow illusion around center "card" */
         .block-container {
-            max-width: 350px;
+            max-width: 400px;
             margin-top: 80px;
             padding: 5px;
             box-shadow: 0 0 25px rgba(0,0,0,0.15);
@@ -396,7 +394,6 @@ def login_page(credentials_df):
         </style>
     """, unsafe_allow_html=True)
     
-
     # Heading + logo section
     st.markdown(f"""
         <div style='text-align: center; margin-top: 0px; margin-bottom: 0px;'>
@@ -405,7 +402,7 @@ def login_page(credentials_df):
             <h2 style='
                 font-family: "Merriweather", serif;
                 font-size: 20px;
-                font-weight: 700;
+                font-weight: 500;
                 color: #1a4c74;
                 margin: 0;
             '>
