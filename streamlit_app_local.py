@@ -368,28 +368,36 @@ def login_page(credentials_df):
         </style>
     """, unsafe_allow_html=True)
     
-    # Banner section - Half width
-    st.markdown(f"""
-        <div style='
-            background: linear-gradient(135deg, #e0f7fa, #b2ebf2);
-            padding: 0px;
-            border-radius: 0px;
-            text-align: center;
-            margin-bottom: 1px;
-            margin-top: 0px;
-            width: 40%;
-            margin-left: auto;
-            margin-right: auto;
-        '>
-            <img src='data:image/png;base64,{encoded_banner}' 
-                 style='width: 100%; max-height: 80px; object-fit: contain; border-radius: 8px;' />
-        </div>
+    st.markdown("""
+        <style>
+        html, body, .stApp {
+            background-color: #e3f2fd !important;  /* soft blue background */
+            background-attachment: fixed;
+            background-size: cover;
+        }
+    
+        /* Add soft shadow illusion around center "card" */
+        .block-container {
+            max-width: 350px;
+            margin-top: 80px;
+            padding: 5px;
+            box-shadow: 0 0 25px rgba(0,0,0,0.15);
+            border-radius: 16px;
+            background-color: rgba(255, 255, 255, 0.65); /* optional light tint */
+        }
+    
+        /* Optional: style input fields to pop more */
+        input, textarea {
+            background-color: rgba(255, 255, 255, 0.9) !important;
+            border-radius: 8px !important;
+            padding: 5px !important;
+            border: 1px solid #b3cce6 !important;
+        }
+        </style>
     """, unsafe_allow_html=True)
-
+    
 
     # Heading + logo section
-    st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)    
-
     st.markdown(f"""
         <div style='text-align: center; margin-top: 0px; margin-bottom: 0px;'>
             <img src='data:image/png;base64,{encoded_logospec}' 
@@ -407,7 +415,7 @@ def login_page(credentials_df):
     """, unsafe_allow_html=True)
 
     # Center login inputs
-    col1, col2, col3 = st.columns([2, 1, 2])
+    col1, col2, col3 = st.columns([1, 3, 1])
 
     with col2:
         username_input = st.text_input("", key="username_input", placeholder="Username", label_visibility="collapsed")
