@@ -2807,7 +2807,7 @@ def main_app():
                         row_num += 1
             
                     ws.merge_cells(f'A{row_num}:H{row_num}')
-                    ws[f'A{row_num}'] = "All Items should be as per ISI Standards"
+                    ws[f'A{row_num}'] = "All items shall conform to ISI standards. GI pipes shall be Class B, unless specified otherwise."
                     ws[f'A{row_num}'].alignment = center_align
                     ws[f'A{row_num}'].font = ws[f'A{row_num}'].font.copy(italic=True)
                     row_num += 1
@@ -3334,7 +3334,7 @@ def main_app():
                 # Add ISI standards note (merged row)
                 pdf.set_x(left_margin)  # Set x position to left margin to center the cell
                 pdf.set_font("Arial", 'I', 10)
-                pdf.cell(table_width, row_height, "All Items should be as per ISI Standards", border=1, ln=1, align='C')
+                pdf.cell(table_width, row_height, "All items shall conform to ISI standards. GI pipes shall be Class B, unless specified otherwise.", border=1, ln=1, align='C')
                 pdf.set_font("Arial", '', 10)  # Reset font
                 
                 
