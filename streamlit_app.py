@@ -1951,7 +1951,7 @@ def main_app():
                     # Loop through all rows in column A to find the matching text
                     for row in range(1, ws.max_row):
                         cell_val = ws.cell(row=row, column=1).value
-                        if cell_val and str(cell_val).strip() == "All Items should be as per ISI Standards":
+                        if cell_val and str(cell_val).strip() == "All items shall conform to ISI standards. GI pipes shall be Class B, unless specified otherwise.":
                             next_row_val = ws.cell(row=row + 1, column=1).value
                             if next_row_val and str(next_row_val).strip():
                                 estimate_note = str(next_row_val).strip()
