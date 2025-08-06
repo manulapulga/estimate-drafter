@@ -1335,6 +1335,7 @@ def main_app():
                     with col1b:
                         st.markdown("<div style='height:28px;'></div>", unsafe_allow_html=True)
                         if st.button("🔍 Change Item", key=f"smart_filter_{idx}"):
+                            update_all_items()  # <-- Run this first
                             st.session_state["wizard_target_index"] = idx
                             st.switch_page("pages/wizard.py")
 
