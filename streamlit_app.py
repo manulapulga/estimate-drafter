@@ -190,13 +190,15 @@ def save_excel_to_firebase(username, filename, excel_io):
             i += 1
         return f"{base_name}_{i}"
 
-    # Ensure file pointer is at start
     excel_io.seek(0)
     encoded = base64.b64encode(excel_io.read()).decode()
-
     unique_filename = get_unique_filename(filename)
-    db.reference(f'estimates/{username}/{unique_filename}').set(encoded)
-    return unique_filename  # optional, useful for UI confirmation
+    file_data = {
+        "content": encoded,
+        "timestamp": int(time.time())
+    }
+    db.reference(f'estimates/{username}/{unique_filename}').set(file_data)
+    return unique_filename
     
 
 def list_user_files(username):
@@ -204,10 +206,18 @@ def list_user_files(username):
     return files if files else {}
 
 def load_excel_from_firebase(username, filename):
-    encoded = db.reference(f'estimates/{username}/{filename}').get()
-    if encoded:
-        return io.BytesIO(base64.b64decode(encoded))
-    return None
+    record = db.reference(f'estimates/{username}/{filename}').get()
+
+    if isinstance(record, dict) and "content" in record:
+        # ✅ New format
+        return io.BytesIO(base64.b64decode(record["content"]))
+    elif isinstance(record, str):
+        # ✅ Old format (base64 string only)
+        return io.BytesIO(base64.b64decode(record))
+    else:
+        st.error("❌ Failed to load file from Firebase.")
+        return None
+
     
 def break_long_words(text, max_length=8):
     """
@@ -1850,10 +1860,49 @@ def main_app():
                 if not files:
                     st.warning("No saved estimates found.")
                 else:
-                    st.markdown("**📂 Saved Estimates**")
-                    file_names = list(files.keys())
+
+                    col1, col2, col3 = st.columns([4, 1, 1])  # Wider column for search
+                    with col1:
+                        st.markdown("**📂 Saved Estimates**")
+                    with col2:
+                        sort_option = st.selectbox(
+                        label="Sort By", 
+                        options=["Newest First", "Oldest First", "A-Z", "Z-A"],
+                        index=0,
+                        label_visibility="collapsed",
+                        placeholder="Sort By"
+                    )
+                    with col3:
+                        search_query = st.text_input(
+                        label="Search",
+                        label_visibility="collapsed",
+                        placeholder="🔍 Search Estimates"
+                    )
+                    # Convert to list of (name, timestamp)
+                    file_list = []
+                    for name, value in files.items():
+                        if search_query.lower() not in name.lower():
+                            continue
+                        # Try to get timestamp if the value is a dict, else use 0
+                        if isinstance(value, dict) and "timestamp" in value:
+                            ts = value["timestamp"]
+                        else:
+                            ts = 0  # fallback for old plain string format
+                        file_list.append((name, ts))
+                
+                    # Apply sorting
+                    if sort_option == "Newest First":
+                        file_list.sort(key=lambda x: x[1], reverse=True)
+                    elif sort_option == "Oldest First":
+                        file_list.sort(key=lambda x: x[1])    
+                    elif sort_option == "A-Z":
+                        file_list.sort(key=lambda x: x[0].lower())
+                    elif sort_option == "Z-A":
+                        file_list.sort(key=lambda x: x[0].lower(), reverse=True)
+                
+                    file_names = [name for name, _ in file_list]
                     cards_per_row = 4
-            
+                
                     for i in range(0, len(file_names), cards_per_row):
                         cols = st.columns(cards_per_row)
                         for j in range(cards_per_row):
@@ -1868,6 +1917,8 @@ def main_app():
                                                 excel_io = load_excel_from_firebase(username, file_name)
                                                 if excel_io:
                                                     st.session_state["excel_uploader"] = excel_io
+                                                    # your existing restore logic here
+                
                                                     st.session_state["uploaded_file_name"] = file_name
                                                     st.session_state["show_firebase_load"] = False
                                                     st.rerun()
@@ -2872,6 +2923,7 @@ def main_app():
                     msg.success("✅ Saved")
                     time.sleep(3)  # visible for 3 seconds
                     msg.empty()
+                    
             
                 except Exception as e:
                     st.error(f"❌ Save failed: {e}")
