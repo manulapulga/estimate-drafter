@@ -3151,8 +3151,8 @@ def main_app():
                 pdf.set_font("Arial", '', 10)
             
                 serial = 1
-                summary_accumulator = 0  # Tracks total cost for current section
-                gst_accumulator = 0      # Tracks GST-applicable cost for current section
+                summary_accumulator = 0  # Add this line above the loop
+                gst_accumulator = 0
                 
                 for item in st.session_state.selected_items:
                     # Check if we need a new page (with buffer for row height)
@@ -3166,87 +3166,81 @@ def main_app():
                     if item.get("Type") == "Subheading":
                         if item['Item'].strip().lower() == "section total":
                             # ====== SPECIAL HANDLING FOR SUMMARY SECTIONS ======
-                
+                            
+                            # Calculate height needed for the summary block (3 rows)
                             summary_block_height = 3 * 8  # 3 rows at 8mm each
-                
-                            # Check if we need a new page for the summary block
+                            
+                            # Check if we need a new page
                             if pdf.get_y() + summary_block_height > pdf.h - 30:
                                 pdf.add_page()
                                 add_watermark(pdf)
                                 add_spec_watermark(pdf)
                                 draw_table_header()
                                 pdf.set_font("Arial", '', 10)
-                
-                            # Compute GST only if there's a section subtotal
+                            
+                            # Initialize GST amount
                             gst_amount = 0
+                            
+                            # Only calculate GST if total is not zero
                             if summary_accumulator > 0:
-                                gst_amount = round(gst_accumulator * 0.18, 2)
-                
+                                # Calculate GST (18% of accumulated GST-applicable items only)
+                                for item in st.session_state.selected_items:
+                                    if item.get('Type') not in ['Subheading', 'Other'] and item.get('GST_Applicable', True):
+                                        try:
+                                            gst_amount += float(item['Cost']) * 0.18
+                                        except (KeyError, ValueError):
+                                            pass
+                            
+                            gst_amount = round(gst_amount, 2)
                             subtotal = summary_accumulator + gst_amount
-                
-                            # Draw summary block
+                            
+                            # Draw the summary block
                             x_start = left_margin
                             y_start = pdf.get_y()
-                
-                            # Draw outer border
+                            
+                            # Draw outer border for the entire summary block
                             pdf.rect(x_start, y_start, table_width, summary_block_height)
-                
-                            # Horizontal lines between rows
+                            
+                            # Draw horizontal lines between rows
                             for i in range(1, 3):
                                 pdf.line(
                                     x_start, y_start + (i * 8),
                                     x_start + table_width, y_start + (i * 8)
                                 )
-                
-                            # Vertical line before total column
+                            
+                            # Draw vertical line separating columns (after first 5 columns)
                             pdf.line(
                                 x_start + sum(col_widths[:-1]), y_start,
                                 x_start + sum(col_widths[:-1]), y_start + summary_block_height
                             )
-                
+                            
+                            # Add summary content
                             pdf.set_font("Arial", 'I', 10)
-                
-                            # Row 1: Section Subtotal
+                            
+                            # Row 1: Total
                             pdf.set_xy(x_start, y_start)
                             pdf.cell(sum(col_widths[:-1]), 8, "Section Subtotal", 0, 0, 'R')
                             pdf.set_xy(x_start + sum(col_widths[:-1]), y_start)
                             pdf.cell(col_widths[-1], 8, f"{summary_accumulator:.2f}", 0, 0, 'C')
-                
+                            
                             # Row 2: GST at 18%
                             pdf.set_xy(x_start, y_start + 8)
                             pdf.cell(sum(col_widths[:-1]), 8, "GST at 18%", 0, 0, 'R')
                             pdf.set_xy(x_start + sum(col_widths[:-1]), y_start + 8)
                             pdf.cell(col_widths[-1], 8, f"{gst_amount:.2f}", 0, 0, 'C')
-                
-                            # Row 3: Section Total
+                            
+                            # Row 3: Sub Total
                             pdf.set_xy(x_start, y_start + 16)
                             pdf.cell(sum(col_widths[:-1]), 8, "Section Total", 0, 0, 'R')
                             pdf.set_xy(x_start + sum(col_widths[:-1]), y_start + 16)
                             pdf.cell(col_widths[-1], 8, f"{subtotal:.2f}", 0, 0, 'C')
-                
-                            # Reset accumulators
+                            
+                            # Reset the accumulator for items after this summary
                             summary_accumulator = 0
-                            gst_accumulator = 0
-                
-                            # Move cursor down
+                            
+                            # Move to next position
                             pdf.set_y(y_start + summary_block_height)
                             pdf.set_font("Arial", '', 10)
-                
-                        continue  # Skip further handling of subheadings
-                
-                    # ===================== REGULAR ITEM =====================
-                    if item.get("Type") not in ['Subheading', 'Other']:
-                        try:
-                            cost = float(item['Cost'])
-                            summary_accumulator += cost
-                
-                            if item.get('GST_Applicable', True):
-                                gst_accumulator += cost
-                        except (KeyError, ValueError):
-                            pass
-                
-                    # Render regular item row here (your existing row-drawing logic)
-                
                             
                         else:
                             # ====== REGULAR SUBHEADING PROCESSING ======
