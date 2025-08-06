@@ -1452,7 +1452,7 @@ def main_app():
     with button_col7:
         if st.button("📊 Add Section Total", 
                     key="add_summary_btn",
-                    help="Add summary section at end (drag to desired position)"):
+                    help="Add section total in between items"):
             st.session_state.selected_items.append({
                 'Item': "Section Total",
                 'Type': 'Subheading'
