@@ -1454,7 +1454,7 @@ def main_app():
                     key="add_summary_btn",
                     help="Add section total in between items"):
             st.session_state.selected_items.append({
-                'Item': "Section Total",
+                'Item': "Summary",
                 'Type': 'Subheading'
             })
             st.rerun()
@@ -3163,7 +3163,7 @@ def main_app():
                         pdf.set_font("Arial", '', 10)
                 
                     if item.get("Type") == "Subheading":
-                        if item['Item'].strip().lower() == "section total":
+                        if item['Item'].strip().lower() == "summary":
                             # ====== SPECIAL HANDLING FOR SUMMARY SECTIONS ======
                             
                             # Calculate height needed for the summary block (3 rows)
@@ -3177,6 +3177,9 @@ def main_app():
                                 draw_table_header()
                                 pdf.set_font("Arial", '', 10)
                             
+                            # Initialize GST amount
+                            gst_amount = 0
+                            
                             # Only calculate GST if total is not zero
                             if summary_accumulator > 0:
                                 # Calculate GST (18% of accumulated GST-applicable items in this summary section only)
@@ -3186,7 +3189,7 @@ def main_app():
                                 start_idx = 0
                                 # Find the index of the previous summary
                                 for i, prev_item in enumerate(st.session_state.selected_items[:st.session_state.selected_items.index(item)]):
-                                    if prev_item.get('Type') == 'Subheading' and prev_item['Item'].strip().lower() == 'section total':
+                                    if prev_item.get('Type') == 'Subheading' and prev_item['Item'].strip().lower() == 'summary':
                                         start_idx = i + 1
                                 
                                 # Get items in this section
@@ -3224,23 +3227,23 @@ def main_app():
                             )
                             
                             # Add summary content
-                            pdf.set_font("Arial", 'I', 10)
+                            pdf.set_font("Arial", 'B', 10)
                             
-                            # Row 1: Total
+                            # Row 1: Total (of this section)
                             pdf.set_xy(x_start, y_start)
-                            pdf.cell(sum(col_widths[:-1]), 8, "Section Subtotal", 0, 0, 'R')
+                            pdf.cell(sum(col_widths[:-1]), 8, "Total", 0, 0, 'L')
                             pdf.set_xy(x_start + sum(col_widths[:-1]), y_start)
                             pdf.cell(col_widths[-1], 8, f"{summary_accumulator:.2f}", 0, 0, 'C')
                             
-                            # Row 2: GST at 18%
+                            # Row 2: GST at 18% (of this section)
                             pdf.set_xy(x_start, y_start + 8)
-                            pdf.cell(sum(col_widths[:-1]), 8, "GST at 18%", 0, 0, 'R')
+                            pdf.cell(sum(col_widths[:-1]), 8, "GST at 18%", 0, 0, 'L')
                             pdf.set_xy(x_start + sum(col_widths[:-1]), y_start + 8)
                             pdf.cell(col_widths[-1], 8, f"{gst_amount:.2f}", 0, 0, 'C')
                             
-                            # Row 3: Sub Total
+                            # Row 3: Sub Total (of this section)
                             pdf.set_xy(x_start, y_start + 16)
-                            pdf.cell(sum(col_widths[:-1]), 8, "Section Total", 0, 0, 'R')
+                            pdf.cell(sum(col_widths[:-1]), 8, "Sub Total", 0, 0, 'L')
                             pdf.set_xy(x_start + sum(col_widths[:-1]), y_start + 16)
                             pdf.cell(col_widths[-1], 8, f"{subtotal:.2f}", 0, 0, 'C')
                             
