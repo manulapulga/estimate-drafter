@@ -1450,11 +1450,11 @@ def main_app():
     # Add New Item or Subheading buttons
     button_col1, button_col2, button_col3, button_col4, button_col5, button_col6, button_col7, button_col8, button_col9  = st.columns([2, 2, 2, 2, 2, 2.2, 2, 2, 2])
     with button_col7:
-        if st.button("📊 Add Summary", 
+        if st.button("📊 Add Section Total", 
                     key="add_summary_btn",
                     help="Add summary section at end (drag to desired position)"):
             st.session_state.selected_items.append({
-                'Item': "Summary",
+                'Item': "Section Total",
                 'Type': 'Subheading'
             })
             st.rerun()
@@ -3163,7 +3163,7 @@ def main_app():
                         pdf.set_font("Arial", '', 10)
                 
                     if item.get("Type") == "Subheading":
-                        if item['Item'].strip().lower() == "summary":
+                        if item['Item'].strip().lower() == "Section Total":
                             # ====== SPECIAL HANDLING FOR SUMMARY SECTIONS ======
                             
                             # Calculate height needed for the summary block (3 rows)
