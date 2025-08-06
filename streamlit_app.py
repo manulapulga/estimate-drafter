@@ -3186,7 +3186,7 @@ def main_app():
                                 start_idx = 0
                                 # Find the index of the previous summary
                                 for i, prev_item in enumerate(st.session_state.selected_items[:st.session_state.selected_items.index(item)]):
-                                    if prev_item.get('Type') == 'Subheading' and prev_item['Item'].strip().lower() == 'summary':
+                                    if prev_item.get('Type') == 'Subheading' and prev_item['Item'].strip().lower() == 'section total':
                                         start_idx = i + 1
                                 
                                 # Get items in this section
