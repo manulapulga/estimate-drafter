@@ -3157,13 +3157,11 @@ def main_app():
                 gst_accumulator = 0
                 
                 for item in st.session_state.selected_items:
-                    if item.get("Type") != "Subheading" or (
-                        item.get("Type") == "Subheading" and item["Item"].strip().lower() != "section total"
-                    ):
+                    if item.get("Type") not in ["Subheading"]:
                         summary_accumulator += item["Cost"]
                         if item.get("GST_Applicable", True):
                             gst_accumulator += item["Cost"]
-                    
+
                     # Check if we need a new page (with buffer for row height)
                     if pdf.get_y() + 20 > pdf.h - 30:
                         pdf.add_page()
@@ -3188,7 +3186,7 @@ def main_app():
                                 pdf.set_font("Arial", '', 10)
                             
                             gst_amount = gst_accumulator * 0.18
-                            subtotal = summary_accumulator + gst_amount
+                            subtotal = (summary_accumulator / 2) + gst_amount
                             
                             # Draw the summary block
                             x_start = left_margin
@@ -3217,7 +3215,7 @@ def main_app():
                             pdf.set_xy(x_start, y_start)
                             pdf.cell(sum(col_widths[:-1]), 8, "Section Subtotal", 0, 0, 'R')
                             pdf.set_xy(x_start + sum(col_widths[:-1]), y_start)
-                            pdf.cell(col_widths[-1], 8, f"{summary_accumulator:.2f}", 0, 0, 'C')
+                            pdf.cell(col_widths[-1], 8, f"{(summary_accumulator / 2):.2f}", 0, 0, 'C')
                             
                             # Row 2: GST at 18%
                             pdf.set_xy(x_start, y_start + 8)
