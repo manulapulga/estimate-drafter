@@ -26,15 +26,13 @@ st.set_page_config(
 # Initialize Firebase once
 if not firebase_admin._apps:
     try:
-        # Convert st.secrets.AttrDict to a normal JSON-serializable dict
-        firebase_dict = dict(st.secrets["firebase"])
-        firebase_json = json.loads(json.dumps(firebase_dict))  # now it's safe for Certificate()
-
-        # Initialize Firebase
-        cred = credentials.Certificate(firebase_json)
+        cred = credentials.Certificate("Support/firebase_credentials.json")
         firebase_admin.initialize_app(cred, {
-            'databaseURL': firebase_json["databaseURL"]
+            'databaseURL': 'https://spec-files-b881b-default-rtdb.firebaseio.com/'
         })
+        st.write("✅ Firebase Initialized")
+    except Exception as e:
+        st.error(f"❌ Firebase init failed: {e}")
 
         st.write("✅ Firebase Initialized")
     except Exception as e:
@@ -2868,9 +2866,11 @@ def main_app():
                     # ✅ Save to Firebase using consistent filename
                     save_excel_to_firebase(username, filename_no_ext, output)
                     
-                    st.success("✅ Saved")
+                    msg = st.empty()
+                    msg.success("✅ Saved")
                     time.sleep(3)  # visible for 3 seconds
                     msg.empty()
+                    
             
                 except Exception as e:
                     st.error(f"❌ Save failed: {e}")
