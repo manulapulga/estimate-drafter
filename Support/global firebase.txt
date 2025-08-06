@@ -1,0 +1,10 @@
+# Initialize Firebase once
+if not firebase_admin._apps:
+    try:
+        cred = credentials.Certificate("Support/firebase_credentials.json")
+        firebase_admin.initialize_app(cred, {
+            'databaseURL': 'https://spec-files-b881b-default-rtdb.firebaseio.com/'
+        })
+        st.write("✅ Firebase Initialized")
+    except Exception as e:
+        st.error(f"❌ Firebase init failed: {e}")

@@ -34,6 +34,10 @@ if not firebase_admin._apps:
     except Exception as e:
         st.error(f"❌ Firebase init failed: {e}")
 
+        st.write("✅ Firebase Initialized")
+    except Exception as e:
+        st.error(f"❌ Firebase init failed: {e}")
+
 def save_progress_to_firebase(username):
     try:
         # Convert session state to regular dict and remove unserializable items
@@ -422,7 +426,7 @@ def login_page(credentials_df):
     st.markdown(f"""
         <div style='text-align: center; margin-top: 0px; margin-bottom: 0px;'>
             <img src='data:image/png;base64,{encoded_logospec}' 
-                 style='width: auto; max-height: 60px; object-fit: contain; border-radius: 8px; margin-bottom: 0px; margin-top: 25px;' />
+                 style='width: auto; max-height: 60px; object-fit: contain; border-radius: 8px; margin-bottom: 0px; margin-top: 15px;' />
             <h2 style='
                 font-family: "Merriweather", serif;
                 font-size: 20px;
@@ -1329,6 +1333,7 @@ def main_app():
                     with col1b:
                         st.markdown("<div style='height:28px;'></div>", unsafe_allow_html=True)
                         if st.button("🔍 Change Item", key=f"smart_filter_{idx}"):
+                            update_all_items()  # <-- Run this first
                             st.session_state["wizard_target_index"] = idx
                             st.switch_page("pages/wizard.py")
 
@@ -1488,7 +1493,7 @@ def main_app():
             st.rerun()
     with button_col4:
         # Replace your existing upload button with this:
-        if st.button("📤 Upload Excel File", key="show_upload_btn"):
+        if st.button("📤 Import Estimates", key="show_upload_btn"):
             st.session_state.show_upload = not st.session_state.get('show_upload', False)
             st.session_state.show_templates = False
             st.session_state.show_add_item = False
@@ -1945,7 +1950,7 @@ def main_app():
                     # Loop through all rows in column A to find the matching text
                     for row in range(1, ws.max_row):
                         cell_val = ws.cell(row=row, column=1).value
-                        if cell_val and str(cell_val).strip() == "All Items should be as per ISI Standards":
+                        if cell_val and str(cell_val).strip() == "All items shall conform to ISI standards. GI pipes shall be Class B, unless specified otherwise.":
                             next_row_val = ws.cell(row=row + 1, column=1).value
                             if next_row_val and str(next_row_val).strip():
                                 estimate_note = str(next_row_val).strip()
@@ -2625,7 +2630,7 @@ def main_app():
         
                 # === ISI Clause ===
                 ws.merge_cells(f'A{row_num}:H{row_num}')
-                ws[f'A{row_num}'] = "All Items should be as per ISI Standards"
+                ws[f'A{row_num}'] = "All items shall conform to ISI standards. GI pipes shall be Class B, unless specified otherwise."
                 ws[f'A{row_num}'].alignment = center_align
                 ws[f'A{row_num}'].font = ws[f'A{row_num}'].font.copy(italic=True)
                 row_num += 1
@@ -2801,7 +2806,7 @@ def main_app():
                         row_num += 1
             
                     ws.merge_cells(f'A{row_num}:H{row_num}')
-                    ws[f'A{row_num}'] = "All Items should be as per ISI Standards"
+                    ws[f'A{row_num}'] = "All items shall conform to ISI standards. GI pipes shall be Class B, unless specified otherwise."
                     ws[f'A{row_num}'].alignment = center_align
                     ws[f'A{row_num}'].font = ws[f'A{row_num}'].font.copy(italic=True)
                     row_num += 1
@@ -3328,7 +3333,7 @@ def main_app():
                 # Add ISI standards note (merged row)
                 pdf.set_x(left_margin)  # Set x position to left margin to center the cell
                 pdf.set_font("Arial", 'I', 10)
-                pdf.cell(table_width, row_height, "All Items should be as per ISI Standards", border=1, ln=1, align='C')
+                pdf.cell(table_width, row_height, "All items shall conform to ISI standards. GI pipes shall be Class B, unless specified otherwise.", border=1, ln=1, align='C')
                 pdf.set_font("Arial", '', 10)  # Reset font
                 
                 

@@ -2869,6 +2869,8 @@ def main_app():
                     save_excel_to_firebase(username, filename_no_ext, output)
                     
                     st.success("✅ Saved")
+                    time.sleep(3)  # visible for 3 seconds
+                    msg.empty()
             
                 except Exception as e:
                     st.error(f"❌ Save failed: {e}")
