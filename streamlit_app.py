@@ -3187,7 +3187,7 @@ def main_app():
                                 for item in st.session_state.selected_items:
                                     if item.get('Type') not in ['Subheading', 'Other'] and item.get('GST_Applicable', True):
                                         try:
-                                            gst_amount += float(item['Cost']) * 0.18
+                                            gst_amount += summary_accumulator * 0.18
                                         except (KeyError, ValueError):
                                             pass
                             
