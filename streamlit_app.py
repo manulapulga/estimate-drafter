@@ -1495,7 +1495,7 @@ def main_app():
             st.rerun()
     with button_col4:
         # Replace your existing upload button with this:
-        if st.button("📤 Upload Excel File", key="show_upload_btn"):
+        if st.button("📤 Import Estimates", key="show_upload_btn"):
             st.session_state.show_upload = not st.session_state.get('show_upload', False)
             st.session_state.show_templates = False
             st.session_state.show_add_item = False
