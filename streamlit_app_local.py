@@ -1445,7 +1445,16 @@ def main_app():
     if st.button("☁️ Save Progress", use_container_width=True):
             save_progress_to_firebase(st.session_state.logged_in_username)
     # Add New Item or Subheading buttons
-    button_col1, button_col2, button_col3, button_col4, button_col5, button_col6, button_col7,button_col8  = st.columns([2, 2, 2, 2, 2, 2, 2, 2])
+    button_col1, button_col2, button_col3, button_col4, button_col5, button_col6, button_col7, button_col8, button_col9  = st.columns([2, 2, 2, 2, 2, 2, 2, 2, 2])
+    with button_col9:
+        if st.button("📊 Add Summary", 
+                    key="add_summary_btn",
+                    help="Add summary section at end (drag to desired position)"):
+            st.session_state.selected_items.append({
+                'Item': "Summary",
+                'Type': 'Subheading'
+            })
+            st.rerun()
     with button_col7:
         if st.button("🔽 Add from Dropdown", key="add_item_btn"):
             # Toggle add item section and hide others
@@ -3139,49 +3148,127 @@ def main_app():
                 pdf.set_font("Arial", '', 10)
             
                 serial = 1
+                summary_accumulator = 0  # Add this line above the loop
+                
                 for item in st.session_state.selected_items:
                     # Check if we need a new page (with buffer for row height)
-                    if pdf.get_y() + 20 > pdf.h - 30:  # Increased buffer to 20
+                    if pdf.get_y() + 20 > pdf.h - 30:
                         pdf.add_page()
                         add_watermark(pdf)
                         add_spec_watermark(pdf)
                         draw_table_header()
-                        pdf.set_font("Arial", '', 10)  # Reset font after header
-            
-                    if item.get("Type") == "Subheading":
-                        # Calculate height needed (using fixed 6mm per line)
-                        available_width = table_width - 10  # 5mm margin each side
-                        subheading_lines = split_text(item['Item'], available_width)
-                        subheading_height = 6 * len(subheading_lines)
-                        
-                        # Page break check
-                        if pdf.get_y() + subheading_height > pdf.h - 30:
-                            pdf.add_page()
-                            add_watermark(pdf)
-                            add_spec_watermark(pdf)
-                            draw_table_header()
-                        
-                        # Draw border
-                        x_start = left_margin
-                        y_start = pdf.get_y()
-                        pdf.rect(x_start, y_start, table_width, subheading_height)
-                        
-                        # Print text with margins
-                        pdf.set_font("Arial", 'B', 10)
-                        for i, line in enumerate(subheading_lines):
-                            pdf.set_x(x_start + 5)  # 5mm left margin
-                            pdf.cell(table_width - 10, 6, line, 0, 0, 'C')  # Centered in remaining width
-                            if i < len(subheading_lines) - 1:
-                                pdf.ln()
-                        
-                        pdf.set_y(y_start + subheading_height)
                         pdf.set_font("Arial", '', 10)
+                
+                    if item.get("Type") == "Subheading":
+                        if item['Item'].strip().lower() == "summary":
+                            # ====== SPECIAL HANDLING FOR SUMMARY SECTIONS ======
+                            
+                            # Calculate height needed for the summary block (3 rows)
+                            summary_block_height = 3 * 8  # 3 rows at 8mm each
+                            
+                            # Check if we need a new page
+                            if pdf.get_y() + summary_block_height > pdf.h - 30:
+                                pdf.add_page()
+                                add_watermark(pdf)
+                                add_spec_watermark(pdf)
+                                draw_table_header()
+                                pdf.set_font("Arial", '', 10)
+                            
+                            # Initialize GST amount
+                            gst_amount = 0
+                            
+                            # Only calculate GST if total is not zero
+                            if summary_accumulator > 0:
+                                # Calculate GST (18% of accumulated GST-applicable items only)
+                                for item in st.session_state.selected_items:
+                                    if item.get('Type') not in ['Subheading', 'Other'] and item.get('GST_Applicable', True):
+                                        try:
+                                            gst_amount += float(item['Cost']) * 0.18
+                                        except (KeyError, ValueError):
+                                            pass
+                            
+                            gst_amount = round(gst_amount, 2)
+                            subtotal = summary_accumulator + gst_amount
+                            
+                            # Draw the summary block
+                            x_start = left_margin
+                            y_start = pdf.get_y()
+                            
+                            # Draw outer border for the entire summary block
+                            pdf.rect(x_start, y_start, table_width, summary_block_height)
+                            
+                            # Draw horizontal lines between rows
+                            for i in range(1, 3):
+                                pdf.line(
+                                    x_start, y_start + (i * 8),
+                                    x_start + table_width, y_start + (i * 8)
+                                )
+                            
+                            # Draw vertical line separating columns (after first 5 columns)
+                            pdf.line(
+                                x_start + sum(col_widths[:-1]), y_start,
+                                x_start + sum(col_widths[:-1]), y_start + summary_block_height
+                            )
+                            
+                            # Add summary content
+                            pdf.set_font("Arial", 'I', 10)
+                            
+                            # Row 1: Total
+                            pdf.set_xy(x_start, y_start)
+                            pdf.cell(sum(col_widths[:-1]), 8, "Section Subtotal", 0, 0, 'R')
+                            pdf.set_xy(x_start + sum(col_widths[:-1]), y_start)
+                            pdf.cell(col_widths[-1], 8, f"{summary_accumulator:.2f}", 0, 0, 'C')
+                            
+                            # Row 2: GST at 18%
+                            pdf.set_xy(x_start, y_start + 8)
+                            pdf.cell(sum(col_widths[:-1]), 8, "GST at 18%", 0, 0, 'R')
+                            pdf.set_xy(x_start + sum(col_widths[:-1]), y_start + 8)
+                            pdf.cell(col_widths[-1], 8, f"{gst_amount:.2f}", 0, 0, 'C')
+                            
+                            # Row 3: Sub Total
+                            pdf.set_xy(x_start, y_start + 16)
+                            pdf.cell(sum(col_widths[:-1]), 8, "Section Total", 0, 0, 'R')
+                            pdf.set_xy(x_start + sum(col_widths[:-1]), y_start + 16)
+                            pdf.cell(col_widths[-1], 8, f"{subtotal:.2f}", 0, 0, 'C')
+                            
+                            # Reset the accumulator for items after this summary
+                            summary_accumulator = 0
+                            
+                            # Move to next position
+                            pdf.set_y(y_start + summary_block_height)
+                            pdf.set_font("Arial", '', 10)
+                            
+                        else:
+                            # ====== REGULAR SUBHEADING PROCESSING ======
+                            available_width = table_width - 10
+                            subheading_lines = split_text(item['Item'], available_width)
+                            subheading_height = 6 * len(subheading_lines)
+                            
+                            if pdf.get_y() + subheading_height > pdf.h - 30:
+                                pdf.add_page()
+                                add_watermark(pdf)
+                                add_spec_watermark(pdf)
+                                draw_table_header()
+                            
+                            x_start = left_margin
+                            y_start = pdf.get_y()
+                            pdf.rect(x_start, y_start, table_width, subheading_height)
+                            
+                            pdf.set_font("Arial", 'B', 10)
+                            for i, line in enumerate(subheading_lines):
+                                pdf.set_x(x_start + 5)
+                                pdf.cell(table_width - 10, 6, line, 0, 0, 'C')
+                                if i < len(subheading_lines) - 1:
+                                    pdf.ln()
+                            
+                            pdf.set_y(y_start + subheading_height)
+                            pdf.set_font("Arial", '', 10)
+                        
                         continue
                     
+                    # ====== REGULAR ITEM PROCESSING ======
                     gst_applicable = item.get('GST_Applicable', True)
-            
-                    # In the PDF generation section, modify the item processing logic:
-
+                
                     if item.get("Type") == "Other":
                         rate_text = f"{item['Unit Price']:.2f}" if 'Unit Price' in item else "-"
                         unit_text = item.get('Item Unit', '-')
@@ -3190,12 +3277,10 @@ def main_app():
                             qty_text = f"{item.get('Quantity', '-')} ({remark})"
                         else:
                             qty_text = f"{item.get('Quantity', '-')}"
-                    # Replace it with this:
                     else:
                         rate_text = f"{item['Unit Price']:.2f}"
                         unit_text = item['Item Unit']
                         remark = item.get('Quantity_Remarks', '')
-                        # Format quantity to remove trailing zeros
                         qty_value = item['Quantity']
                         qty_str = f"{qty_value:.4f}".rstrip('0').rstrip('.') if '.' in f"{qty_value:.4f}" else f"{qty_value}"
                         if remark:
@@ -3206,7 +3291,7 @@ def main_app():
                     total_text = f"{item['Cost']:.2f}"
                     if not gst_applicable:
                         total_text += " (No GST)"
-            
+                
                     row_data = [
                         str(serial),
                         item['Item'],
@@ -3215,14 +3300,13 @@ def main_app():
                         rate_text,
                         total_text
                     ]
-            
+                
                     x_row_start = left_margin
                     y_row_start = pdf.get_y()
-            
+                
                     max_lines = calculate_max_lines(row_data)
                     row_height = 6 * max_lines
                     
-                    # Ensure we have space for this row
                     if pdf.get_y() + row_height > pdf.h - 30:
                         pdf.add_page()
                         add_watermark(pdf)
@@ -3231,56 +3315,51 @@ def main_app():
                         pdf.set_font("Arial", '', 10)
                         x_row_start = left_margin
                         y_row_start = pdf.get_y()
-            
-                    # Draw the row border
+                
                     pdf.rect(x_row_start, y_row_start, table_width, row_height)
                     
-                    # Draw vertical lines
                     for i in range(1, len(col_widths)):
                         pdf.line(
                             x_row_start + sum(col_widths[:i]), y_row_start,
                             x_row_start + sum(col_widths[:i]), y_row_start + row_height
                         )
-            
-                    # For the first column (serial number) - keep centered
+                
                     if item.get("Type") == "Other":
-                        # Calculate circle position and size
-                        r = 4  # Radius of the circle
-                        x = x_row_start + col_widths[0]/2  # Center of the first column
-                        y = y_row_start + row_height/2     # Vertical center of the row
-                        
-                        # Draw circle
+                        r = 4
+                        x = x_row_start + col_widths[0]/2
+                        y = y_row_start + row_height/2
                         pdf.ellipse(x - r, y - r, r * 2, r * 2)
-                        
-                        # Print serial number centered in the circle
                         pdf.set_xy(x_row_start, y_row_start)
                         pdf.cell(col_widths[0], row_height, str(serial), 0, 0, 'C')
                     else:
-                        # Standard item - just print the serial number
                         pdf.set_xy(x_row_start, y_row_start)
                         pdf.cell(col_widths[0], row_height, str(serial), 0, 0, 'C')
+                        # Accumulate cost for summary sections (add this condition)
+                        if item.get("Type") not in ["Subheading", "Other"]:
+                            try:
+                                summary_accumulator += float(item['Cost'])
+                            except (KeyError, ValueError):
+                                pass
                 
-                    # For the item name column (second column) - left-justified
                     pdf.set_xy(x_row_start + col_widths[0], y_row_start)
                     cell_lines = split_text(str(item['Item']), col_widths[1])
                     vertical_offset = (row_height - (6 * len(cell_lines))) / 2
                     
                     for line in cell_lines:
                         pdf.set_xy(x_row_start + col_widths[0], y_row_start + vertical_offset)
-                        pdf.cell(col_widths[1], 6, line, 0, 0, 'L')  # Changed to 'L' for left alignment
+                        pdf.cell(col_widths[1], 6, line, 0, 0, 'L')
                         vertical_offset += 6
                 
-                    # For remaining columns (keep centered)
-                    for i, text in enumerate(row_data[2:], 2):  # Start from index 2 (rate)
+                    for i, text in enumerate(row_data[2:], 2):
                         pdf.set_xy(x_row_start + sum(col_widths[:i]), y_row_start)
                         cell_lines = split_text(str(text), col_widths[i])
                         vertical_offset = (row_height - (6 * len(cell_lines))) / 2
                         
                         for line in cell_lines:
                             pdf.set_xy(x_row_start + sum(col_widths[:i]), y_row_start + vertical_offset)
-                            pdf.cell(col_widths[i], 6, line, 0, 0, 'C')  # Keep centered
+                            pdf.cell(col_widths[i], 6, line, 0, 0, 'C')
                             vertical_offset += 6
-            
+                
                     pdf.set_y(y_row_start + row_height)
                     serial += 1
             
