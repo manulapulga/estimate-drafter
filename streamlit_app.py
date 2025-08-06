@@ -3232,6 +3232,22 @@ def main_app():
                             pdf.set_y(y_start + summary_block_height)
                             pdf.set_font("Arial", '', 10)
                 
+                        continue  # Skip further handling of subheadings
+                
+                    # ===================== REGULAR ITEM =====================
+                    if item.get("Type") not in ['Subheading', 'Other']:
+                        try:
+                            cost = float(item['Cost'])
+                            summary_accumulator += cost
+                
+                            if item.get('GST_Applicable', True):
+                                gst_accumulator += cost
+                        except (KeyError, ValueError):
+                            pass
+                
+                    # Render regular item row here (your existing row-drawing logic)
+                
+                            
                         else:
                             # ====== REGULAR SUBHEADING PROCESSING ======
                             available_width = table_width - 10
@@ -3331,9 +3347,13 @@ def main_app():
                         # Accumulate cost for summary sections (add this condition)
                         if item.get("Type") not in ["Subheading", "Other"]:
                             try:
-                                summary_accumulator += float(item['Cost'])
+                                cost = float(item['Cost'])
+                                summary_accumulator += cost
+                                if gst_applicable:
+                                    gst_accumulator += cost
                             except (KeyError, ValueError):
                                 pass
+
                 
                     pdf.set_xy(x_row_start + col_widths[0], y_row_start)
                     cell_lines = split_text(str(item['Item']), col_widths[1])
