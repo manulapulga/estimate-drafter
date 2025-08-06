@@ -3178,20 +3178,7 @@ def main_app():
                                 draw_table_header()
                                 pdf.set_font("Arial", '', 10)
                             
-                            # Initialize GST amount
-                            gst_amount = 0
-                            
-                            # Only calculate GST if total is not zero
-                            if summary_accumulator > 0:
-                                # Calculate GST (18% of accumulated GST-applicable items only)
-                                for item in st.session_state.selected_items:
-                                    if item.get('Type') not in ['Subheading', 'Other'] and item.get('GST_Applicable', True):
-                                        try:
-                                            gst_amount += summary_accumulator * 0.18
-                                        except (KeyError, ValueError):
-                                            pass
-                            
-                            gst_amount = round(gst_amount, 2)
+                            gst_amount = summary_accumulator * 0.18
                             subtotal = summary_accumulator + gst_amount
                             
                             # Draw the summary block
