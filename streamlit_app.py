@@ -3152,7 +3152,6 @@ def main_app():
             
                 serial = 1
                 summary_accumulator = 0  # Add this line above the loop
-                gst_accumulator = 0  # Track GST separately for items in this section
                 
                 for item in st.session_state.selected_items:
                     # Check if we need a new page (with buffer for row height)
@@ -3178,8 +3177,30 @@ def main_app():
                                 draw_table_header()
                                 pdf.set_font("Arial", '', 10)
                             
-                            # Calculate GST (18% of accumulated GST-applicable items only)
-                            gst_amount = round(gst_accumulator, 2)
+                            # Only calculate GST if total is not zero
+                            if summary_accumulator > 0:
+                                # Calculate GST (18% of accumulated GST-applicable items in this summary section only)
+                                # We need to track which items belong to this summary section
+                                current_section_items = []
+                                # Find all items since last summary (or start of list)
+                                start_idx = 0
+                                # Find the index of the previous summary
+                                for i, prev_item in enumerate(st.session_state.selected_items[:st.session_state.selected_items.index(item)]):
+                                    if prev_item.get('Type') == 'Subheading' and prev_item['Item'].strip().lower() == 'summary':
+                                        start_idx = i + 1
+                                
+                                # Get items in this section
+                                section_items = st.session_state.selected_items[start_idx:st.session_state.selected_items.index(item)]
+                                
+                                # Calculate GST for this section only
+                                for item in section_items:
+                                    if item.get('Type') not in ['Subheading', 'Other'] and item.get('GST_Applicable', True):
+                                        try:
+                                            gst_amount += float(item['Cost']) * 0.18
+                                        except (KeyError, ValueError):
+                                            pass
+                            
+                            gst_amount = round(gst_amount, 2)
                             subtotal = summary_accumulator + gst_amount
                             
                             # Draw the summary block
@@ -3223,9 +3244,8 @@ def main_app():
                             pdf.set_xy(x_start + sum(col_widths[:-1]), y_start + 16)
                             pdf.cell(col_widths[-1], 8, f"{subtotal:.2f}", 0, 0, 'C')
                             
-                            # Reset the accumulators for items after this summary
+                            # Reset the accumulator for items after this summary
                             summary_accumulator = 0
-                            gst_accumulator = 0
                             
                             # Move to next position
                             pdf.set_y(y_start + summary_block_height)
