@@ -3163,7 +3163,7 @@ def main_app():
                         pdf.set_font("Arial", '', 10)
                 
                     if item.get("Type") == "Subheading":
-                        if item['Item'].strip().lower() == "Section Total":
+                        if item['Item'].strip().lower() == "section total":
                             # ====== SPECIAL HANDLING FOR SUMMARY SECTIONS ======
                             
                             # Calculate height needed for the summary block (3 rows)
