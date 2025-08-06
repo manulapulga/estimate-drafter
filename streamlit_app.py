@@ -1459,7 +1459,7 @@ def main_app():
             })
             st.rerun()
     with button_col7:
-        if st.button("🔽 Add from Dropdown", key="add_item_btn"):
+        if st.button("🔽 Dropdown", key="add_item_btn"):
             # Toggle add item section and hide others
             st.session_state.show_add_item = not st.session_state.get('show_add_item', False)
             st.session_state.show_wizard = False
@@ -1470,7 +1470,7 @@ def main_app():
             st.session_state.show_local_templates = False
             st.rerun()
     with button_col1:
-        if st.button("🔍 Smart Filter View", key="open_wizard"):
+        if st.button("🔍 Smart Filter", key="open_wizard"):
             # Toggle wizard and hide others
             st.session_state.show_wizard = not st.session_state.get('show_wizard', False)
             st.session_state.show_add_item = False
@@ -1481,7 +1481,7 @@ def main_app():
             st.session_state.show_local_templates = False
             st.rerun()
     with button_col6:
-        if st.button("📌 Add Subheading", key="add_subheading_btn"):
+        if st.button("📌 Subheading", key="add_subheading_btn"):
             # Toggle subheading and hide others
             st.session_state.adding_subheading = not st.session_state.get('adding_subheading', False)
             st.session_state.show_add_item = False
@@ -1492,7 +1492,7 @@ def main_app():
             st.session_state.show_local_templates = False
             st.rerun()
     with button_col5:
-        if st.button("🧩 Custom Items", key="add_other_btn", type="secondary", 
+        if st.button("🧩 Other Items", key="add_other_btn", type="secondary", 
                     help="Add custom items not in database", use_container_width=True):
             # Toggle other items section and hide others
             st.session_state.show_add_other = not st.session_state.get('show_add_other', False)
@@ -1535,7 +1535,7 @@ def main_app():
             st.session_state.show_templates = False
             st.rerun()
     with button_col8:
-            if st.button("🔁 Update All Items", key="update_all2", 
+            if st.button("🔁 Update All", key="update_all2", 
                         help="Update all items with current values"):
                 updated_count = update_all_items()
                 st.rerun()        
