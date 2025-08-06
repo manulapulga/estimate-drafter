@@ -1454,7 +1454,7 @@ def main_app():
                     key="add_summary_btn",
                     help="Add section total in between items"):
             st.session_state.selected_items.append({
-                'Item': "Summary",
+                'Item': "Section Total",
                 'Type': 'Subheading'
             })
             st.rerun()
@@ -3163,7 +3163,7 @@ def main_app():
                         pdf.set_font("Arial", '', 10)
                 
                     if item.get("Type") == "Subheading":
-                        if item['Item'].strip().lower() == "summary":
+                        if item['Item'].strip().lower() == "section total":
                             # ====== SPECIAL HANDLING FOR SUMMARY SECTIONS ======
                             
                             # Calculate height needed for the summary block (3 rows)
@@ -3177,33 +3177,21 @@ def main_app():
                                 draw_table_header()
                                 pdf.set_font("Arial", '', 10)
                             
-                            # Initialize GST amount for this section
-                            section_gst = 0
+                            # Initialize GST amount
+                            gst_amount = 0
                             
-                            # Only calculate GST if section total is not zero
+                            # Only calculate GST if total is not zero
                             if summary_accumulator > 0:
-                                # Find all items in this section (since previous summary or start)
-                                section_start = 0
-                                current_index = st.session_state.selected_items.index(item)
-                                
-                                # Find previous summary (walk backwards from current position)
-                                for i in range(current_index-1, -1, -1):
-                                    prev_item = st.session_state.selected_items[i]
-                                    if prev_item.get('Type') == 'Subheading' and prev_item['Item'].strip().lower() == 'summary':
-                                        section_start = i + 1
-                                        break
-                                
-                                # Calculate GST only for items in this section
-                                for section_item in st.session_state.selected_items[section_start:current_index]:
-                                    if (section_item.get('Type') not in ['Subheading', 'Other'] and 
-                                        section_item.get('GST_Applicable', True)):
+                                # Calculate GST (18% of accumulated GST-applicable items only)
+                                for item in st.session_state.selected_items:
+                                    if item.get('Type') not in ['Subheading', 'Other'] and item.get('GST_Applicable', True):
                                         try:
-                                            section_gst += float(section_item['Cost']) * 0.18
+                                            gst_amount += float(item['Cost']) * 0.18
                                         except (KeyError, ValueError):
                                             pass
                             
-                            section_gst = round(section_gst, 2)
-                            section_subtotal = summary_accumulator + section_gst
+                            gst_amount = round(gst_amount, 2)
+                            subtotal = summary_accumulator + gst_amount
                             
                             # Draw the summary block
                             x_start = left_margin
@@ -3226,25 +3214,25 @@ def main_app():
                             )
                             
                             # Add summary content
-                            pdf.set_font("Arial", 'B', 10)
+                            pdf.set_font("Arial", 'I', 10)
                             
-                            # Row 1: Section Total
+                            # Row 1: Total
                             pdf.set_xy(x_start, y_start)
-                            pdf.cell(sum(col_widths[:-1]), 8, "Total", 0, 0, 'L')
+                            pdf.cell(sum(col_widths[:-1]), 8, "Section Subtotal", 0, 0, 'R')
                             pdf.set_xy(x_start + sum(col_widths[:-1]), y_start)
                             pdf.cell(col_widths[-1], 8, f"{summary_accumulator:.2f}", 0, 0, 'C')
                             
-                            # Row 2: Section GST (18% of applicable items in this section)
+                            # Row 2: GST at 18%
                             pdf.set_xy(x_start, y_start + 8)
-                            pdf.cell(sum(col_widths[:-1]), 8, "GST at 18%", 0, 0, 'L')
+                            pdf.cell(sum(col_widths[:-1]), 8, "GST at 18%", 0, 0, 'R')
                             pdf.set_xy(x_start + sum(col_widths[:-1]), y_start + 8)
-                            pdf.cell(col_widths[-1], 8, f"{section_gst:.2f}", 0, 0, 'C')
+                            pdf.cell(col_widths[-1], 8, f"{gst_amount:.2f}", 0, 0, 'C')
                             
-                            # Row 3: Section Sub Total
+                            # Row 3: Sub Total
                             pdf.set_xy(x_start, y_start + 16)
-                            pdf.cell(sum(col_widths[:-1]), 8, "Sub Total", 0, 0, 'L')
+                            pdf.cell(sum(col_widths[:-1]), 8, "Section Total", 0, 0, 'R')
                             pdf.set_xy(x_start + sum(col_widths[:-1]), y_start + 16)
-                            pdf.cell(col_widths[-1], 8, f"{section_subtotal:.2f}", 0, 0, 'C')
+                            pdf.cell(col_widths[-1], 8, f"{subtotal:.2f}", 0, 0, 'C')
                             
                             # Reset the accumulator for items after this summary
                             summary_accumulator = 0
