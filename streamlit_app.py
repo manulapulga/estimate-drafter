@@ -3152,6 +3152,7 @@ def main_app():
             
                 serial = 1
                 summary_accumulator = 0  # Add this line above the loop
+                gst_accumulator = 0  # Track GST separately for items in this section
                 
                 for item in st.session_state.selected_items:
                     # Check if we need a new page (with buffer for row height)
@@ -3177,20 +3178,8 @@ def main_app():
                                 draw_table_header()
                                 pdf.set_font("Arial", '', 10)
                             
-                            # Initialize GST amount
-                            gst_amount = 0
-                            
-                            # Only calculate GST if total is not zero
-                            if summary_accumulator > 0:
-                                # Calculate GST (18% of accumulated GST-applicable items only)
-                                for item in st.session_state.selected_items:
-                                    if item.get('Type') not in ['Subheading', 'Other'] and item.get('GST_Applicable', True):
-                                        try:
-                                            gst_amount += float(item['Cost']) * 0.18
-                                        except (KeyError, ValueError):
-                                            pass
-                            
-                            gst_amount = round(gst_amount, 2)
+                            # Calculate GST (18% of accumulated GST-applicable items only)
+                            gst_amount = round(gst_accumulator, 2)
                             subtotal = summary_accumulator + gst_amount
                             
                             # Draw the summary block
@@ -3234,8 +3223,9 @@ def main_app():
                             pdf.set_xy(x_start + sum(col_widths[:-1]), y_start + 16)
                             pdf.cell(col_widths[-1], 8, f"{subtotal:.2f}", 0, 0, 'C')
                             
-                            # Reset the accumulator for items after this summary
+                            # Reset the accumulators for items after this summary
                             summary_accumulator = 0
+                            gst_accumulator = 0
                             
                             # Move to next position
                             pdf.set_y(y_start + summary_block_height)
