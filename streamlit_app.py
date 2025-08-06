@@ -1449,7 +1449,7 @@ def main_app():
             save_progress_to_firebase(st.session_state.logged_in_username)
     # Add New Item or Subheading buttons
     button_col1, button_col2, button_col3, button_col4, button_col5, button_col6, button_col7, button_col8, button_col9  = st.columns([2, 2, 2, 2, 2, 2.2, 2, 2, 2])
-    with button_col9:
+    with button_col7:
         if st.button("📊 Add Summary", 
                     key="add_summary_btn",
                     help="Add summary section at end (drag to desired position)"):
@@ -1458,7 +1458,7 @@ def main_app():
                 'Type': 'Subheading'
             })
             st.rerun()
-    with button_col7:
+    with button_col8:
         if st.button("🔽 Dropdown", key="add_item_btn"):
             # Toggle add item section and hide others
             st.session_state.show_add_item = not st.session_state.get('show_add_item', False)
@@ -1534,7 +1534,7 @@ def main_app():
             st.session_state.show_upload = False
             st.session_state.show_templates = False
             st.rerun()
-    with button_col8:
+    with button_col9:
             if st.button("🔁 Update All", key="update_all2", 
                         help="Update all items with current values"):
                 updated_count = update_all_items()
