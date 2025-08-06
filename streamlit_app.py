@@ -1447,6 +1447,26 @@ def main_app():
     
     if st.button("☁️ Save Progress", use_container_width=True):
             save_progress_to_firebase(st.session_state.logged_in_username)
+    
+    def calculate_section_totals(items, start_idx, end_idx):
+    """
+    Calculates subtotal, GST-applicable subtotal and GST for a section.
+
+    Parameters:
+        items (list): All items in the table.
+        start_idx (int): Index to start (inclusive).
+        end_idx (int): Index to end (exclusive).
+
+    Returns:
+        tuple: (section_subtotal, gst_applicable_total, section_gst, section_total)
+    """
+    section_items = items[start_idx:end_idx]
+    section_subtotal = sum(item["total"] for item in section_items)
+    gst_applicable_total = sum(item["total"] for item in section_items if item.get("gst_applicable", False))
+    section_gst = round(gst_applicable_total * 0.18, 2)
+    section_total = section_subtotal + section_gst
+    return section_subtotal, gst_applicable_total, section_gst, section_total
+
     # Add New Item or Subheading buttons
     button_col1, button_col2, button_col3, button_col4, button_col5, button_col6, button_col7, button_col8, button_col9  = st.columns([2, 2, 2, 2, 2, 2.2, 2, 2, 2])
     with button_col7:
@@ -3155,6 +3175,11 @@ def main_app():
                 gst_accumulator = 0
                 
                 for item in st.session_state.selected_items:
+                    if item.get("Type") not in ["Subheading"]:
+                        summary_accumulator += item["Cost"]
+                        if item.get("GST_Applicable", True):
+                            gst_accumulator += item["Cost"]
+
                     # Check if we need a new page (with buffer for row height)
                     if pdf.get_y() + 20 > pdf.h - 30:
                         pdf.add_page()
@@ -3178,7 +3203,7 @@ def main_app():
                                 draw_table_header()
                                 pdf.set_font("Arial", '', 10)
                             
-                            gst_amount = summary_accumulator * 0.18
+                            gst_amount = gst_accumulator * 0.18
                             subtotal = summary_accumulator + gst_amount
                             
                             # Draw the summary block
@@ -3224,6 +3249,8 @@ def main_app():
                             
                             # Reset the accumulator for items after this summary
                             summary_accumulator = 0
+                            gst_accumulator = 0
+                            
                             
                             # Move to next position
                             pdf.set_y(y_start + summary_block_height)
