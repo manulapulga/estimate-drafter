@@ -3347,13 +3347,9 @@ def main_app():
                         # Accumulate cost for summary sections (add this condition)
                         if item.get("Type") not in ["Subheading", "Other"]:
                             try:
-                                cost = float(item['Cost'])
-                                summary_accumulator += cost
-                                if gst_applicable:
-                                    gst_accumulator += cost
+                                summary_accumulator += float(item['Cost'])
                             except (KeyError, ValueError):
                                 pass
-
                 
                     pdf.set_xy(x_row_start + col_widths[0], y_row_start)
                     cell_lines = split_text(str(item['Item']), col_widths[1])
