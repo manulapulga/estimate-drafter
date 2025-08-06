@@ -1481,7 +1481,7 @@ def main_app():
             st.session_state.show_local_templates = False
             st.rerun()
     with button_col6:
-        if st.button("📌 Subheading", key="add_subheading_btn"):
+        if st.button("📌 Add Subheading", key="add_subheading_btn"):
             # Toggle subheading and hide others
             st.session_state.adding_subheading = not st.session_state.get('adding_subheading', False)
             st.session_state.show_add_item = False
