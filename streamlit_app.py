@@ -3240,29 +3240,47 @@ def main_app():
                             
                         else:
                             # ====== REGULAR SUBHEADING PROCESSING ======
-                            available_width = table_width - 10
-                            subheading_lines = split_text(item['Item'], available_width)
-                            subheading_height = 6 * len(subheading_lines)
+                            pdf.set_font("Arial", 'B', 10)
                             
-                            if pdf.get_y() + subheading_height > pdf.h - 30:
+                            # Save current Y and X positions
+                            x_start = left_margin
+                            y_start = pdf.get_y()
+                            
+                            available_width = table_width - 10  # 5mm padding on each side
+                            text_x = x_start + 5  # left padding
+                            text_y = y_start
+                            
+                            # Draw the multi_cell on a temporary FPDF instance to calculate the height
+                            from fpdf import FPDF
+                            temp_pdf = FPDF()
+                            temp_pdf.add_page()
+                            temp_pdf.set_font("Arial", 'B', 10)
+                            temp_pdf.set_xy(0, 0)
+                            lines = temp_pdf.multi_cell(available_width, 6, item['Item'], split_only=True)
+                            subheading_height = 6 * len(lines)
+                            
+                            # Check if we need a new page
+                            if y_start + subheading_height > pdf.h - 30:
                                 pdf.add_page()
                                 add_watermark(pdf)
                                 add_spec_watermark(pdf)
                                 draw_table_header()
+                                y_start = pdf.get_y()
+                                text_y = y_start
                             
-                            x_start = left_margin
-                            y_start = pdf.get_y()
+                            # Draw subheading border
                             pdf.rect(x_start, y_start, table_width, subheading_height)
                             
-                            pdf.set_font("Arial", 'B', 10)
-                            for i, line in enumerate(subheading_lines):
-                                pdf.set_x(x_start + 5)
-                                pdf.cell(table_width - 10, 6, line, 0, 0, 'C')
-                                if i < len(subheading_lines) - 1:
-                                    pdf.ln()
+                            # Write the multi-line subheading centered
+                            pdf.set_xy(text_x, text_y)
+                            pdf.multi_cell(available_width, 6, item['Item'], border=0, align='C')
                             
+                            # Move Y to the next row's position
                             pdf.set_y(y_start + subheading_height)
+                            
+                            # Reset font for next item
                             pdf.set_font("Arial", '', 10)
+                            
                         
                         continue
                     
