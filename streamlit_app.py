@@ -3895,7 +3895,7 @@ if st.session_state.get('authenticated', False):
         st.session_state.show_price_options = False
     # Add PRICE Rates download button
     # PRICE Rates button
-    if st.sidebar.button("Download PRICE Rates"):
+    if st.sidebar.button("Download PRICE Rates", use_container_width=True):
         toggle_section('show_price_options')
         st.rerun()
 
@@ -3906,7 +3906,7 @@ if st.session_state.get('authenticated', False):
                     label="⬇️ Download PRICE Rates (DSR 21) Excel",
                     data=file,
                     file_name="PRICE Rates (DSR 21).xlsx",
-                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",  use_container_width=True
                 )
         except FileNotFoundError:
             st.sidebar.error("PRICE Rates file not found")
@@ -3917,7 +3917,7 @@ if st.session_state.get('authenticated', False):
         st.session_state.show_dsr21basicrates_options = False
     # Add DSR 21 Basic Rates download button
     # Basic Rates button
-    if st.sidebar.button("Download Basic Rates"):
+    if st.sidebar.button("Download Basic Rates",  use_container_width=True):
         toggle_section('show_dsr21basicrates_options')
         st.rerun()
 
@@ -3929,7 +3929,7 @@ if st.session_state.get('authenticated', False):
                     label="⬇️ Download Basic Rates (DSR 21) Excel",
                     data=file,
                     file_name="DSR 21 Basic Rates.xlsx",
-                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",  use_container_width=True
                 )
         except FileNotFoundError:
             st.sidebar.error("DSR 21 Basic Rates file not found")
@@ -3941,7 +3941,7 @@ if st.session_state.get('authenticated', False):
                     label="⬇️ Download Basic Rates (DSR 21) PDF",
                     data=file,
                     file_name="DSR 21 Basic Rates.pdf",
-                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",  use_container_width=True
                 )
         except FileNotFoundError:
             st.sidebar.error("DSR 21 Basic Rates file not found")
@@ -3952,7 +3952,7 @@ if st.session_state.get('authenticated', False):
     
     # Add PRICE Approved MR download button
     # PRICE Approved MR button
-    if st.sidebar.button("PRICE Approved MR"):
+    if st.sidebar.button("PRICE Approved MR",  use_container_width=True):
         toggle_section('show_priceapprovedmr_options')
         st.rerun()
     
@@ -3963,7 +3963,7 @@ if st.session_state.get('authenticated', False):
                     label="⬇️ Download PRICE Approved MR PDF",
                     data=file,
                     file_name="PRICE Approved MR.pdf",
-                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",  use_container_width=True
                 )
         except FileNotFoundError:
             st.sidebar.error("PRICE Approved MR file not found")
@@ -3976,7 +3976,7 @@ if st.session_state.get('authenticated', False):
     
     # Add Cost Index 2021 download button
     # Cost Index 2021 button
-    if st.sidebar.button("Cost Index 2021"):
+    if st.sidebar.button("Cost Index 2021",  use_container_width=True):
         toggle_section('show_costindex_options')
         st.rerun()
     
@@ -3987,7 +3987,7 @@ if st.session_state.get('authenticated', False):
                     label="⬇️ Download Cost Index 2021 PDF",
                     data=file,
                     file_name="Cost Index 2021.pdf",
-                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",  use_container_width=True
                 )
         except FileNotFoundError:
             st.sidebar.error("Cost Index 2021 file not found")
@@ -3998,7 +3998,7 @@ if st.session_state.get('authenticated', False):
         
     # Add GWD Data download button - similar to DSR download
     # GWD Data button
-    if st.sidebar.button("Download GWD Data"):
+    if st.sidebar.button("Download GWD Data",  use_container_width=True):
         toggle_section('show_gwd_options')
         st.rerun()
 
@@ -4056,7 +4056,7 @@ if st.session_state.get('authenticated', False):
         st.session_state.show_templates_options = False
     
     # Add Templates download button
-    if st.sidebar.button("Download Templates"):
+    if st.sidebar.button("Download Templates",  use_container_width=True):
         toggle_section('show_templates_options')
         st.rerun()
     
@@ -4104,7 +4104,7 @@ if st.session_state.get('authenticated', False):
                         label=f"⬇️ Download {selected_file}",
                         data=file,
                         file_name=selected_file,
-                        mime=mime_type
+                        mime=mime_type,  use_container_width=True
                     )
                     
         except Exception as e:
@@ -4115,7 +4115,7 @@ if st.session_state.get('authenticated', False):
     
     # In your sidebar section:
     # Pump Selector button
-    if st.sidebar.button("Pump Selector"):
+    if st.sidebar.button("Pump Selector",  use_container_width=True):
         toggle_section('show_pump_selector')
         st.rerun()
     
