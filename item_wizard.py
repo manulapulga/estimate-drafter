@@ -465,6 +465,7 @@ def show_item_wizard(items_df, add_callback, selected_items=None):
                         width: 100%;
                         text-align: center;
                         transition: background-color 0.2s ease;
+                        use_container_width=True;
                     }}
                     .copy-btn:hover {{
                         background-color: #e4e8ef;
