@@ -3861,7 +3861,7 @@ st.sidebar.markdown("""
 if st.session_state.get('authenticated', False):
     # Add the DSR download button and dropdowns
     # DSR/DAR button
-    if st.sidebar.button("Download DSR/DAR"):
+    if st.sidebar.button("Download DSR/DAR",use_container_width=True):
         toggle_section('show_dsr_options')
         st.rerun()  # Force immediate update
 
