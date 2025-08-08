@@ -3777,88 +3777,74 @@ if st.session_state.authenticated:
 else:
     login_page(credentials_df)
     
-# Replace the existing sidebar CSS with this:
+# --- REPLACE the existing sidebar CSS block with this ---
 st.sidebar.markdown("""
 <style>
-    /* Remove the arrow button styling */
+    /* hide the toolbar arrow */
     section[data-testid="stSidebar"] div[data-testid="stToolbar"] {
         display: none !important;
     }
-    
-    /* Main container styling */
-    section[data-testid="stSidebar"] > div {
-        padding-top: 0 !important;
-    }
-    
-    /* Button styling - compact and professional */
-    section[data-testid="stSidebar"] button {
+    section[data-testid="stSidebar"] > div { padding-top: 0 !important; }
+
+    /* Force ANY button inside sidebar to be block and full width */
+    section[data-testid="stSidebar"] button,
+    section[data-testid="stSidebar"] .stButton,
+    section[data-testid="stSidebar"] .stButton > button {
+        display: block !important;
         width: 100% !important;
-        margin: 0px 0 !important;
-        padding: 0px !important;
+        box-sizing: border-box !important;
+    }
+
+    /* Download buttons are sometimes wrapped in <a> elements.
+       Ensure anchors and nested buttons become full-width too. */
+    section[data-testid="stSidebar"] .stDownloadButton,
+    section[data-testid="stSidebar"] a.stDownloadButton,
+    section[data-testid="stSidebar"] .stDownloadButton > button,
+    section[data-testid="stSidebar"] a.stDownloadButton > button {
+        display: block !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+    }
+
+    /* Pump selector & other custom inline buttons */
+    section[data-testid="stSidebar"] .pump-selector-btn button {
+        display: block !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+    }
+
+    /* Visual/spacing styles (kept compact) */
+    section[data-testid="stSidebar"] button {
+        margin: 0 !important;
+        padding: 6px 8px !important;
         font-size: 14px !important;
         border-radius: 4px !important;
         border: 1px solid #2387eb !important;
         background-color: #e8f2fc !important;
         color: #333 !important;
-        transition: all 0.2s !important;
+        transition: all 0.12s !important;
         box-shadow: none !important;
     }
-    
-    /* Download/secondary buttons - green style */
+
+    /* Download-style buttons (green) */
     section[data-testid="stSidebar"] .stDownloadButton button,
     section[data-testid="stSidebar"] .pump-selector-btn button {
         background-color: #4CAF50 !important;
         color: white !important;
         border: 1px solid #2E7D32 !important;
     }
-    
-    /* Hover states */
-    section[data-testid="stSidebar"] button:hover:not(.stDownloadButton button, .pump-selector-btn button) {
-        background-color: #d0e3f7 !important;
-        border-color: #1a6fbb !important;
-    }
-    
-    section[data-testid="stSidebar"] .stDownloadButton button:hover,
-    section[data-testid="stSidebar"] .pump-selector-btn button:hover {
-        background-color: #43a047 !important;
-        border-color: #1b5e20 !important;
-    }
-    
-    /* Active states */
-    section[data-testid="stSidebar"] button:active:not(.stDownloadButton button, .pump-selector-btn button) {
-        background-color: #b8d4f0 !important;
-    }
-    
-    section[data-testid="stSidebar"] .stDownloadButton button:active,
-    section[data-testid="stSidebar"] .pump-selector-btn button:active {
-        background-color: #388e3c !important;
-    }
-    
-    /* Dropdown styling */
-    section[data-testid="stSidebar"] .stSelectbox select {
-        padding: 0px 0px !important;
-        font-size: 14px !important;
-        margin: 0px 0 0px 0 !important;
-    }
-    
-    /* Section headers */
-    section[data-testid="stSidebar"] .st-expanderHeader {
-        padding: 6px 8px !important;
-        margin: 2px 0 !important;
-    }
-    
-    /* Remove extra padding around buttons */
-    section[data-testid="stSidebar"] > div > div > div > div {
-        padding: 0 !important;
-    }
-    
-    /* Pump selector link button */
-    .pump-selector-btn button {
-        margin-top: 0px !important;
-        margin-bottom: 0px !important;
+
+    /* Fix buttons inside expanders/containers too */
+    section[data-testid="stSidebar"] div[data-testid="stExpander"] button,
+    section[data-testid="stSidebar"] div[role="listitem"] button {
+        display: block !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
     }
 </style>
 """, unsafe_allow_html=True)
+# --- END REPLACEMENT ---
+
 
 
 if st.session_state.get('authenticated', False):
