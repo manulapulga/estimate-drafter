@@ -114,13 +114,15 @@ if st.session_state.get("wizard_target_index") is not None:
     
 st.markdown("""
     <style>
-    /* Make all buttons stretch full width of their container */
-    button[kind="primary"], button[kind="secondary"] {
+    /* Force all buttons in main area to full width */
+    .stButton > button {
         width: 100% !important;
         display: block !important;
     }
-    .stButton > button {
+    /* Specifically target sidebar buttons as well */
+    section[data-testid="stSidebar"] .stButton > button {
         width: 100% !important;
+        display: block !important;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -3861,7 +3863,7 @@ st.sidebar.markdown("""
 if st.session_state.get('authenticated', False):
     # Add the DSR download button and dropdowns
     # DSR/DAR button
-    if st.sidebar.button("Download DSR/DAR"):
+    if st.sidebar.button("Download DSR/DAR", use_container_width=True):
         toggle_section('show_dsr_options')
         st.rerun()  # Force immediate update
 
