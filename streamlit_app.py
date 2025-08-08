@@ -558,6 +558,54 @@ def main_app():
     with open("Icons/spec1.png", "rb") as image_file:
         encoded_logo2spec = base64.b64encode(image_file.read()).decode()
     
+    st.markdown("""
+    <style>
+        /* Make ALL buttons stretch full width */
+        button, .stButton>button, .stDownloadButton>button {
+            width: 100% !important;
+            display: block !important;
+            margin: 0.25rem 0 !important;
+        }
+        
+        /* Specific button types */
+        button[kind="primary"], 
+        button[kind="secondary"],
+        .stButton > button,
+        .stDownloadButton > button,
+        .st-emotion-cache-n3bfp {
+            width: 100% !important;
+            display: block !important;
+            margin: 0.25rem 0 !important;
+        }
+        
+        /* Sidebar buttons */
+        section[data-testid="stSidebar"] button,
+        section[data-testid="stSidebar"] .stButton>button,
+        section[data-testid="stSidebar"] .stDownloadButton>button {
+            width: 100% !important;
+            display: block !important;
+            margin: 0.25rem 0 !important;
+        }
+        
+        /* Fix for download buttons */
+        .stDownloadButton {
+            width: 100% !important;
+        }
+        
+        /* Fix for checkbox labels */
+        .stCheckbox label {
+            width: auto !important;
+        }
+        
+        /* Ensure other form elements aren't affected */
+        .stSelectbox select,
+        .stTextInput input,
+        .stTextArea textarea,
+        .stNumberInput input {
+            width: auto !important;
+        }
+    </style>
+    """, unsafe_allow_html=True)
     # Inject CSS to remove top space
     st.markdown("""
         <style>
@@ -4137,7 +4185,7 @@ if st.session_state.get('authenticated', False):
         </div>
         """, unsafe_allow_html=True)
     # Add logout button if authenticated  
-    if st.sidebar.button("Logout"):
+    if st.sidebar.button("Logout",  use_container_width=True):
         st.session_state.authenticated = False
         st.session_state.logged_in_username = None
         st.rerun()        
