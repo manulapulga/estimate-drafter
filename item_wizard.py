@@ -387,13 +387,13 @@ def show_item_wizard(items_df, add_callback, selected_items=None):
                 
                 with col1:
                     if st.button("⏮️", disabled=st.session_state.current_page == 1, 
-                               key="first_page", help="Go to first page"):
+                               key="first_page", help="Go to first page",  use_container_width=True):
                         st.session_state.current_page = 1
                         st.rerun()
                 
                 with col2:
                     if st.button("◀️", disabled=st.session_state.current_page == 1, 
-                               key="prev_page", help="Previous page"):
+                               key="prev_page", help="Previous page",  use_container_width=True):
                         st.session_state.current_page -= 1
                         st.rerun()
                 
@@ -406,11 +406,11 @@ def show_item_wizard(items_df, add_callback, selected_items=None):
                 
                 with col4:
                     if st.button("▶️", disabled=st.session_state.current_page == total_pages, 
-                               key="next_page", help="Next page"):
+                               key="next_page", help="Next page",  use_container_width=True):
                         st.session_state.current_page += 1
                         st.rerun()
                 with col5:
-                    if st.button("✕ Close", key="close_wizard2", type="primary"):
+                    if st.button("✕ Close", key="close_wizard2", type="primary",  use_container_width=True):
                         if st.session_state.get("wizard_target_index") is not None:
                             st.session_state["wizard_target_index"] = None
                             st.switch_page("streamlit_app.py")  # Redirect to main page
@@ -543,7 +543,7 @@ def show_item_wizard(items_df, add_callback, selected_items=None):
                             </style>
                         """, unsafe_allow_html=True)
                         
-                        if st.button(btn_text, key=f"{btn_text}_{idx}"):
+                        if st.button(btn_text, key=f"{btn_text}_{idx}",  use_container_width=True):
                             if is_selected and not is_edit_mode:
                                 # Find and remove the item from selected_items
                                 for i, item in enumerate(selected_items):
@@ -562,13 +562,13 @@ def show_item_wizard(items_df, add_callback, selected_items=None):
                 
                 with col1:
                     if st.button("⏮️", disabled=st.session_state.current_page == 1, 
-                               key="first_page2", help="Go to first page"):
+                               key="first_page2", help="Go to first page",  use_container_width=True):
                         st.session_state.current_page = 1
                         st.rerun()
                 
                 with col2:
                     if st.button("◀️", disabled=st.session_state.current_page == 1, 
-                               key="prev_page2", help="Previous page"):
+                               key="prev_page2", help="Previous page",  use_container_width=True):
                         st.session_state.current_page -= 1
                         st.rerun()
                 
@@ -581,11 +581,11 @@ def show_item_wizard(items_df, add_callback, selected_items=None):
                 
                 with col4:
                     if st.button("▶️", disabled=st.session_state.current_page == total_pages, 
-                               key="next_page2", help="Next page"):
+                               key="next_page2", help="Next page",  use_container_width=True):
                         st.session_state.current_page += 1
                         st.rerun()
                 with col5:
-                    if st.button("✕ Close", key="close_wizard3", type="primary"):
+                    if st.button("✕ Close", key="close_wizard3", type="primary",  use_container_width=True):
                         if st.session_state.get("wizard_target_index") is not None:
                             st.session_state["wizard_target_index"] = None
                             st.switch_page("streamlit_app.py")  # Redirect to main page
