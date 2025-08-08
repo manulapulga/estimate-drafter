@@ -114,18 +114,19 @@ if st.session_state.get("wizard_target_index") is not None:
     
 st.markdown("""
     <style>
-    /* Force all buttons in main area to full width */
-    .stButton > button {
+    /* Target any button inside the sidebar, no matter how deep */
+    section[data-testid="stSidebar"] button {
         width: 100% !important;
         display: block !important;
     }
-    /* Specifically target sidebar buttons as well */
-    section[data-testid="stSidebar"] .stButton > button {
+    /* Also target main content buttons */
+    .stButton > button {
         width: 100% !important;
         display: block !important;
     }
     </style>
 """, unsafe_allow_html=True)
+
 
 
 st.markdown("""
