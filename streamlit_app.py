@@ -3861,7 +3861,7 @@ st.sidebar.markdown("""
 if st.session_state.get('authenticated', False):
     # Add the DSR download button and dropdowns
     # DSR/DAR button
-    if st.sidebar.button("Download DSR/DAR",use_container_width=True):
+    if st.sidebar.button("Download DSR/DAR", use_container_width=True):
         toggle_section('show_dsr_options')
         st.rerun()  # Force immediate update
 
@@ -3885,7 +3885,7 @@ if st.session_state.get('authenticated', False):
                     label=f"⬇️ Download {selected_year} {doc_type} {volume}",
                     data=file,
                     file_name=f"{selected_year}_{doc_type}_{volume}.pdf",
-                    mime="application/pdf"
+                    mime="application/pdf", use_container_width=True
                 )
         except FileNotFoundError:
             st.sidebar.error("Requested file not found")
