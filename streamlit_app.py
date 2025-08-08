@@ -558,54 +558,6 @@ def main_app():
     with open("Icons/spec1.png", "rb") as image_file:
         encoded_logo2spec = base64.b64encode(image_file.read()).decode()
     
-    st.markdown("""
-    <style>
-        /* Make ALL buttons stretch full width */
-        button, .stButton>button, .stDownloadButton>button {
-            width: 100% !important;
-            display: block !important;
-            margin: 0.25rem 0 !important;
-        }
-        
-        /* Specific button types */
-        button[kind="primary"], 
-        button[kind="secondary"],
-        .stButton > button,
-        .stDownloadButton > button,
-        .st-emotion-cache-n3bfp {
-            width: 100% !important;
-            display: block !important;
-            margin: 0.25rem 0 !important;
-        }
-        
-        /* Sidebar buttons */
-        section[data-testid="stSidebar"] button,
-        section[data-testid="stSidebar"] .stButton>button,
-        section[data-testid="stSidebar"] .stDownloadButton>button {
-            width: 100% !important;
-            display: block !important;
-            margin: 0.25rem 0 !important;
-        }
-        
-        /* Fix for download buttons */
-        .stDownloadButton {
-            width: 100% !important;
-        }
-        
-        /* Fix for checkbox labels */
-        .stCheckbox label {
-            width: auto !important;
-        }
-        
-        /* Ensure other form elements aren't affected */
-        .stSelectbox select,
-        .stTextInput input,
-        .stTextArea textarea,
-        .stNumberInput input {
-            width: auto !important;
-        }
-    </style>
-    """, unsafe_allow_html=True)
     # Inject CSS to remove top space
     st.markdown("""
         <style>
@@ -1204,19 +1156,19 @@ def main_app():
                 # Update and Remove buttons
                 col1, col2, col3, col4, col5, col6 = st.columns([1, 1, 1, 1, 0.5, 1])
                 with col1:
-                    if st.button("🔁 Update", key=f"update_sub_{idx}"):
+                    if st.button("🔁 Update", key=f"update_sub_{idx}",  use_container_width=True):
                         if new_heading.strip():
                             st.session_state.selected_items[idx]['Item'] = new_heading.strip()
                             st.session_state[f"expander_{idx}"] = False  # Collapse the expander
                             st.rerun()
                 with col2:
-                    if st.button(f"❌ Remove", key=f"remove_sub_{idx}"):
+                    if st.button(f"❌ Remove", key=f"remove_sub_{idx}", use_container_width=True):
                         remove_item(idx)
                 with col3:    
-                    if st.button("⬆️ Move Up", key=f"move_up_sub_{idx}"):
+                    if st.button("⬆️ Move Up", key=f"move_up_sub_{idx}",  use_container_width=True):
                         move_item_up(idx)
                 with col4:
-                    if st.button("⬇️ Move Down", key=f"move_down_sub_{idx}"):
+                    if st.button("⬇️ Move Down", key=f"move_down_sub_{idx}",  use_container_width=True):
                         move_item_down(idx)
                 with col5:
                     new_pos = st.text_input(
@@ -1226,7 +1178,7 @@ def main_app():
                         label_visibility="collapsed"
                     )
                 with col6:    
-                    if st.button("Move", key=f"move_button_{idx}"):
+                    if st.button("Move", key=f"move_button_{idx}",  use_container_width=True):
                         try:
                             target_index = int(new_pos) - 1
                             if target_index == idx:
@@ -1309,7 +1261,7 @@ def main_app():
                     remark = item.get('Quantity_Remarks', '')
                     button_label = "✏️ Edit Remark" if remark else "➕ Add Remark"
                     
-                    if st.button(button_label, key=f"edit_remark_other_{idx}"):
+                    if st.button(button_label, key=f"edit_remark_other_{idx}",  use_container_width=True):
                         st.session_state.selected_items[idx]['show_remark_input'] = True
                     
                     if remark and not item.get('show_remark_input', False):
@@ -1317,7 +1269,7 @@ def main_app():
                     
                     if item.get('show_remark_input', False):
                         new_remark = st.text_input("Edit Remark", value=remark, key=f"remark_input_other_{idx}", max_chars=100)
-                        if st.button("Save Remark", key=f"save_remark_other_{idx}"):
+                        if st.button("Save Remark", key=f"save_remark_other_{idx}",  use_container_width=True):
                             st.session_state.selected_items[idx]['Quantity_Remarks'] = break_long_words(new_remark)
                             st.session_state.selected_items[idx]['show_remark_input'] = False
                             st.rerun()
@@ -1325,7 +1277,7 @@ def main_app():
                 # Action buttons
                 col1, col2, col3, col4, col5, col6 = st.columns([1, 1, 1, 1, 0.5, 1])
                 with col1:
-                    if st.button(f"🔁 Update", key=f"update_other_{idx}"):
+                    if st.button(f"🔁 Update", key=f"update_other_{idx}",  use_container_width=True):
                         if new_desc and new_qty and new_unit and new_rate:
                             try:
                                 qty = float(new_qty)
@@ -1347,14 +1299,14 @@ def main_app():
                             except ValueError:
                                 st.error("Please enter valid numbers for quantity and rate")
                 with col2:
-                    if st.button(f"❌ Remove", key=f"remove_{idx}"):
+                    if st.button(f"❌ Remove", key=f"remove_{idx}",  use_container_width=True):
                         remove_item(idx)
                         
                 with col3:
-                    if st.button("⬆️ Move Up", key=f"move_up_sub_{idx}"):
+                    if st.button("⬆️ Move Up", key=f"move_up_sub_{idx}",  use_container_width=True):
                         move_item_up(idx)
                 with col4:
-                    if st.button("⬇️ Move Down", key=f"move_down_sub_{idx}"):
+                    if st.button("⬇️ Move Down", key=f"move_down_sub_{idx}",  use_container_width=True):
                         move_item_down(idx)
                 with col5:
                     new_pos = st.text_input(
@@ -1364,7 +1316,7 @@ def main_app():
                         label_visibility="collapsed"
                     )
                 with col6:    
-                    if st.button("Move", key=f"move_button_{idx}"):
+                    if st.button("Move", key=f"move_button_{idx}",  use_container_width=True):
                         try:
                             target_index = int(new_pos) - 1
                             if target_index == idx:
@@ -1393,7 +1345,7 @@ def main_app():
                     
                     with col1b:
                         st.markdown("<div style='height:28px;'></div>", unsafe_allow_html=True)
-                        if st.button("🔍 Change Item", key=f"smart_filter_{idx}"):
+                        if st.button("🔍 Change Item", key=f"smart_filter_{idx}",  use_container_width=True):
                             update_all_items()  # <-- Run this first
                             st.session_state["wizard_target_index"] = idx
                             st.switch_page("pages/wizard.py")
@@ -1421,7 +1373,7 @@ def main_app():
                     
                     # Change button label based on whether remark exists
                     button_label = "✏️ Edit Remark" if remark else "➕ Add Remark"                    
-                    if st.button(button_label, key=f"add_qty_remark_{idx}"):
+                    if st.button(button_label, key=f"add_qty_remark_{idx}",  use_container_width=True):
                         st.session_state.selected_items[idx]['show_remark_input'] = True
                     
                     # Show saved remark always (read-only view)
@@ -1431,7 +1383,7 @@ def main_app():
                     # Show input box if editing
                     if item.get('show_remark_input', False):
                         new_remark = st.text_input("Edit Remark", value=remark, key=f"qty_remark_{idx}", max_chars=100)
-                        if st.button("Save Remark", key=f"save_remark_{idx}"):
+                        if st.button("Save Remark", key=f"save_remark_{idx}",  use_container_width=True):
                             st.session_state.selected_items[idx]['Quantity_Remarks'] = break_long_words(new_remark)
                             st.session_state.selected_items[idx]['show_remark_input'] = False
                             st.session_state[f"expander_{idx}"] = False  # Collapse after saving remark
@@ -1440,7 +1392,7 @@ def main_app():
                 # Action buttons inside expander
                 col1, col2, col3, col4, col5, col6 = st.columns([1, 1, 1, 1, 0.5, 1])
                 with col1:
-                    if st.button(f"🔁 Update", key=f"update_{idx}"):
+                    if st.button(f"🔁 Update", key=f"update_{idx}",  use_container_width=True):
                         if item_name and quantity:
                             try:
                                 quantity = float(quantity)
@@ -1465,13 +1417,13 @@ def main_app():
                             except ValueError:
                                 st.error("Please enter a valid quantity")
                 with col2:
-                    if st.button(f"❌ Remove", key=f"remove_{idx}"):
+                    if st.button(f"❌ Remove", key=f"remove_{idx}",  use_container_width=True):
                         remove_item(idx)
                 with col3:
-                    if st.button("⬆️ Move Up", key=f"move_up_sub_{idx}"):
+                    if st.button("⬆️ Move Up", key=f"move_up_sub_{idx}",  use_container_width=True):
                         move_item_up(idx)
                 with col4:
-                    if st.button("⬇️ Move Down", key=f"move_down_sub_{idx}"):
+                    if st.button("⬇️ Move Down", key=f"move_down_sub_{idx}",  use_container_width=True):
                         move_item_down(idx)
                 with col5:
                     new_pos = st.text_input(
@@ -1481,7 +1433,7 @@ def main_app():
                         label_visibility="collapsed"
                     )
                 with col6:    
-                    if st.button("Move", key=f"move_button_{idx}"):
+                    if st.button("Move", key=f"move_button_{idx}",  use_container_width=True):
                         try:
                             target_index = int(new_pos) - 1
                             if target_index == idx:
@@ -1502,14 +1454,14 @@ def main_app():
     with button_col7:
         if st.button("🔢 Add Part Sum", 
                     key="add_summary_btn",
-                    help="Add section total in between items"):
+                    help="Add section total in between items",  use_container_width=True):
             st.session_state.selected_items.append({
                 'Item': "Section Total",
                 'Type': 'Subheading'
             })
             st.rerun()
     with button_col8:
-        if st.button("🔽 Dropdown", key="add_item_btn"):
+        if st.button("🔽 Dropdown", key="add_item_btn",  use_container_width=True):
             # Toggle add item section and hide others
             st.session_state.show_add_item = not st.session_state.get('show_add_item', False)
             st.session_state.show_wizard = False
@@ -1520,7 +1472,7 @@ def main_app():
             st.session_state.show_local_templates = False
             st.rerun()
     with button_col1:
-        if st.button("🔍 Smart Filter", key="open_wizard"):
+        if st.button("🔍 Smart Filter", key="open_wizard",  use_container_width=True):
             # Toggle wizard and hide others
             st.session_state.show_wizard = not st.session_state.get('show_wizard', False)
             st.session_state.show_add_item = False
@@ -1531,7 +1483,7 @@ def main_app():
             st.session_state.show_local_templates = False
             st.rerun()
     with button_col6:
-        if st.button("📌 Add Subheading", key="add_subheading_btn"):
+        if st.button("📌 Add Subheading", key="add_subheading_btn",  use_container_width=True):
             # Toggle subheading and hide others
             st.session_state.adding_subheading = not st.session_state.get('adding_subheading', False)
             st.session_state.show_add_item = False
@@ -1554,7 +1506,7 @@ def main_app():
             st.session_state.show_local_templates = False
             st.rerun()
     with button_col2:
-        if st.button("🌐 Global Templates", key="show_templates_btn"):
+        if st.button("🌐 Global Templates", key="show_templates_btn",  use_container_width=True):
             st.session_state.show_templates = not st.session_state.get('show_templates', False)
             st.session_state.show_add_item = False
             st.session_state.show_wizard = False
@@ -1565,7 +1517,7 @@ def main_app():
             st.rerun()
     with button_col4:
         # Replace your existing upload button with this:
-        if st.button("📤 Import Estimates", key="show_upload_btn"):
+        if st.button("📤 Import Estimates", key="show_upload_btn",  use_container_width=True):
             st.session_state.show_upload = not st.session_state.get('show_upload', False)
             st.session_state.show_templates = False
             st.session_state.show_add_item = False
@@ -1575,7 +1527,7 @@ def main_app():
             st.session_state.show_local_templates = False
             st.rerun()
     with button_col3:
-        if st.button("🏠 Local Templates", key="show_local_templates_btn"):
+        if st.button("🏠 Local Templates", key="show_local_templates_btn",  use_container_width=True):
             st.session_state.show_local_templates = not st.session_state.get('show_local_templates', False)
             st.session_state.show_add_item = False
             st.session_state.show_wizard = False
@@ -1586,7 +1538,7 @@ def main_app():
             st.rerun()
     with button_col9:
             if st.button("🔁 Update All", key="update_all2", 
-                        help="Update all items with current values"):
+                        help="Update all items with current values",  use_container_width=True):
                 updated_count = update_all_items()
                 st.rerun()        
     # Show Add Item section if toggled on
@@ -1630,7 +1582,7 @@ def main_app():
 
             col1, col2 = st.columns([1, 1])
             with col1:
-                if st.button(f"Add to Estimate", key=f"add_{idx}"):
+                if st.button(f"Add to Estimate", key=f"add_{idx}",  use_container_width=True):
                     if item_name and quantity:
                         try:
                             quantity = float(quantity)
@@ -1663,7 +1615,7 @@ def main_app():
     # Show Smart Filter if toggled on
     if st.session_state.get('show_wizard', False):
         show_item_wizard(wizard_data, handle_item_selection, st.session_state.selected_items)
-        if st.button("✕ Close Wizard", key="close_wizard", type="primary"):
+        if st.button("✕ Close Wizard", key="close_wizard", type="primary",  use_container_width=True):
             st.session_state.show_wizard = False
             if 'show_wizard_for_edit' in st.session_state:
                 st.session_state.show_wizard_for_edit = None
@@ -1684,7 +1636,7 @@ def main_app():
                 if i + j < len(template_names):
                     template_name = template_names[i + j]
                     with cols[j]:
-                        if st.button(f"{template_name}", key=f"template_btn_{template_name}"):
+                        if st.button(f"{template_name}", key=f"template_btn_{template_name}",  use_container_width=True):
                             from openpyxl import load_workbook
                             template_path = f"Data Base/Global Templates/{template_name}.xlsx"
                             wb = load_workbook(template_path)
@@ -1770,7 +1722,7 @@ def main_app():
                             st.session_state.show_templates = False
                             st.rerun()
     
-        if st.button("✕ Cancel", key="cancel_template", type="primary"):
+        if st.button("✕ Cancel", key="cancel_template", type="primary",  use_container_width=True):
             st.session_state.show_templates = False
             st.rerun()
 
@@ -1788,7 +1740,7 @@ def main_app():
                 if i + j < len(template_names):
                     template_name = template_names[i + j]
                     with cols[j]:
-                        if st.button(f"📝 {template_name}", key=f"local_template_btn_{template_name}"):
+                        if st.button(f"📝 {template_name}", key=f"local_template_btn_{template_name}",  use_container_width=True):
                             from openpyxl import load_workbook
                             template_path = os.path.join("Data Base/Local Templates", username, f"{template_name}.xlsx")
                             wb = load_workbook(template_path)
@@ -1874,7 +1826,7 @@ def main_app():
                             st.session_state.show_local_templates = False
                             st.rerun()
     
-            if st.button("✕ Cancel", key="cancel_local_template", type="primary"):
+            if st.button("✕ Cancel", key="cancel_local_template", type="primary",  use_container_width=True):
                 st.session_state.show_local_templates = False
                 st.rerun()
     # Excel upload section
@@ -1907,7 +1859,7 @@ def main_app():
         
         with st.container():
             # 🔘 Toggle Firebase file load panel
-            if st.button("☁️ Load From Cloud", key="trigger_load_firebase"):
+            if st.button("☁️ Load From Cloud", key="trigger_load_firebase",  use_container_width=True):
                 st.session_state["show_firebase_load"] = not st.session_state.get("show_firebase_load", False)
             
             
@@ -1973,7 +1925,7 @@ def main_app():
                                         st.markdown(f"🚰 {file_name}", unsafe_allow_html=True)
                                         btn_col1, btn_col2 = st.columns([2, 1])
                                         with btn_col1:
-                                            if st.button("📥 Load", key=f"open_{file_name}"):
+                                            if st.button("📥 Load", key=f"open_{file_name}",  use_container_width=True):
                                                 excel_io = load_excel_from_firebase(username, file_name)
                                                 if excel_io:
                                                     st.session_state["excel_uploader"] = excel_io
@@ -1985,13 +1937,13 @@ def main_app():
                                                 else:
                                                     st.error("❌ Failed to load file from Firebase.")
                                         with btn_col2:
-                                            if st.button("🗑️", key=f"delete_{file_name}"):
+                                            if st.button("🗑️", key=f"delete_{file_name}",  use_container_width=True):
                                                 db.reference(f'estimates/{username}/{file_name}').delete()
                                                 st.success(f"❌")
                                                 st.rerun()
                                                 
             if st.session_state.get("show_firebase_load", False):
-                if st.button("❌ Close", key="close_firebase_view"):
+                if st.button("❌ Close", key="close_firebase_view",  use_container_width=True):
                     st.session_state["show_firebase_load"] = False
                     st.rerun()        
                             
@@ -2259,7 +2211,7 @@ def main_app():
                 
                 col1, col2 = st.columns([1, 1])
                 with col1:
-                    if st.button("Add Uploaded Items", key="add_uploaded_items"):
+                    if st.button("Add Uploaded Items", key="add_uploaded_items",  use_container_width=True):
                         main_items_data = data
                         added_count = 0
                         
@@ -2328,7 +2280,7 @@ def main_app():
                         st.rerun()
                 
                 with col2:
-                    if st.button("✕ Cancel", key="cancel_upload", type="primary"):
+                    if st.button("✕ Cancel", key="cancel_upload", type="primary",  use_container_width=True):
                         st.session_state.show_upload = False
                         st.session_state["excel_uploader"] = None
                         st.session_state["uploaded_file_name"] = None
@@ -2337,7 +2289,7 @@ def main_app():
             except Exception as e:
                 st.error(f"Error reading Excel file: {str(e)}")
         else:
-            if st.button("✕ Cancel", key="cancel_upload_no_file", type="primary"):
+            if st.button("✕ Cancel", key="cancel_upload_no_file", type="primary",  use_container_width=True):
                 st.session_state.show_upload = False
                 st.rerun()  
     # Show Subheading section if toggled on
@@ -2345,7 +2297,7 @@ def main_app():
         subheading = st.text_area("Enter Subheading", key="new_subheading")
         col1, col2 = st.columns([1, 1])
         with col1:
-            if st.button("Add Subheading to Estimate", key="confirm_subheading"):
+            if st.button("Add Subheading to Estimate", key="confirm_subheading",  use_container_width=True):
                 if subheading.strip():
                     st.session_state.selected_items.append({
                         'Item': subheading.strip(),
@@ -2357,7 +2309,7 @@ def main_app():
                 else:
                     st.warning("Please enter a valid subheading.")
         with col2:
-            if st.button("✕ Cancel", key="cancel_subheading", type="primary"):
+            if st.button("✕ Cancel", key="cancel_subheading", type="primary",  use_container_width=True):
                 st.session_state.adding_subheading = False
                 st.rerun()
 
@@ -2511,7 +2463,7 @@ def main_app():
         
         with col2:
             st.markdown("<div style='margin-top: 1.75em'></div>", unsafe_allow_html=True)  # Push button down
-            if st.button("🔁", key="reset_unforeseen"):
+            if st.button("🔁", key="reset_unforeseen",  use_container_width=True):
                 st.session_state.unforeseen_amount = round(max_unforeseen, 2)
                 st.session_state.manual_final_total = None  # Optional
                 st.session_state.edit_final_total = False   # ⬅️ Force toggle OFF
@@ -3802,7 +3754,7 @@ def main_app():
         
         col1, col2= st.columns([1, 4])
         with col1:
-            if st.button("Close Preview", key="close_preview"):
+            if st.button("Close Preview", key="close_preview",  use_container_width=True):
                 st.session_state.show_preview = False
                 st.rerun()
 # Check authentication
