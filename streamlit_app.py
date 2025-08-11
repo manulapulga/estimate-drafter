@@ -36,9 +36,9 @@ if not firebase_admin._apps:
             'databaseURL': firebase_json["databaseURL"]
         })
 
-        st.write("✅ Cloude Initialized")
+        st.write("✅ Cloud Initialized")
     except Exception as e:
-        st.error(f"❌ Cloude Not Connected: {e}")
+        st.error(f"❌ Cloud Not Connected: {e}")
 
 
 def save_progress_to_firebase(username):
