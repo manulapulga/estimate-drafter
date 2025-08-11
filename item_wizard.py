@@ -478,14 +478,11 @@ def show_item_wizard(items_df, add_callback, selected_items=None):
                     </script>
                     <div style="display: flex; flex-direction: row; gap: 8px; margin-top: 5px;">
                         <button type="button" onclick="copyToClipboard(`{escaped_text1}`)"
-                                class="copy-btn" title="Copy Item Name"
-                                style="flex: 1; width: 100%;">⧉ Copy Name</button>
+                                class="copy-btn" style="flex: 1;" title="Copy Item Name">⧉ Copy Name</button>
                         <button type="button" onclick="copyToClipboard(`{escaped_text2}`)"
-                                class="copy-btn" title="Copy All Details"
-                                style="flex: 1; width: 100%;">📋 Copy Details</button>
+                                class="copy-btn" style="flex: 1;" title="Copy All Details">📋 Copy Details</button>
                         <button type="button" onclick="copyToClipboard(`{escaped_text3}`)"
-                                class="copy-btn" title="Copy Item Price"
-                                style="flex: 1; width: 100%;">₹ Copy Price</button>        
+                                class="copy-btn" style="flex: 1;" title="Copy Item Price">₹ Copy Price</button>        
                     </div>
                 """, height=70)
 
