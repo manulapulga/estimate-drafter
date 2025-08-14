@@ -1829,6 +1829,29 @@ def main_app():
             if st.button("✕ Cancel", key="cancel_local_template", type="primary",  use_container_width=True):
                 st.session_state.show_local_templates = False
                 st.rerun()
+    st.markdown("""
+    <style>
+    /* Fix file uploader box text overflow */
+    div[data-testid="stFileUploader"] > section {
+        background-color: #f8f9fa;
+        border: 1px dashed #ccc;
+        border-radius: 8px;
+        padding: 16px;
+        text-align: center;
+        color: #333;
+        max-width: 100%;
+        word-wrap: break-word;
+    }
+    
+    /* Ensure inner text wraps inside the box */
+    div[data-testid="stFileUploader"] section p {
+        white-space: normal !important;
+        overflow-wrap: break-word !important;
+        margin: 0;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
     # Excel upload section
     if st.session_state.get('show_upload', False):
         try:
