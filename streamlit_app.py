@@ -1831,7 +1831,7 @@ def main_app():
                 st.rerun()
     st.markdown("""
     <style>
-    /* Fix file uploader box text overflow */
+    /* Fix file uploader box text overflow and height */
     div[data-testid="stFileUploader"] > section {
         background-color: #f8f9fa;
         border: 1px dashed #ccc;
@@ -1841,6 +1841,12 @@ def main_app():
         color: #333;
         max-width: 100%;
         word-wrap: break-word;
+    
+        /* height fix */
+        min-height: 120px !important;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
     }
     
     /* Ensure inner text wraps inside the box */
@@ -1851,7 +1857,6 @@ def main_app():
     }
     </style>
     """, unsafe_allow_html=True)
-
     # Excel upload section
     if st.session_state.get('show_upload', False):
         try:
