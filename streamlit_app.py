@@ -2716,7 +2716,7 @@ def main_app():
                 if final_total > 0:
                     amount_words = num2words(int(round(float(final_total))), lang='en_IN').title() + " Rupees Only"
                     ws.merge_cells(f'A{row_num}:H{row_num}')
-                    ws[f'A{row_num}'] = f"Amount in Words: {amount_words}"
+                    ws[f'A{row_num}'] = f"{amount_words}"
                     ws[f'A{row_num}'].alignment = center_align
                     ws[f'A{row_num}'].font = ws[f'A{row_num}'].font.copy(bold=True)
                     row_num += 1
@@ -2893,7 +2893,7 @@ def main_app():
                     if final_total > 0:
                         amount_words = num2words(int(round(float(final_total))), lang='en_IN').title() + " Rupees Only"
                         ws.merge_cells(f'A{row_num}:H{row_num}')
-                        ws[f'A{row_num}'] = f"Amount in Words: {amount_words}"
+                        ws[f'A{row_num}'] = f"{amount_words}"
                         ws[f'A{row_num}'].alignment = center_align
                         ws[f'A{row_num}'].font = ws[f'A{row_num}'].font.copy(bold=True)
                         row_num += 1
@@ -3481,7 +3481,7 @@ def main_app():
                 pdf.set_font("Arial", 'B', 10)
                 
                 # Calculate the amount in words
-                amount_words = "Amount in Words: " + num2words(int(round(float(final_total))), lang='en_IN').title() + " Rupees Only"
+                amount_words = num2words(int(round(float(final_total))), lang='en_IN').title() + " Rupees Only"
                 
                 # First calculate how many lines we need
                 test_lines = pdf.multi_cell(
