@@ -41,14 +41,19 @@ if not firebase_admin._apps:
         st.error(f"❌ Cloud Not Connected: {e}")
 
 
+def safe_key(key: str) -> str:
+    """Replace invalid Firebase key characters with underscore"""
+    return re.sub(r'[.$#[\]/]', '_', key)
+    
 def save_progress_to_firebase(username):
     try:
+        safe_username = safe_key(username)   # 🔹 added line
         # Convert session state to regular dict and remove unserializable items
         state_to_save = {
             k: v for k, v in st.session_state.items()
             if isinstance(v, (str, int, float, bool, list, dict, type(None)))
         }
-        db.reference(f'progress/{username}').set(state_to_save)
+        db.reference(f'progress/{safe_username}').set(state_to_save)
         # Show temporary success message
         msg = st.empty()
         msg.success("✅ Progress saved successfully!")
@@ -59,6 +64,7 @@ def save_progress_to_firebase(username):
 
 def load_progress_from_firebase(username):
     try:
+        safe_username = safe_key(username)
         # Check if user has unsaved progress in session
         dirty = (
             st.session_state.get("selected_items") or
@@ -74,7 +80,7 @@ def load_progress_from_firebase(username):
             return
 
         # Proceed with loading
-        saved_state = db.reference(f'progress/{username}').get()
+        saved_state = db.reference(f'progress/{safe_username}').get()
         if saved_state:
             # Restore basic fields immediately
             safe_keys = ['file_name', 'estimate_date', 'work_desc', 'head_note', 'estimate_note']
@@ -174,6 +180,7 @@ div[data-testid="stExpander"]:not([open]):hover {
 }
 </style>
 """, unsafe_allow_html=True)
+
 
 
 # Load user credentials from Sheet 2 of Excel
