@@ -487,6 +487,20 @@ def login_page(credentials_df):
             </p>
         </div>
     """, unsafe_allow_html=True)
+    # Subtle creator signature
+    st.markdown("""
+        <div style='text-align: center; margin-top: -20px;'>
+            <p style='
+                font-family: "Cursive", sans-serif;
+                font-size: 12px;
+                color: rgba(26, 76, 116, 0.15); /* semi-transparent */
+                font-style: italic;
+                letter-spacing: 2px;
+            '>
+                Created by 1d10t
+            </p>
+        </div>
+    """, unsafe_allow_html=True)
 
 
 def set_rounding_option(option):
