@@ -15,6 +15,7 @@ from num2words import num2words
 import firebase_admin
 from firebase_admin import credentials, db
 import time
+from decimal import Decimal, InvalidOperation   # <-- make sure this is imported
 
 # Set page config
 st.set_page_config(
@@ -1048,13 +1049,16 @@ def main_app():
         # GST at 18%, rounded to nearest rupee
         gst = (taxable_amount * Decimal('0.18')).to_integral_value(rounding=ROUND_HALF_UP)
         
-        # Calculate base unforeseen (2.5% of total + gst)
         base_unforeseen = ((total_cost + gst) * Decimal('0.025')).to_integral_value(rounding=ROUND_HALF_UP)
-        
-        # Use manual unforeseen if provided, otherwise use base
-        unforeseen = manual_unforeseen if manual_unforeseen is not None else base_unforeseen
-        
-        # Ensure unforeseen doesn't exceed 2.5% of total + gst
+
+        # 🔽 replace your existing unforeseen logic with this
+        unforeseen = base_unforeseen
+        if manual_unforeseen is not None:
+            try:
+                unforeseen = Decimal(str(manual_unforeseen))
+            except (InvalidOperation, ValueError):
+                unforeseen = base_unforeseen  # fallback if invalid input
+    
         unforeseen = min(unforeseen, base_unforeseen)
         
         # Calculate final total and round up to next 100
