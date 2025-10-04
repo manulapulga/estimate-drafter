@@ -2010,7 +2010,12 @@ def main_app():
             
             # ✅ Otherwise show upload widget
             if not uploaded_file:
-                uploaded_file = st.file_uploader("Choose an Excel file", type=["xlsx"], key="manual_upload")
+                uploaded_file = st.file_uploader(
+                    "Choose an Excel file", 
+                    type=["xlsx", "xlsm"],  # allow both
+                    key="manual_upload"
+                )
+                
                 if uploaded_file:
                     st.session_state["uploaded_file_name"] = uploaded_file.name
 
