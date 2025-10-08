@@ -190,26 +190,21 @@ def load_credentials(file_path):
     return pd.read_excel(file_path, sheet_name=1)  # Sheet 2 is index 1
 
 def save_excel_to_firebase(username, filename, excel_io):
-    # Get existing files
-    existing_files = list_user_files(username)
-    
-    # Generate unique filename
-    base_name = filename
-    if base_name not in existing_files:
-        unique_filename = base_name
-    else:
+    def get_unique_filename(base_name):
+        existing_files = list_user_files(username).keys()
+        if base_name not in existing_files:
+            return base_name
         i = 1
         while f"{base_name}_{i}" in existing_files:
             i += 1
-        unique_filename = f"{base_name}_{i}"
-
-    # Encode and save
+        return f"{base_name}_{i}"
+    import time  # Add this line
     excel_io.seek(0)
     encoded = base64.b64encode(excel_io.read()).decode()
-    
+    unique_filename = get_unique_filename(filename)
     file_data = {
         "content": encoded,
-        "timestamp": int(time.time())  # This should now work
+        "timestamp": int(time.time())
     }
     db.reference(f'estimates/{username}/{unique_filename}').set(file_data)
     return unique_filename
