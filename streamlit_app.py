@@ -190,6 +190,8 @@ def load_credentials(file_path):
     return pd.read_excel(file_path, sheet_name=1)  # Sheet 2 is index 1
 
 def save_excel_to_firebase(username, filename, excel_io):
+    import time  # ← ADD THIS LINE
+    import base64  # ← ALSO ADD THIS since base64 is used
     def get_unique_filename(base_name):
         existing_files = list_user_files(username).keys()
         if base_name not in existing_files:
