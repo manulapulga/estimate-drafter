@@ -198,7 +198,7 @@ def save_excel_to_firebase(username, filename, excel_io):
         while f"{base_name}_{i}" in existing_files:
             i += 1
         return f"{base_name}_{i}"
-    import time  # Add this line
+
     excel_io.seek(0)
     encoded = base64.b64encode(excel_io.read()).decode()
     unique_filename = get_unique_filename(filename)
@@ -2996,10 +2996,7 @@ def main_app():
                     # ✅ Save to Firebase using consistent filename
                     save_excel_to_firebase(username, filename_no_ext, output)
                     
-                    msg = st.empty()
-                    msg.success("✅ Saved")
-                    time.sleep(3)  # visible for 3 seconds
-                    msg.empty()
+                    st.success("✅ Saved to Cloud")
                     
             
                 except Exception as e:
