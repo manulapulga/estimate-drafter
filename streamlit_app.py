@@ -2722,10 +2722,17 @@ def main_app():
                 subtotal_row = row_num
                 row_num += 1
         
-                # GST
+                # GST - Calculate actual GST based on taxable items only
+                taxable_total = sum(
+                    float(item['Cost'])
+                    for item in st.session_state.selected_items
+                    if item.get('Type') != 'Subheading' and item.get('GST_Applicable', True)
+                )
+                actual_gst = round(taxable_total * 0.18, 2)
+                
                 ws.merge_cells(f'A{row_num}:E{row_num}')
                 ws[f'A{row_num}'] = "GST (18%)"
-                ws[f'F{row_num}'] = f"=F{subtotal_row}*0.18"
+                ws[f'F{row_num}'] = actual_gst  # Use actual calculated value instead of formula
                 gst_row = row_num
                 row_num += 1
         
@@ -2736,11 +2743,17 @@ def main_app():
                 ws[f'F{row_num}'] = f"{false_unforeseen}"
                 row_num += 1
         
-                # Final Total
+                # Final Total - Calculate based on actual values
+                subtotal_value = sum(
+                    float(item['Cost'])
+                    for item in st.session_state.selected_items
+                    if item.get('Type') != 'Subheading'
+                )
+                final_total_value = subtotal_value + actual_gst + false_unforeseen
+                
                 ws.merge_cells(f'A{row_num}:E{row_num}')
                 ws[f'A{row_num}'] = rounding_label
-                ws[f'F{row_num}'] = final_total
-                row_num += 1
+                ws[f'F{row_num}'] = final_total_value
         
                 # === Amount in Words ===
                 if final_total > 0:
