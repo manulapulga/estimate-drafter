@@ -3006,8 +3006,13 @@ def main_app():
                     st.error(f"❌ Save failed: {e}")
         with col2:
             if st.button("📕 Generate PDF File", use_container_width=True):
-              # Update all items silently
-                update_all_items()
+                # Update all items first
+                updated_count = update_all_items()
+                
+                # Show updating status with slight delay
+                with st.spinner("🔄 Updating All Items"):
+                    import time
+                    time.sleep(3)  # 3000ms delay to ensure updates are processed
                 from num2words import num2words
                 from fpdf import FPDF
             
