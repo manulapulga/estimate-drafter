@@ -3006,9 +3006,9 @@ def main_app():
                     st.error(f"❌ Save failed: {e}")
         with col2:
             if st.button("📕 Generate PDF File", use_container_width=True):
-                from num2words import num2words
-                # Update all items silently
+              # Update all items silently
                 update_all_items()
+                from num2words import num2words
                 from fpdf import FPDF
             
                 pdf = FPDF()
