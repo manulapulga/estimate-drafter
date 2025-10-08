@@ -3006,8 +3006,15 @@ def main_app():
                     st.error(f"❌ Save failed: {e}")
         with col2:
             if st.button("📕 Generate PDF File", use_container_width=True):
-              # Update all items silently
-                update_all_items()
+              # Update all items and wait for completion
+              updated_count = update_all_items()
+              
+              # Show updating status
+              with st.spinner("Updating items before generating PDF..."):
+                  # Force immediate session state sync
+                  st.session_state._force_refresh = True
+                  st.rerun()  # This ensures all updates are applied
+                  
                 from num2words import num2words
                 from fpdf import FPDF
             
