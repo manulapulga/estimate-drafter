@@ -2743,17 +2743,11 @@ def main_app():
                 ws[f'F{row_num}'] = f"{false_unforeseen}"
                 row_num += 1
         
-                # Final Total - Calculate based on actual values
-                subtotal_value = sum(
-                    float(item['Cost'])
-                    for item in st.session_state.selected_items
-                    if item.get('Type') != 'Subheading'
-                )
-                final_total_value = subtotal_value + actual_gst + false_unforeseen
-                
+                # Final Total
                 ws.merge_cells(f'A{row_num}:E{row_num}')
                 ws[f'A{row_num}'] = rounding_label
-                ws[f'F{row_num}'] = final_total_value
+                ws[f'F{row_num}'] = final_total
+                row_num += 1
         
                 # === Amount in Words ===
                 if final_total > 0:
