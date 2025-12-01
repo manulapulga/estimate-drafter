@@ -145,6 +145,36 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
+# Hide top ribbon/header
+st.markdown("""
+    <style>
+        /* Hide the entire top ribbon */
+        header {
+            visibility: hidden !important;
+        }
+        
+        .stApp > header {
+            display: none !important;
+        }
+        
+        [data-testid="stHeader"] {
+            display: none !important;
+        }
+        
+        [data-testid="stDecoration"] {
+            display: none !important;
+        }
+        
+        [data-testid="stToolbar"] {
+            display: none !important;
+        }
+        
+        .viewerBadge_container__1QSob {
+            display: none !important;
+        }
+    </style>
+""", unsafe_allow_html=True)
+
 # Auto-open wizard if flagged
 if st.session_state.get("wizard_target_index") is not None:
     st.switch_page("pages/wizard.py")
