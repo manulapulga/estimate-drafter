@@ -24,6 +24,16 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
+st.markdown("""
+<style>
+/* Hide first toolbar button (GitHub) but keep the others */
+div[data-testid="stToolbar"] > div button:nth-child(1) {
+    display: none !important;
+}
+</style>
+""", unsafe_allow_html=True)
+
+
 # Initialize Firebase once
 if not firebase_admin._apps:
     try:
