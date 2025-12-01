@@ -23,8 +23,6 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="collapsed"
 )
-if st.button("🔽 Show Options", use_container_width=True):
-    st.markdown("<script>openSidebar()</script>", unsafe_allow_html=True)
 
 st.markdown("""
 <style>
@@ -35,6 +33,8 @@ div[data-testid="stToolbar"] > div button:nth-child(1) {
 </style>
 """, unsafe_allow_html=True)
 
+if st.button("🔽 Show Options", use_container_width=True):
+    st.markdown("<script>openSidebar()</script>", unsafe_allow_html=True)
 
 # Initialize Firebase once
 if not firebase_admin._apps:
