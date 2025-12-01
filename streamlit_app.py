@@ -183,8 +183,8 @@ st.markdown("""
         
         /* Adjust the app container */
         .main .block-container {
-            padding-top: 10px !important;
-            padding-bottom: 10px !important;
+            padding-top: 5px !important;
+            padding-bottom: 5px !important;
         }
         
         /* Remove any gaps */
