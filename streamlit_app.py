@@ -27,30 +27,39 @@ st.set_page_config(
 # Hide Streamlit UI elements
 st.markdown("""
     <style>
-        /* Hide GitHub/Fork button */
-        #MainMenu {visibility: hidden;}
-        footer {visibility: hidden;}
+        /* Hide Streamlit's default top menu items (except burger menu) */
+        #MainMenu {{visibility: hidden;}}
+        header {{visibility: hidden;}}
+        .stDeployButton {{display:none;}}
         
-        /* Hide the hamburger menu */
-        .stDeployButton {display:none;}
+        /* Hide GitHub button if present */
+        .stActionButton {{display: none !important;}}
         
-        /* Hide Streamlit branding */
-        #stDecoration {display:none;}
+        /* Hide specific buttons in the header */
+        div[data-testid="stToolbar"] {{display:none;}}
+        div[data-testid="stDecoration"] {{display:none;}}
+        div[data-testid="stStatusWidget"] {{display:none;}}
         
-        /* Hide the deploy button */
-        [data-testid="stDeployButton"] {
-            display: none !important;
-        }
+        /* Hide the bottom footer */
+        footer {{visibility: hidden;}}
         
-        /* Hide the manage app button */
-        [data-testid="stToolbar"] {
-            display: none !important;
-        }
+        /* Hide the "Made with Streamlit" text */
+        .viewerBadge_container__1QSob {{display: none !important;}}
         
-        /* Hide the sidebar navigation */
-        [data-testid="stSidebarNav"] {
-            display: none;
-        }
+        /* Alternative way to hide footer */
+        #root > div:nth-child(1) > div > div > div > div > section > div {{padding-top: 0rem;}}
+        
+        /* Hide any other Streamlit branding */
+        .stApp > header {{display: none !important;}}
+        
+        /* Keep the burger menu but hide other header elements */
+        .stApp > header + div {{margin-top: -5rem;}}
+        
+        /* Adjust main content area to account for hidden header */
+        .main .block-container {{
+            padding-top: 0rem !important;
+            margin-top: -2rem !important;
+        }}
     </style>
 """, unsafe_allow_html=True)
 
