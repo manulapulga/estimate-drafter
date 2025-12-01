@@ -26,19 +26,17 @@ st.set_page_config(
 
 st.markdown("""
 <style>
-/* Hide ALL toolbar buttons (GitHub, Share, etc.) */
-div[data-testid="stToolbar"] {
+
+/* Hide ONLY GitHub button from toolbar */
+div[data-testid="stToolbar"] button[title*="GitHub"] {
     display: none !important;
 }
 
-/* (Optional) Hide individual icons */
-div[data-testid="stToolbarActionButton"] {
+/* Compatibility: hide GitHub icon by its SVG path class */
+div[data-testid="stToolbarActionButtonIcon"] svg[viewBox="0 0 16 16"] {
     display: none !important;
 }
 
-div[data-testid="stToolbarActionButtonIcon"] {
-    display: none !important;
-}
 </style>
 """, unsafe_allow_html=True)
 
