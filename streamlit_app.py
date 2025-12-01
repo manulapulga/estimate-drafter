@@ -26,12 +26,22 @@ st.set_page_config(
 
 st.markdown("""
 <style>
-/* Hide GitHub toolbar icon only */
-div[data-testid="stToolbar"] button[title*="GitHub"] {
+/* Hide ALL toolbar buttons (GitHub, Share, etc.) */
+div[data-testid="stToolbar"] {
+    display: none !important;
+}
+
+/* (Optional) Hide individual icons */
+div[data-testid="stToolbarActionButton"] {
+    display: none !important;
+}
+
+div[data-testid="stToolbarActionButtonIcon"] {
     display: none !important;
 }
 </style>
 """, unsafe_allow_html=True)
+
 
 
 # Initialize Firebase once
