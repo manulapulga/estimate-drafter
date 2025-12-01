@@ -176,7 +176,7 @@ st.markdown("""
         
         /* Adjust main container to fill the space */
         .block-container {
-            padding-top: 5px !important;
+            padding-top: 0px !important;
             margin-top: 5px !important;
             margin-bottom: 5px !important;
         }
