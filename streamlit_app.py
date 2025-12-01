@@ -24,125 +24,32 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# Add this CSS in your main app (after page config but before any other content)
-
+# Hide Streamlit UI elements
 st.markdown("""
     <style>
-        /* ==============================================
-           COMPLETE TOP MENU REMOVAL - STREAMLIT CLOUD
-           ============================================== */
+        /* Hide GitHub/Fork button */
+        #MainMenu {visibility: hidden;}
+        footer {visibility: hidden;}
         
-        /* Hide the entire header including GitHub, hamburger, deploy button */
-        header[data-testid="stHeader"] {
+        /* Hide the hamburger menu */
+        .stDeployButton {display:none;}
+        
+        /* Hide Streamlit branding */
+        #stDecoration {display:none;}
+        
+        /* Hide the deploy button */
+        [data-testid="stDeployButton"] {
             display: none !important;
         }
         
-        /* Hide Streamlit's main menu button */
-        #MainMenu {
-            visibility: hidden !important;
-        }
-        
-        /* Hide the deploy/manage app button */
-        .stDeployButton {
+        /* Hide the manage app button */
+        [data-testid="stToolbar"] {
             display: none !important;
         }
         
-        /* Hide the toolbar (contains settings, share, etc.) */
-        div[data-testid="stToolbar"] {
-            display: none !important;
-        }
-        
-        /* Hide the status widget */
-        div[data-testid="stStatusWidget"] {
-            display: none !important;
-        }
-        
-        /* Hide the decoration/branding bar */
-        div[data-testid="stDecoration"] {
-            display: none !important;
-        }
-        
-        /* Hide any Streamlit branding elements */
-        .stApp > header {
-            display: none !important;
-        }
-        
-        /* Hide the "Made with Streamlit" badge */
-        .viewerBadge_container__1QSob {
-            display: none !important;
-        }
-        
-        /* Hide GitHub fork button */
-        .stActionButton {
-            display: none !important;
-        }
-        
-        /* Hide the footer */
-        footer {
-            visibility: hidden !important;
-        }
-        
-        /* ==============================================
-           RECLAIM THE SPACE - CRITICAL
-           ============================================== */
-        
-        /* Remove the reserved space for header */
-        .stApp > header {
-            height: 0px !important;
-            min-height: 0px !important;
-        }
-        
-        /* Push main content to the very top */
-        .main .block-container {
-            padding-top: 0rem !important;
-            margin-top: -3rem !important;
-        }
-        
-        /* Adjust the app container */
-        .stApp {
-            margin-top: -80px !important;
-        }
-        
-        /* Ensure vertical blocks start at top */
-        [data-testid="stVerticalBlock"] {
-            gap: 0rem !important;
-        }
-        
-        /* Fix for any remaining top padding */
-        section.main > div {
-            padding-top: 0px !important;
-        }
-        
-        /* ==============================================
-           SPECIFIC FIXES FOR YOUR APP
-           ============================================== */
-        
-        /* Make sure your ribbon-bar sits at the very top */
-        .ribbon-bar {
-            margin-top: -10px !important;
-        }
-        
-        /* Ensure login screen is properly positioned */
-        .block-container {
-            padding-top: 0rem !important;
-            margin-top: 0rem !important;
-        }
-        
-        /* Remove any extra space from hidden elements */
-        div[data-testid="stVerticalBlock"] > div:nth-child(1) {
-            margin-top: 0px !important;
-            padding-top: 0px !important;
-        }
-        
-        /* Fix for Streamlit Cloud specific elements */
-        .stApp > div:nth-child(1) > div:nth-child(1) > div {
-            height: 0px !important;
-            min-height: 0px !important;
-        }
-        
-        /* Hide the top spacer completely */
-        .stApp > div:first-child {
-            display: none !important;
+        /* Hide the sidebar navigation */
+        [data-testid="stSidebarNav"] {
+            display: none;
         }
     </style>
 """, unsafe_allow_html=True)
@@ -650,128 +557,6 @@ def main_app():
     # Load data
     username = st.session_state.logged_in_username
     
-    # Add this CSS in your main app (after page config but before any other content)
-
-    st.markdown("""
-        <style>
-            /* ==============================================
-               COMPLETE TOP MENU REMOVAL - STREAMLIT CLOUD
-               ============================================== */
-            
-            /* Hide the entire header including GitHub, hamburger, deploy button */
-            header[data-testid="stHeader"] {
-                display: none !important;
-            }
-            
-            /* Hide Streamlit's main menu button */
-            #MainMenu {
-                visibility: hidden !important;
-            }
-            
-            /* Hide the deploy/manage app button */
-            .stDeployButton {
-                display: none !important;
-            }
-            
-            /* Hide the toolbar (contains settings, share, etc.) */
-            div[data-testid="stToolbar"] {
-                display: none !important;
-            }
-            
-            /* Hide the status widget */
-            div[data-testid="stStatusWidget"] {
-                display: none !important;
-            }
-            
-            /* Hide the decoration/branding bar */
-            div[data-testid="stDecoration"] {
-                display: none !important;
-            }
-            
-            /* Hide any Streamlit branding elements */
-            .stApp > header {
-                display: none !important;
-            }
-            
-            /* Hide the "Made with Streamlit" badge */
-            .viewerBadge_container__1QSob {
-                display: none !important;
-            }
-            
-            /* Hide GitHub fork button */
-            .stActionButton {
-                display: none !important;
-            }
-            
-            /* Hide the footer */
-            footer {
-                visibility: hidden !important;
-            }
-            
-            /* ==============================================
-               RECLAIM THE SPACE - CRITICAL
-               ============================================== */
-            
-            /* Remove the reserved space for header */
-            .stApp > header {
-                height: 0px !important;
-                min-height: 0px !important;
-            }
-            
-            /* Push main content to the very top */
-            .main .block-container {
-                padding-top: 0rem !important;
-                margin-top: -3rem !important;
-            }
-            
-            /* Adjust the app container */
-            .stApp {
-                margin-top: -80px !important;
-            }
-            
-            /* Ensure vertical blocks start at top */
-            [data-testid="stVerticalBlock"] {
-                gap: 0rem !important;
-            }
-            
-            /* Fix for any remaining top padding */
-            section.main > div {
-                padding-top: 0px !important;
-            }
-            
-            /* ==============================================
-               SPECIFIC FIXES FOR YOUR APP
-               ============================================== */
-            
-            /* Make sure your ribbon-bar sits at the very top */
-            .ribbon-bar {
-                margin-top: -10px !important;
-            }
-            
-            /* Ensure login screen is properly positioned */
-            .block-container {
-                padding-top: 0rem !important;
-                margin-top: 0rem !important;
-            }
-            
-            /* Remove any extra space from hidden elements */
-            div[data-testid="stVerticalBlock"] > div:nth-child(1) {
-                margin-top: 0px !important;
-                padding-top: 0px !important;
-            }
-            
-            /* Fix for Streamlit Cloud specific elements */
-            .stApp > div:nth-child(1) > div:nth-child(1) > div {
-                height: 0px !important;
-                min-height: 0px !important;
-            }
-            
-            /* Hide the top spacer completely */
-            .stApp > div:first-child {
-                display: none !important;
-            }
-        </style>
-    """, unsafe_allow_html=True)
     
     
     # --- Step 1: Start progressive item restoration ---
