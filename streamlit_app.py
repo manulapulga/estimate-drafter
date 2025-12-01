@@ -171,24 +171,25 @@ st.markdown("""
         /* Remove the blank space left by hidden ribbon */
         .stApp {
             margin-top: -50px !important;
-            padding-top: 0 !important;
+            padding-top: 5px !important;
         }
         
         /* Adjust main container to fill the space */
         .block-container {
-            padding-top: 0rem !important;
-            margin-top: 0 !important;
+            padding-top: 50px !important;
+            margin-top: 50px !important;
+            margin-bottom: 50px !important;
         }
         
         /* Adjust the app container */
         .main .block-container {
-            padding-top: 0rem !important;
-            padding-bottom: 0rem !important;
+            padding-top: 10px !important;
+            padding-bottom: 10px !important;
         }
         
         /* Remove any gaps */
         [data-testid="stVerticalBlock"] {
-            gap: 0rem !important;
+            gap: 10px !important;
         }
     </style>
 """, unsafe_allow_html=True)
