@@ -23,6 +23,8 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="collapsed"
 )
+if st.button("🔽 Show Options", use_container_width=True):
+    st.markdown("<script>openSidebar()</script>", unsafe_allow_html=True)
 
 st.markdown("""
 <style>
@@ -50,9 +52,6 @@ if not firebase_admin._apps:
         st.write("✅ Cloud Initialized")
     except Exception as e:
         st.error(f"❌ Cloud Not Connected: {e}")
-
-if st.button("🔽 Show Options", use_container_width=True):
-    st.markdown("<script>openSidebar()</script>", unsafe_allow_html=True)
 
         
 def safe_key(key: str) -> str:
