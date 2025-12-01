@@ -51,7 +51,22 @@ if not firebase_admin._apps:
     except Exception as e:
         st.error(f"❌ Cloud Not Connected: {e}")
 
+# ---- ADD THIS BLOCK ----
+open_sidebar_js = """
+<script>
+function openSidebar() {
+    const btn = window.parent.document.querySelector('button[data-testid="collapsedControl"]');
+    if (btn) { btn.click(); }
+}
+</script>
+"""
+st.markdown(open_sidebar_js, unsafe_allow_html=True)
 
+# Optional: add a button in top area
+if st.button("📂 Open Menu", use_container_width=True):
+    st.markdown("<script>openSidebar()</script>", unsafe_allow_html=True)
+# ---- END BLOCK ----
+        
 def safe_key(key: str) -> str:
     """Replace invalid Firebase key characters with underscore"""
     return re.sub(r'[.$#[\]/]', '_', key)
