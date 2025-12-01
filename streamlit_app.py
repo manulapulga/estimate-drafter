@@ -24,36 +24,6 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# Hide Streamlit UI elements
-st.markdown("""
-    <style>
-        /* Hide GitHub/Fork button */
-        #MainMenu {visibility: hidden;}
-        footer {visibility: hidden;}
-        
-        /* Hide the hamburger menu */
-        .stDeployButton {display:none;}
-        
-        /* Hide Streamlit branding */
-        #stDecoration {display:none;}
-        
-        /* Hide the deploy button */
-        [data-testid="stDeployButton"] {
-            display: none !important;
-        }
-        
-        /* Hide the manage app button */
-        [data-testid="stToolbar"] {
-            display: none !important;
-        }
-        
-        /* Hide the sidebar navigation */
-        [data-testid="stSidebarNav"] {
-            display: none;
-        }
-    </style>
-""", unsafe_allow_html=True)
-
 # Initialize Firebase once
 if not firebase_admin._apps:
     try:
@@ -136,60 +106,11 @@ def load_progress_from_firebase(username):
 getcontext().prec = 10  # Increase precision
 
 
-# Hide default Streamlit sidebar navigation AND top ribbon
+# Hide default Streamlit sidebar navigation
 st.markdown("""
     <style>
         [data-testid="stSidebarNav"] {
             display: none;
-        }
-        
-        /* Hide the entire top ribbon */
-        header {
-            display: none !important;
-        }
-        
-        .stApp > header {
-            display: none !important;
-        }
-        
-        [data-testid="stHeader"] {
-            display: none !important;
-        }
-        
-        [data-testid="stDecoration"] {
-            display: none !important;
-        }
-        
-        [data-testid="stToolbar"] {
-            display: none !important;
-        }
-        
-        .viewerBadge_container__1QSob {
-            display: none !important;
-        }
-        
-        /* Remove the blank space left by hidden ribbon */
-        .stApp {
-            margin-top: -50px !important;
-            padding-top: 5px !important;
-        }
-        
-        /* Adjust main container to fill the space */
-        .block-container {
-            padding-top: 0px !important;
-            margin-top: 5px !important;
-            margin-bottom: 5px !important;
-        }
-        
-        /* Adjust the app container */
-        .main .block-container {
-            padding-top: 5px !important;
-            padding-bottom: 5px !important;
-        }
-        
-        /* Remove any gaps */
-        [data-testid="stVerticalBlock"] {
-            gap: 5px !important;
         }
     </style>
 """, unsafe_allow_html=True)
