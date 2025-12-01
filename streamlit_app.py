@@ -24,6 +24,15 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
+# Hide only GitHub fork/star button
+st.markdown("""
+<style>
+.stApp > header > div:nth-child(3) > div > div > div > a {
+    display: none !important;
+}
+</style>
+""", unsafe_allow_html=True)
+
 # Initialize Firebase once
 if not firebase_admin._apps:
     try:
