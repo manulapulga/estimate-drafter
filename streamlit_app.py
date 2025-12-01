@@ -189,7 +189,7 @@ st.markdown("""
         
         /* Remove any gaps */
         [data-testid="stVerticalBlock"] {
-            gap: 10px !important;
+            gap: 5px !important;
         }
     </style>
 """, unsafe_allow_html=True)
