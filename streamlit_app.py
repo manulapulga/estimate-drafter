@@ -176,9 +176,9 @@ st.markdown("""
         
         /* Adjust main container to fill the space */
         .block-container {
-            padding-top: 50px !important;
-            margin-top: 50px !important;
-            margin-bottom: 50px !important;
+            padding-top: 10px !important;
+            margin-top: 10px !important;
+            margin-bottom: 10px !important;
         }
         
         /* Adjust the app container */
