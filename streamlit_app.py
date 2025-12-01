@@ -170,7 +170,7 @@ st.markdown("""
         
         /* Remove the blank space left by hidden ribbon */
         .stApp {
-            margin-top: -50px !important;
+            margin-top: -10px !important;
             padding-top: 5px !important;
         }
         
