@@ -136,21 +136,16 @@ def load_progress_from_firebase(username):
 getcontext().prec = 10  # Increase precision
 
 
-# Hide default Streamlit sidebar navigation
+# Hide default Streamlit sidebar navigation AND top ribbon
 st.markdown("""
     <style>
         [data-testid="stSidebarNav"] {
             display: none;
         }
-    </style>
-""", unsafe_allow_html=True)
-
-# Hide top ribbon/header
-st.markdown("""
-    <style>
+        
         /* Hide the entire top ribbon */
         header {
-            visibility: hidden !important;
+            display: none !important;
         }
         
         .stApp > header {
@@ -171,6 +166,29 @@ st.markdown("""
         
         .viewerBadge_container__1QSob {
             display: none !important;
+        }
+        
+        /* Remove the blank space left by hidden ribbon */
+        .stApp {
+            margin-top: -50px !important;
+            padding-top: 0 !important;
+        }
+        
+        /* Adjust main container to fill the space */
+        .block-container {
+            padding-top: 0rem !important;
+            margin-top: 0 !important;
+        }
+        
+        /* Adjust the app container */
+        .main .block-container {
+            padding-top: 0rem !important;
+            padding-bottom: 0rem !important;
+        }
+        
+        /* Remove any gaps */
+        [data-testid="stVerticalBlock"] {
+            gap: 0rem !important;
         }
     </style>
 """, unsafe_allow_html=True)
