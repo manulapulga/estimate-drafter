@@ -170,15 +170,15 @@ st.markdown("""
         
         /* Remove the blank space left by hidden ribbon */
         .stApp {
-            margin-top: -10px !important;
+            margin-top: -50px !important;
             padding-top: 5px !important;
         }
         
         /* Adjust main container to fill the space */
         .block-container {
-            padding-top: 10px !important;
-            margin-top: 10px !important;
-            margin-bottom: 10px !important;
+            padding-top: 5px !important;
+            margin-top: 5px !important;
+            margin-bottom: 5px !important;
         }
         
         /* Adjust the app container */
