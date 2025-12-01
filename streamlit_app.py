@@ -24,13 +24,12 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# Hide GitHub logo (fork/star button)
+# Hide top-right corner buttons
 st.markdown("""
 <style>
-#MainMenu {visibility: hidden;}
-footer {visibility: hidden;}
-header {visibility: hidden;}
-.stDeployButton {visibility: hidden;}
+.stApp > header > div:nth-child(3) {
+    display: none !important;
+}
 </style>
 """, unsafe_allow_html=True)
 
