@@ -24,6 +24,16 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
+# Hide GitHub logo (fork/star button)
+st.markdown("""
+<style>
+#MainMenu {visibility: hidden;}
+footer {visibility: hidden;}
+header {visibility: hidden;}
+.stDeployButton {visibility: hidden;}
+</style>
+""", unsafe_allow_html=True)
+
 # Initialize Firebase once
 if not firebase_admin._apps:
     try:
