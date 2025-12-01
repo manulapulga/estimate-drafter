@@ -24,36 +24,6 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# Hide Streamlit UI elements
-st.markdown("""
-    <style>
-        /* Hide GitHub/Fork button */
-        #MainMenu {visibility: hidden;}
-        footer {visibility: hidden;}
-        
-        /* Hide the hamburger menu */
-        .stDeployButton {display:none;}
-        
-        /* Hide Streamlit branding */
-        #stDecoration {display:none;}
-        
-        /* Hide the deploy button */
-        [data-testid="stDeployButton"] {
-            display: none !important;
-        }
-        
-        /* Hide the manage app button */
-        [data-testid="stToolbar"] {
-            display: none !important;
-        }
-        
-        /* Hide the sidebar navigation */
-        [data-testid="stSidebarNav"] {
-            display: none;
-        }
-    </style>
-""", unsafe_allow_html=True)
-
 # Initialize Firebase once
 if not firebase_admin._apps:
     try:
