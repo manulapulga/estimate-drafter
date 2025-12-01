@@ -526,7 +526,19 @@ def set_rounding_option(option):
 def main_app():
     # Load data
     username = st.session_state.logged_in_username
-    
+    # Hide GitHub logo CSS
+    st.markdown("""
+    <style>
+        [data-testid="stToolbar"] svg[aria-label="View the source on GitHub"],
+        [data-testid="stToolbar"] a[href*="github"] {
+            display: none !important;
+        }
+        
+        [data-testid="collapsedControl"] {
+            visibility: visible !important;
+        }
+    </style>
+    """, unsafe_allow_html=True)
     
     
     # --- Step 1: Start progressive item restoration ---
