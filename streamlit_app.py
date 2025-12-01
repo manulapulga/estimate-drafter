@@ -115,6 +115,16 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
+st.markdown("""
+    <style>
+        /* Hide Streamlit GitHub button */
+        a[href^="https://github.com"] {
+            display: none !important;
+        }
+    </style>
+""", unsafe_allow_html=True)
+
+
 # Auto-open wizard if flagged
 if st.session_state.get("wizard_target_index") is not None:
     st.switch_page("pages/wizard.py")
