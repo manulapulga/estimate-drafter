@@ -372,7 +372,7 @@ def login_page(credentials_df):
     st.markdown("""
         <style>
         html, body, .stApp {
-            margin-top: 0px !important;
+            margin-top: 100px !important;
             padding-top: 0px !important;
         }
         [data-testid="stVerticalBlock"] {
