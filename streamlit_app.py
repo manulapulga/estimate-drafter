@@ -372,7 +372,7 @@ def login_page(credentials_df):
     st.markdown("""
         <style>
         html, body, .stApp {
-            margin-top: 100px !important;
+            margin-top: 0px !important;
             padding-top: 0px !important;
         }
         [data-testid="stVerticalBlock"] {
@@ -426,7 +426,7 @@ def login_page(credentials_df):
         /* Add soft shadow illusion around center "card" */
         .block-container {
             max-width: 400px;
-            margin-top: 80px;
+            margin-top: 1000px;
             padding: 5px;
             box-shadow: 0 0 25px rgba(0,0,0,0.15);
             border-radius: 16px;
