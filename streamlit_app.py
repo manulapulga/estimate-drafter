@@ -41,7 +41,7 @@ if not firebase_admin._apps:
     except Exception as e:
         st.error(f"❌ Cloud Not Connected: {e}")
 
-        
+
 def safe_key(key: str) -> str:
     """Replace invalid Firebase key characters with underscore"""
     return re.sub(r'[.$#[\]/]', '_', key)
@@ -114,7 +114,6 @@ st.markdown("""
         }
     </style>
 """, unsafe_allow_html=True)
-
 
 # Auto-open wizard if flagged
 if st.session_state.get("wizard_target_index") is not None:
@@ -527,7 +526,8 @@ def set_rounding_option(option):
 def main_app():
     # Load data
     username = st.session_state.logged_in_username
-       
+    
+    
     
     # --- Step 1: Start progressive item restoration ---
     if "__pending_restore_items__" in st.session_state:
