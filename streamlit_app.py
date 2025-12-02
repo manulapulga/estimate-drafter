@@ -426,7 +426,7 @@ def login_page(credentials_df):
         /* Add soft shadow illusion around center "card" */
         .block-container {
             max-width: 400px;
-            margin-top: 1000px;
+            margin-top: 150px;
             padding: 5px;
             box-shadow: 0 0 25px rgba(0,0,0,0.15);
             border-radius: 16px;
