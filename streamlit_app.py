@@ -28,7 +28,7 @@ st.markdown(f"""
     <style>    
         /* Sidebar */
     .css-1d391kg {{
-        background-color: {LITMUSQ_THEME['light_bg']};
+        background-color: green;
     }}
     </style>
     """, unsafe_allow_html=True)
