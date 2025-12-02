@@ -19,7 +19,7 @@ from decimal import Decimal, InvalidOperation   # <-- make sure this is imported
 
 # Set page config
 st.set_page_config(
-    page_title="Estimate Drafter",
+    page_title="📐🚰SPEC-Standardised Project Estimation Console",
     layout="wide",
     initial_sidebar_state="collapsed"
 )
