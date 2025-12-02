@@ -20,6 +20,7 @@ from decimal import Decimal, InvalidOperation   # <-- make sure this is imported
 # Set page config
 st.set_page_config(
     page_title="📐🚰SPEC-Standardised Project Estimation Console",
+    page_icon="🧪",
     layout="wide",
     initial_sidebar_state="collapsed"
 )
