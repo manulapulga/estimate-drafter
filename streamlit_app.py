@@ -27,16 +27,17 @@ st.set_page_config(
 
 st.markdown("""
     <style>
-        /* ✅ Hide Streamlit's top-right Fork/GitHub/Record buttons */
+        /* Hide ONLY the top-right toolbar (Fork / GitHub / Record) */
         [data-testid="stToolbar"] {
             display: none !important;
         }
 
-        /* (Optional) Hide the 'Made with Streamlit' footer */
-        footer {visibility: hidden;}
+        /* Optional: hide Streamlit’s footer and hamburger menu */
         #MainMenu {visibility: hidden;}
+        footer {visibility: hidden;}
     </style>
 """, unsafe_allow_html=True)
+
 
 
 # Initialize Firebase once
