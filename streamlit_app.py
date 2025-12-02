@@ -24,6 +24,7 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="collapsed"
 )
+
 # Initialize Firebase once
 if not firebase_admin._apps:
     try:
