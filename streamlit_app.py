@@ -22,18 +22,8 @@ st.set_page_config(
     page_title="SPEC-Standardised Project Estimation Console",
     page_icon="🚰",
     layout="wide",
-    initial_sidebar_state="expanded"
+    initial_sidebar_state="collapsed"
 )
-
-st.markdown("""
-    <style>
-        /* Hide ONLY the top-right toolbar icons */
-        [data-testid="stToolbar"] {
-            display: none !important;
-        }
-    </style>
-""", unsafe_allow_html=True)
-
 
 # Initialize Firebase once
 if not firebase_admin._apps:
