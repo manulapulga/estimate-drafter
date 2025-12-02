@@ -368,136 +368,145 @@ def login_page(credentials_df):
     with open("Icons/spec1.png", "rb") as image_file:
         encoded_logospec = base64.b64encode(image_file.read()).decode()
 
-     # Inject CSS to remove top space
+    # **REVISED CSS - More aggressive removal of top space**
     st.markdown("""
         <style>
+        /* Complete removal of top margins and paddings */
         html, body, .stApp {
             margin-top: 0px !important;
             padding-top: 0px !important;
+            overflow: visible !important;
         }
-        [data-testid="stVerticalBlock"] {
-            margin-top: 100px !important;
-            padding-top: 0px !important;
-        }
-        .block-container {
+        
+        /* Target the main container directly */
+        .main .block-container {
             padding-top: 0rem !important;
+            padding-bottom: 0rem !important;
+        }
+        
+        /* Remove all vertical block margins */
+        [data-testid="stVerticalBlock"] {
+            margin-top: 0px !important;
+            padding-top: 0px !important;
+            gap: 0.5rem !important;
+        }
+        
+        /* Adjust the card container to be more compact */
+        .block-container {
+            max-width: 400px;
+            margin-top: 20px !important;  /* Reduced from 80px */
+            padding: 15px !important;     /* Reduced padding */
+            box-shadow: 0 0 15px rgba(0,0,0,0.1);  /* Lighter shadow */
+            border-radius: 12px;
+            background-color: rgba(255, 255, 255, 0.8);
+        }
+        
+        /* Make the logo section more compact */
+        .logo-section {
+            margin-top: 5px !important;
+            margin-bottom: 5px !important;
+        }
+        
+        /* Reduce space between logo and heading */
+        .logo-section h2 {
+            margin-top: 10px !important;
+            margin-bottom: 30px !important;  /* Reduced from 50px */
+        }
+        
+        /* Compact the login form */
+        .login-form {
+            margin-top: 10px !important;
+            margin-bottom: 10px !important;
+        }
+        
+        /* Style inputs to be more compact */
+        .stTextInput input, .stTextInput > div > div {
+            padding: 8px 10px !important;
+            margin-bottom: 8px !important;
+        }
+        
+        /* Compact button */
+        .stButton button {
+            margin-top: 5px !important;
+            margin-bottom: 5px !important;
+            padding: 10px !important;
         }
         </style>
     """, unsafe_allow_html=True)
     
+    # Background style
     st.markdown("""
         <style>
         html, body, .stApp {
-            background-color: #e3f2fd !important;  /* soft blue background */
+            background-color: #e3f2fd !important;
             background-attachment: fixed;
             background-size: cover;
-        }
-        .st-emotion-cache-46x3d8 {
-            width: 390px;
-            position: relative;
-            display: flex;
-            flex: 1 1 0%;
-            flex-direction: column;
-            gap: 0rem;
-        }
-        .st-emotion-cache-n3bfp {
-            display: inline-flex;
-            -webkit-box-align: center;
-            align-items: center;
-            -webkit-box-pack: center;
-            justify-content: center;
-            font-weight: 400;
-            padding: 0.25rem 0.75rem;
-            border-radius: 0.5rem;
-            min-height: 2.5rem;
-            margin: 0px;
-            line-height: 1.6;
-            text-transform: none;
-            font-size: inherit;
-            font-family: inherit;
-            color: inherit;
-            width: auto;
-            cursor: pointer;
-            user-select: none;
-            background-color: #65d1ea;
-            border: 1px solid rgba(0, 0, 0, 0.2);
-        }
-    
-        /* Add soft shadow illusion around center "card" */
-        .block-container {
-            max-width: 400px;
-            margin-top: 80px;
-            padding: 5px;
-            box-shadow: 0 0 25px rgba(0,0,0,0.15);
-            border-radius: 16px;
-            background-color: rgba(255, 255, 255, 0.65); /* optional light tint */
-            padding-top: 0px !important;
-        }
-    
-        /* Optional: style input fields to pop more */
-        input, textarea {
-            background-color: rgba(255, 255, 255, 0.9) !important;
-            border-radius: 8px !important;
-            padding: 10px !important;
-            border: 1px solid #b3cce6 !important;
+            min-height: 100vh !important;
         }
         </style>
     """, unsafe_allow_html=True)
     
-    # Heading + logo section
+    # **REVISED Heading + logo section with tighter spacing**
     st.markdown(f"""
-        <div style='text-align: center; margin-top: 0px; margin-bottom: 0px;'>
+        <div class='logo-section' style='text-align: center; margin-top: 0px; margin-bottom: 0px;'>
             <img src='data:image/png;base64,{encoded_logospec}' 
-                 style='width: auto; max-height: 60px; object-fit: contain; border-radius: 8px; margin-bottom: 0px; margin-top: 15px;' />
+                 style='width: auto; max-height: 50px; object-fit: contain; border-radius: 6px; margin-bottom: 0px;' />
             <h2 style='
                 font-family: "Merriweather", serif;
-                font-size: 20px;
+                font-size: 18px;
                 font-weight: 500;
                 color: #1a4c74;
-                margin-bottom: 50px;
+                margin-top: 10px;
+                margin-bottom: 25px;
+                line-height: 1.3;
             '>
                 Standardised Project Estimation Console
             </h2>
         </div>
     """, unsafe_allow_html=True)
 
-    # Center login inputs
-    col1, col2, col3 = st.columns([1, 3, 1])
+    # **REVISED Center login inputs with tighter columns**
+    col1, col2, col3 = st.columns([1, 2.5, 1])  # Narrower center column
 
     with col2:
+        st.markdown('<div class="login-form">', unsafe_allow_html=True)
+        
         username_input = st.text_input("", key="username_input", placeholder="Username", label_visibility="collapsed")
         password_input = st.text_input("", type="password", key="password_input", placeholder="Password", label_visibility="collapsed")
 
-        if st.button("Login"):
+        if st.button("Login", use_container_width=True):
             if authenticate(username_input, password_input, credentials_df):
                 st.session_state.logged_in_username = username_input
                 st.session_state.authenticated = True
                 st.rerun()
             else:
                 st.error("Invalid username or password")
+        
+        st.markdown('</div>', unsafe_allow_html=True)
                 
-    # Heading + logo section
+    # **REVISED Footer with less space**
     st.markdown(f"""
-        <div style='text-align: center; margin-top: 0px; margin-bottom: 40px;'>
+        <div style='text-align: center; margin-top: 15px; margin-bottom: 10px;'>
             <p style='
                 font-family: "Segoe UI", sans-serif;
-                font-size: 13px;
+                font-size: 12px;
                 color: #39779a;
-                margin-top: 20px;
+                margin-top: 10px;
             '>
                 Powered by DSR 2021
             </p>
         </div>
     """, unsafe_allow_html=True)
-    # Subtle creator signature
+    
+    # **REVISED Creator signature - smaller and less prominent**
     st.markdown("""
-        <div style='text-align: center; margin-top: -20px;'>
+        <div style='text-align: center; margin-top: 5px; margin-bottom: 5px;'>
             <p style='
                 font-family: "Cursive", sans-serif;
-                font-size: 12px;
-                color: rgba(26, 76, 116, 0.15); /* semi-transparent */
+                font-size: 10px;
+                color: rgba(26, 76, 116, 0.1);
                 font-style: italic;
-                letter-spacing: 2px;
+                letter-spacing: 1px;
             '>
                 Created by 1d10t
             </p>
