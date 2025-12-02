@@ -24,6 +24,26 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="collapsed"
 )
+# --- Hide Streamlit Toolbar (same as ProjectK) ---
+st.markdown("""
+<style>
+/* Hide Streamlit top-right toolbar (Fork/GitHub/etc) */
+[data-testid="stToolbar"] {
+    display: none !important;
+}
+
+/* Hide top decoration bar */
+[data-testid="stDecoration"] {
+    display: none !important;
+}
+
+/* Hide Streamlit default menu */
+#MainMenu {visibility: hidden;}
+
+/* Hide Streamlit footer */
+footer {visibility: hidden;}
+</style>
+""", unsafe_allow_html=True)
 
 # Initialize Firebase once
 if not firebase_admin._apps:
