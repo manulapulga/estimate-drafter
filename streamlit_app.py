@@ -24,14 +24,6 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="collapsed"
 )
-st.markdown(f"""
-    <style>    
-        /* Sidebar */
-    .css-1d391kg {{
-        background-color: green;
-    }}
-    </style>
-    """, unsafe_allow_html=True)
 
 # Initialize Firebase once
 if not firebase_admin._apps:
