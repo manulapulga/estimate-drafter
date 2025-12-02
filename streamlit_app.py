@@ -44,6 +44,14 @@ st.markdown("""
 footer {visibility: hidden;}
 </style>
 """, unsafe_allow_html=True)
+st.markdown(f"""
+    <style>    
+        /* Sidebar */
+    .css-1d391kg {{
+        background-color: green]};
+    }}
+    </style>
+    """, unsafe_allow_html=True)
 
 # Initialize Firebase once
 if not firebase_admin._apps:
