@@ -48,7 +48,7 @@ st.markdown(f"""
     <style>    
         /* Sidebar */
     .css-1d391kg {{
-        background-color: green]};
+        background-color: green;
     }}
     </style>
     """, unsafe_allow_html=True)
