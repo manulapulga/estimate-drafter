@@ -25,6 +25,20 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
+st.markdown("""
+    <style>
+        /* ✅ Hide Streamlit's top-right Fork/GitHub/Record buttons */
+        [data-testid="stToolbar"] {
+            display: none !important;
+        }
+
+        /* (Optional) Hide the 'Made with Streamlit' footer */
+        footer {visibility: hidden;}
+        #MainMenu {visibility: hidden;}
+    </style>
+""", unsafe_allow_html=True)
+
+
 # Initialize Firebase once
 if not firebase_admin._apps:
     try:
