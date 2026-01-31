@@ -3815,7 +3815,7 @@ def main_app():
         with col1:
             st.selectbox(
                 "",
-                ["Below", "At", "Above"],
+                ["At", "Below", "Above"],
                 key="tender_mode",
                 on_change=reset_bill_download,
                 label_visibility="collapsed"
