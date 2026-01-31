@@ -3792,12 +3792,89 @@ def main_app():
                 margin-top: 6px;
                 text-align: center;
             }
+            
+            .deduction-expander {
+                background: #f8f9fa !important;
+                border: 1px solid #dee2e6 !important;
+                border-radius: 8px !important;
+                margin-top: 15px !important;
+            }
+            
+            .deduction-expander summary {
+                background-color: #e9ecef !important;
+                border-radius: 8px 8px 0 0 !important;
+                padding: 12px 15px !important;
+                font-weight: bold !important;
+                color: #495057 !important;
+            }
+            
+            .deduction-row {
+                margin-bottom: 10px;
+                padding: 10px;
+                background-color: #ffffff;
+                border: 1px solid #e9ecef;
+                border-radius: 5px;
+            }
+            
+            .deduction-checkbox {
+                margin-bottom: 5px !important;
+            }
+            
+            .deduction-details {
+                margin-left: 25px;
+                margin-top: 5px;
+            }
+            
+            /* Remove +/- buttons from all number inputs */
+            input[type="number"]::-webkit-outer-spin-button,
+            input[type="number"]::-webkit-inner-spin-button {
+                -webkit-appearance: none;
+                margin: 0;
+            }
+            
+            input[type="number"] {
+                -moz-appearance: textfield;
+            }
+            
+            /* Target Streamlit's number input specifically */
+            div[data-baseweb="input"] input[type="number"] {
+                -webkit-appearance: none;
+                -moz-appearance: textfield;
+                appearance: textfield;
+            }
+            
+            /* Style for deduction number inputs */
+            .deduction-number-input input {
+                padding-right: 8px !important;
+            }
             </style>
         
             <div class="thin-banner">
                 <h4>BILL GENERATOR</h4>
             </div>
         """, unsafe_allow_html=True)
+        
+        # Initialize deduction session states
+        if 'deduction_it_enabled' not in st.session_state:
+            st.session_state.deduction_it_enabled = True
+        if 'deduction_it_rate' not in st.session_state:
+            st.session_state.deduction_it_rate = 1  # 1% for Individuals by default
+        if 'deduction_welfare_enabled' not in st.session_state:
+            st.session_state.deduction_welfare_enabled = True
+        if 'deduction_gst_enabled' not in st.session_state:
+            st.session_state.deduction_gst_enabled = False
+        if 'deduction_dept_enabled' not in st.session_state:
+            st.session_state.deduction_dept_enabled = False
+        if 'deduction_dept_desc' not in st.session_state:
+            st.session_state.deduction_dept_desc = "Departmental Deduction"
+        if 'deduction_dept_amount' not in st.session_state:
+            st.session_state.deduction_dept_amount = 0.0
+        if 'deduction_fine_enabled' not in st.session_state:
+            st.session_state.deduction_fine_enabled = False
+        if 'deduction_fine_desc' not in st.session_state:
+            st.session_state.deduction_fine_desc = "Fine"
+        if 'deduction_fine_amount' not in st.session_state:
+            st.session_state.deduction_fine_amount = 0.0
         
         # -------------------- SINGLE TOOLBAR ROW --------------------
         col0, col1, col2, col3, col4, col5 = st.columns(
@@ -3851,7 +3928,19 @@ def main_app():
                 st.session_state.bill_excel_io = generate_bill_excel(
                     selected_items=st.session_state.selected_items,
                     tender_mode=st.session_state.tender_mode,
-                    tender_percent=st.session_state.tender_percent
+                    tender_percent=st.session_state.tender_percent,
+                    deductions={
+                        'it_enabled': st.session_state.deduction_it_enabled,
+                        'it_rate': st.session_state.deduction_it_rate,
+                        'welfare_enabled': st.session_state.deduction_welfare_enabled,
+                        'gst_enabled': st.session_state.deduction_gst_enabled,
+                        'dept_enabled': st.session_state.deduction_dept_enabled,
+                        'dept_desc': st.session_state.deduction_dept_desc,
+                        'dept_amount': st.session_state.deduction_dept_amount,
+                        'fine_enabled': st.session_state.deduction_fine_enabled,
+                        'fine_desc': st.session_state.deduction_fine_desc,
+                        'fine_amount': st.session_state.deduction_fine_amount
+                    }
                 )
                 st.session_state.show_bill_download = True
         
@@ -3871,6 +3960,155 @@ def main_app():
                     st.session_state.show_bill_download = False
                     st.session_state.bill_excel_io = None
                     st.rerun()
+        
+        # -------------------- DEDUCTION OPTIONS SECTION (Collapsible) --------------------
+        with st.expander("📋 Bill Deductions", expanded=False):
+            # Create a container for all deductions in a single column layout
+            deductions_container = st.container()
+            
+            with deductions_container:
+                # Row 1: Income Tax TDS
+                ded_row1 = st.container()
+                with ded_row1:
+                    col1, col2, col3 = st.columns([1, 2, 1])
+                    with col1:
+                        st.session_state.deduction_it_enabled = st.checkbox(
+                            "TDS towards Income Tax",
+                            value=st.session_state.deduction_it_enabled,
+                            key="deduction_it_enabled_cb",
+                            on_change=reset_bill_download
+                        )
+                    with col2:
+                        if st.session_state.deduction_it_enabled:
+                            # Use radio buttons instead of dropdown
+                            it_rate_option = st.radio(
+                                "Select Type",
+                                options=["Individual (1%)", "Firm (2%)"],
+                                index=0 if st.session_state.deduction_it_rate == 1 else 1,
+                                key="deduction_it_rate_radio",
+                                horizontal=True,
+                                label_visibility="collapsed"
+                            )
+                            
+                            # Update the rate based on selection
+                            if it_rate_option == "Individual (1%)":
+                                st.session_state.deduction_it_rate = 1
+                            else:
+                                st.session_state.deduction_it_rate = 2
+                
+                # Row 2: Workers Welfare Board
+                ded_row2 = st.container()
+                with ded_row2:
+                    st.session_state.deduction_welfare_enabled = st.checkbox(
+                        "Deduction towards Workers Welfare Board (1%)",
+                        value=st.session_state.deduction_welfare_enabled,
+                        key="deduction_welfare_enabled_cb",
+                        on_change=reset_bill_download
+                    )
+                
+                # Row 3: GST TDS
+                ded_row3 = st.container()
+                with ded_row3:
+                    st.session_state.deduction_gst_enabled = st.checkbox(
+                        "TDS towards GST (2%)",
+                        value=st.session_state.deduction_gst_enabled,
+                        key="deduction_gst_enabled_cb",
+                        on_change=reset_bill_download
+                    )
+                
+                # Row 4: Departmental Deduction
+                ded_row4 = st.container()
+                with ded_row4:
+                    col1, col2, col3, col4 = st.columns([1, 1, 1, 2])
+                    with col1:
+                        st.session_state.deduction_dept_enabled = st.checkbox(
+                            "Departmental Deduction",
+                            value=st.session_state.deduction_dept_enabled,
+                            key="deduction_dept_enabled_cb",
+                            on_change=reset_bill_download
+                        )
+                    with col2:
+                        if st.session_state.deduction_dept_enabled:
+                            st.text_input(
+                                "",
+                                value=st.session_state.deduction_dept_desc,
+                                key="deduction_dept_desc_input",
+                                on_change=lambda: setattr(st.session_state, 'deduction_dept_desc', 
+                                                        st.session_state.deduction_dept_desc_input),
+                                placeholder="Description",
+                                label_visibility="collapsed"
+                            )
+                    with col3:
+                        if st.session_state.deduction_dept_enabled:
+                            # Use text_input with validation instead of number_input
+                            dept_amount_input = st.text_input(
+                                "",
+                                value=str(st.session_state.deduction_dept_amount),
+                                key="deduction_dept_amount_text",
+                                placeholder="Amount (₹)",
+                                label_visibility="collapsed"
+                            )
+                            
+                            # Validate and update session state
+                            if dept_amount_input:
+                                try:
+                                    # Remove commas and convert to float
+                                    clean_input = dept_amount_input.replace(',', '').strip()
+                                    if clean_input:
+                                        amount = float(clean_input)
+                                        if amount >= 0:
+                                            st.session_state.deduction_dept_amount = amount
+                                        else:
+                                            st.warning("Amount must be positive")
+                                except ValueError:
+                                    st.warning("Please enter a valid number")
+                
+                # Row 5: Fine
+                ded_row5 = st.container()
+                with ded_row5:
+                    col1, col2, col3, col4 = st.columns([1, 1, 1, 2])
+                    with col1:
+                        st.session_state.deduction_fine_enabled = st.checkbox(
+                            "Panlties",
+                            value=st.session_state.deduction_fine_enabled,
+                            key="deduction_fine_enabled_cb",
+                            on_change=reset_bill_download
+                        )
+                    with col2:
+                        if st.session_state.deduction_fine_enabled:
+                            st.text_input(
+                                "",
+                                value=st.session_state.deduction_fine_desc,
+                                key="deduction_fine_desc_input",
+                                on_change=lambda: setattr(st.session_state, 'deduction_fine_desc', 
+                                                        st.session_state.deduction_fine_desc_input),
+                                placeholder="Description",
+                                label_visibility="collapsed"
+                            )
+                    with col3:
+                        if st.session_state.deduction_fine_enabled:
+                            # Use text_input with validation instead of number_input
+                            fine_amount_input = st.text_input(
+                                "",
+                                value=str(st.session_state.deduction_fine_amount),
+                                key="deduction_fine_amount_text",
+                                placeholder="Amount (₹)",
+                                label_visibility="collapsed"
+                            )
+                            
+                            # Validate and update session state
+                            if fine_amount_input:
+                                try:
+                                    # Remove commas and convert to float
+                                    clean_input = fine_amount_input.replace(',', '').strip()
+                                    if clean_input:
+                                        amount = float(clean_input)
+                                        if amount >= 0:
+                                            st.session_state.deduction_fine_amount = amount
+                                        else:
+                                            st.warning("Amount must be positive")
+                                except ValueError:
+                                    st.warning("Please enter a valid number")
 
             
 

@@ -2,12 +2,27 @@ import io
 from openpyxl import Workbook
 from openpyxl.styles import Alignment, Border, Side, Font
 
-
 def generate_bill_excel(
     selected_items,
     tender_mode,
-    tender_percent
+    tender_percent,
+    deductions=None
 ):
+    # Default deductions if not provided
+    if deductions is None:
+        deductions = {
+            'it_enabled': True,
+            'it_rate': 1,  # 1% for Individuals
+            'welfare_enabled': True,
+            'gst_enabled': False,
+            'dept_enabled': False,
+            'dept_desc': "Departmental Deduction",
+            'dept_amount': 0.0,
+            'fine_enabled': False,
+            'fine_desc': "Fine",
+            'fine_amount': 0.0
+        }
+    
     wb = Workbook()
     ws = wb.active
     ws.title = "Bill"
@@ -94,12 +109,13 @@ def generate_bill_excel(
     ws.merge_cells(start_row=row, start_column=1, end_row=row, end_column=6)
     ws.cell(row=row, column=1, value="Sub Total")
     ws.cell(row=row, column=7, value=f"=ROUND(SUM(G2:G{row-1}),0)")
+    subtotal_excl_gst = f"G{sub_total_row}"  # Save reference for deductions
     row += 1
 
     # GST
     ws.merge_cells(start_row=row, start_column=1, end_row=row, end_column=6)
     ws.cell(row=row, column=1, value="GST @18%")
-    ws.cell(row=row, column=7, value=f"=ROUND(G{sub_total_row}*0.18,0)")
+    ws.cell(row=row, column=7, value=f"=ROUND({subtotal_excl_gst}*0.18,0)")
     gst_row = row
     row += 1
 
@@ -109,8 +125,81 @@ def generate_bill_excel(
     ws.cell(
         row=row,
         column=7,
-        value=f"=ROUND(G{sub_total_row}+G{gst_row},0)"
+        value=f"=ROUND({subtotal_excl_gst}+G{gst_row},0)"
     )
+    grand_total_row = row
+    grand_total_ref = f"G{grand_total_row}"
+    row += 1
+
+    # ------------------ DEDUCTIONS SECTION ------------------
+    # Start deductions from this row
+    deduction_start_row = row
+    deduction_rows_added = 0
+    
+    # Income Tax TDS
+    if deductions['it_enabled']:
+        it_rate = deductions['it_rate']
+        ws.merge_cells(start_row=row, start_column=1, end_row=row, end_column=6)
+        ws.cell(row=row, column=1, value=f"Deduction: {it_rate}% TDS Towards Income Tax")
+        ws.cell(row=row, column=7, value=f"=ROUND({subtotal_excl_gst}*{it_rate/100},0)")
+        row += 1
+        deduction_rows_added += 1
+    
+    # Workers Welfare Board
+    if deductions['welfare_enabled']:
+        ws.merge_cells(start_row=row, start_column=1, end_row=row, end_column=6)
+        ws.cell(row=row, column=1, value="Deduction: 1% Payment Towards Workers Welfare Board")
+        ws.cell(row=row, column=7, value=f"=ROUND({subtotal_excl_gst}*0.01,0)")
+        row += 1
+        deduction_rows_added += 1
+    
+    # GST TDS (2% of Subtotal excluding GST)
+    if deductions['gst_enabled']:
+        # Calculate GST TDS using the complex formula
+        # Formula: IF(B28>250000, IF(MOD(ROUND(B28/50),2)=1, ROUND(B28/50)+1, ROUND(B28/50)), "NA")
+        # Where B28 is subtotal_excl_gst
+        gst_tds_formula = f'=IF(MOD(ROUND({subtotal_excl_gst}/50,0),2)=1, ROUND({subtotal_excl_gst}/50,0)+1, ROUND({subtotal_excl_gst}/50,0))'
+        
+        # Add the row only if the formula doesn't result in 0
+        ws.merge_cells(start_row=row, start_column=1, end_row=row, end_column=6)
+        ws.cell(row=row, column=1, value="Deduction: 2% TDS Towards GST")
+        ws.cell(row=row, column=7, value=gst_tds_formula)
+        row += 1
+        deduction_rows_added += 1
+    
+    # Departmental Deduction
+    if deductions['dept_enabled'] and deductions['dept_amount'] > 0:
+        ws.merge_cells(start_row=row, start_column=1, end_row=row, end_column=6)
+        ws.cell(row=row, column=1, value=f"Deduction: {deductions['dept_desc']}")
+        ws.cell(row=row, column=7, value=deductions['dept_amount'])
+        row += 1
+        deduction_rows_added += 1
+    
+    # Fine
+    if deductions['fine_enabled'] and deductions['fine_amount'] > 0:
+        ws.merge_cells(start_row=row, start_column=1, end_row=row, end_column=6)
+        ws.cell(row=row, column=1, value=f"Deduction: {deductions['fine_desc']}")
+        ws.cell(row=row, column=7, value=deductions['fine_amount'])
+        row += 1
+        deduction_rows_added += 1
+    
+    # Calculate total deductions only if any deductions were added
+    if deduction_rows_added > 0:
+        # Total Deductions
+        ws.merge_cells(start_row=row, start_column=1, end_row=row, end_column=6)
+        ws.cell(row=row, column=1, value="Total Deductions")
+        # Sum all deduction rows
+        deduction_range = f"G{deduction_start_row}:G{row-1}"
+        ws.cell(row=row, column=7, value=f"=SUM({deduction_range})")
+        total_deductions_row = row
+        total_deductions_ref = f"G{total_deductions_row}"
+        row += 1
+        
+        # Final Payment to Contractor
+        ws.merge_cells(start_row=row, start_column=1, end_row=row, end_column=6)
+        ws.cell(row=row, column=1, value="Final Payment to Contractor")
+        ws.cell(row=row, column=7, value=f"={grand_total_ref}-{total_deductions_ref}")
+        row += 1
 
     # ------------------ FORMATTING ------------------
     for r in range(1, ws.max_row + 1):
