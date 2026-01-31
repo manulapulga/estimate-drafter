@@ -16,6 +16,7 @@ import firebase_admin
 from firebase_admin import credentials, db
 import time
 from decimal import Decimal, InvalidOperation   # <-- make sure this is imported
+from bill_excel import generate_bill_excel
 
 # Set page config
 st.set_page_config(
@@ -941,6 +942,23 @@ def main_app():
         st.session_state.edit_final_total = False
     if 'signature_height' not in st.session_state:
         st.session_state.signature_height = 20  # or whatever default you want
+    # ---------------- Bill Generator State ----------------
+    if "show_bill_generator" not in st.session_state:
+        st.session_state.show_bill_generator = False
+    
+    if "tender_mode" not in st.session_state:
+        st.session_state.tender_mode = "At"
+    
+    if "tender_percent" not in st.session_state:
+        st.session_state.tender_percent = 0.0
+    
+    if "bill_excel_io" not in st.session_state:
+        st.session_state.bill_excel_io = None
+    
+    if "show_bill_download" not in st.session_state:
+        st.session_state.show_bill_download = False    
+    # ------------------------------------------------------
+    
     if 'signature_block_height' not in st.session_state:
         st.session_state.signature_block_height = 30 
     if 'signature_block_height' not in st.session_state:
@@ -948,6 +966,10 @@ def main_app():
     if 'bottom_margin' not in st.session_state:
         st.session_state.bottom_margin = 20  # or any appropriate default value in mm    
     # Functions
+    
+    def reset_bill_download():
+        st.session_state.show_bill_download = False
+        st.session_state.bill_excel_io = None
     def update_all_items():
         selected_items = st.session_state.selected_items.copy()
         updated_count = 0
@@ -1080,7 +1102,7 @@ def main_app():
         
         
         return int(total_cost), int(gst), int(unforeseen), int(final_total)
-
+        
     def move_item_up(index):
         if index > 0:
             st.session_state.selected_items[index], st.session_state.selected_items[index - 1] = \
@@ -3733,8 +3755,125 @@ def main_app():
                         help="Update all items with current values", use_container_width=True):
                 updated_count = update_all_items()
                 st.rerun()
-            
         
+        # -------------------- BILL GENERATOR BANNER & CSS --------------------
+        st.markdown("""
+            <style>
+            .thin-banner {
+                background: #5d89a3;
+                padding: 2px 0px !important;
+                border-top-left-radius: 13px;
+                border-top-right-radius: 13px;
+                box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+                margin: 0px 0 8px 0;
+                height: 30px;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+            }
+        
+            .thin-banner h4 {
+                color: white;
+                font-size: 20px;
+                font-weight: 600;
+                margin: 0 !important;
+                line-height: 1;
+            }
+        
+            .tender-label {
+                font-size: 17px;
+                font-weight: 600;
+                margin-top: 6px;
+            }
+        
+            .percent-label {
+                font-size: 18px;
+                font-weight: 600;
+                margin-top: 6px;
+                text-align: center;
+            }
+            </style>
+        
+            <div class="thin-banner">
+                <h4>BILL GENERATOR</h4>
+            </div>
+        """, unsafe_allow_html=True)
+        
+        # -------------------- SINGLE TOOLBAR ROW --------------------
+        col0, col1, col2, col3, col4, col5 = st.columns(
+            [1.3, 2.2, 2.2, 0.6, 2.4, 2.4]
+        )
+        
+        # Tender Quoted label
+        with col0:
+            st.markdown(
+                '<div class="tender-label">Tender&nbsp;Quoted</div>',
+                unsafe_allow_html=True
+            )
+        
+        # Tender Mode dropdown
+        with col1:
+            st.selectbox(
+                "",
+                ["Below", "At", "Above"],
+                key="tender_mode",
+                on_change=reset_bill_download,
+                label_visibility="collapsed"
+            )
+        
+        # Percentage input (no +/- buttons)
+        with col2:
+            percent_str = st.text_input(
+                "",
+                value=str(st.session_state.tender_percent),
+                key="tender_percent_input",
+                on_change=reset_bill_download,
+                disabled=(st.session_state.tender_mode == "At"),
+                label_visibility="collapsed"
+            )
+        
+            # Validate and sync to session_state
+            try:
+                st.session_state.tender_percent = float(percent_str)
+            except ValueError:
+                st.session_state.tender_percent = 0.0
+        
+        # % symbol
+        with col3:
+            st.markdown(
+                '<div class="percent-label">%</div>',
+                unsafe_allow_html=True
+            )
+        
+        # Generate Bill button
+        with col4:
+            if st.button("📄 Generate Bill", use_container_width=True):
+                st.session_state.bill_excel_io = generate_bill_excel(
+                    selected_items=st.session_state.selected_items,
+                    tender_mode=st.session_state.tender_mode,
+                    tender_percent=st.session_state.tender_percent
+                )
+                st.session_state.show_bill_download = True
+        
+        # Download Bill button (auto-disappear after click)
+        with col5:
+            if st.session_state.show_bill_download and st.session_state.bill_excel_io:
+                download_clicked = st.download_button(
+                    "⬇️ Download Bill",
+                    data=st.session_state.bill_excel_io,
+                    file_name="Bill.xlsx",
+                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    key="download_bill",
+                    use_container_width=True
+                )
+        
+                if download_clicked:
+                    st.session_state.show_bill_download = False
+                    st.session_state.bill_excel_io = None
+                    st.rerun()
+
+            
+
     # Add this right after the totals section but before the "else" for "No items added"
     if st.session_state.get('show_preview', False) and any(i.get("Type") != "Subheading" for i in st.session_state.selected_items):
         st.markdown("""
