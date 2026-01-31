@@ -3659,7 +3659,7 @@ def main_app():
                         mime="application/pdf"
                     )
             # Toggle button to show/hide signature area settings
-            show_signature_settings = st.toggle("Show PDF Signature Area Settings")
+            show_signature_settings = st.toggle("Signature Settings")
             
             if show_signature_settings:
                 # Create three equal-width columns
