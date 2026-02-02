@@ -481,6 +481,8 @@ def login_page(credentials_df):
     with col2:
         username_input = st.text_input("", key="username_input", placeholder="Username", label_visibility="collapsed")
         password_input = st.text_input("", type="password", key="password_input", placeholder="Password", label_visibility="collapsed")
+        # 🔹 Force Streamlit to notice autofill
+        _ = (username_input, password_input)
 
         if st.button("Login"):
             if authenticate(username_input, password_input, credentials_df):
