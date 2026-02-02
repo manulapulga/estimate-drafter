@@ -274,10 +274,23 @@ def toggle_section(section_key):
             
 # Authentication function
 def authenticate(username, password, credentials_df):
-    user_row = credentials_df[credentials_df['username'] == username]
+    if not username or not password:
+        return False
+
+    # 🔹 CRITICAL: normalize input
+    username = str(username).strip()
+    password = str(password).strip()
+
+    credentials_df["username"] = credentials_df["username"].astype(str).str.strip()
+    credentials_df["password"] = credentials_df["password"].astype(str).str.strip()
+
+    user_row = credentials_df[credentials_df["username"] == username]
+
     if not user_row.empty:
-        return user_row.iloc[0]['password'] == password
+        return user_row.iloc[0]["password"] == password
+
     return False
+
 
 # Load main items data
 @st.cache_data
