@@ -274,23 +274,10 @@ def toggle_section(section_key):
             
 # Authentication function
 def authenticate(username, password, credentials_df):
-    if not username or not password:
-        return False
-
-    # 🔹 CRITICAL: normalize input
-    username = str(username).strip()
-    password = str(password).strip()
-
-    credentials_df["username"] = credentials_df["username"].astype(str).str.strip()
-    credentials_df["password"] = credentials_df["password"].astype(str).str.strip()
-
-    user_row = credentials_df[credentials_df["username"] == username]
-
+    user_row = credentials_df[credentials_df['username'] == username]
     if not user_row.empty:
-        return user_row.iloc[0]["password"] == password
-
+        return user_row.iloc[0]['password'] == password
     return False
-
 
 # Load main items data
 @st.cache_data
@@ -481,8 +468,6 @@ def login_page(credentials_df):
     with col2:
         username_input = st.text_input("", key="username_input", placeholder="Username", label_visibility="collapsed")
         password_input = st.text_input("", type="password", key="password_input", placeholder="Password", label_visibility="collapsed")
-        # 🔹 Force Streamlit to notice autofill
-        _ = (username_input, password_input)
 
         if st.button("Login"):
             if authenticate(username_input, password_input, credentials_df):
