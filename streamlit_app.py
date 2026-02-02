@@ -3946,7 +3946,7 @@ def main_app():
         
         
         # -------------------- DEDUCTION OPTIONS SECTION (Collapsible) --------------------
-        with st.expander("📋 Other Charges", expanded=False):
+        with st.expander("📋 Additions", expanded=False):
             # Create a container for all deductions in a single column layout
             othercharges_container = st.container()
             
