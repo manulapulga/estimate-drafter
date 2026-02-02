@@ -956,7 +956,25 @@ def main_app():
         st.session_state.bill_excel_io = None
     
     if "show_bill_download" not in st.session_state:
-        st.session_state.show_bill_download = False    
+        st.session_state.show_bill_download = False
+    # ADD KSEB SESSION STATES:
+    if 'deduction_kseb_enabled' not in st.session_state:
+        st.session_state.deduction_kseb_enabled = False
+    if 'deduction_kseb_amount' not in st.session_state:
+        st.session_state.deduction_kseb_amount = 0.0
+    # ADD NEW SESSION STATES:
+    if 'deduction_other_charges_enabled' not in st.session_state:
+        st.session_state.deduction_other_charges_enabled = False
+    if 'deduction_other_charges_desc' not in st.session_state:
+        st.session_state.deduction_other_charges_desc = "Other Charges"
+    if 'deduction_other_charges_amount' not in st.session_state:
+        st.session_state.deduction_other_charges_amount = 0.0
+    if 'deduction_other_deductions_enabled' not in st.session_state:
+        st.session_state.deduction_other_deductions_enabled = False
+    if 'deduction_other_deductions_desc' not in st.session_state:
+        st.session_state.deduction_other_deductions_desc = "Other Deductions"
+    if 'deduction_other_deductions_amount' not in st.session_state:
+        st.session_state.deduction_other_deductions_amount = 0.0    
     # ------------------------------------------------------
     
     if 'signature_block_height' not in st.session_state:
@@ -2527,7 +2545,7 @@ def main_app():
         <div class="thin-banner">
             <h4>SUMMARY</h4>
         </div>
-    """, unsafe_allow_html=True)
+        """, unsafe_allow_html=True)
         st.markdown("<div style='height: 20px;'></div>", unsafe_allow_html=True)
         st.write(f"Subtotal: ₹{total_cost:,.2f}")
         st.write(f"GST (18% on taxable items): ₹{gst:,.2f}")
@@ -2661,8 +2679,39 @@ def main_app():
                 pdf.image(spec_path, x=x, y=y, w=image_width)
                 pdf.set_font('Arial', 'I', 8)
                 pdf.cell(0, 5, f'{pdf.page_no()}', 0, 0, 'R')
-
-        
+                
+        st.markdown("<div style='height: 35px;'></div>", unsafe_allow_html=True)
+        st.markdown("""
+        <style>
+        .thin-banner {
+            background: #5d89a3;
+            padding: 2px 0px !important;
+            border-top-left-radius: 13px;
+            border-top-right-radius: 13px;
+            border-bottom-left-radius: 0px;
+            border-bottom-right-radius: 0px;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+            margin: 0px 0 6px 0;
+            text-align: center;
+            height: 30px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .thin-banner h4 {
+            color: white;
+            font-size: 20px;
+            font-weight: 600;
+            margin: 0 !important;
+            padding: 0 !important;
+            line-height: 1;
+        }
+        </style>
+        <div class="thin-banner">
+            <h4>ESTIMATE GENERTOR</h4>
+        </div>
+        """, unsafe_allow_html=True)
+        st.markdown("<div style='height: 25px;'></div>", unsafe_allow_html=True)
         # File generation buttons
         col1, col2, col3, col4, col5, col6 = st.columns([1, 1.5, 1.2, 1, 1, 1])  # Added a 4th column for preview
         with col3:
@@ -3757,6 +3806,7 @@ def main_app():
                 st.rerun()
         
         # -------------------- BILL GENERATOR BANNER & CSS --------------------
+        st.markdown("<div style='height: 35px;'></div>", unsafe_allow_html=True)
         st.markdown("""
             <style>
             .thin-banner {
@@ -3853,7 +3903,7 @@ def main_app():
                 <h4>BILL GENERATOR</h4>
             </div>
         """, unsafe_allow_html=True)
-        
+        st.markdown("<div style='height: 25px;'></div>", unsafe_allow_html=True)
         # Initialize deduction session states
         if 'deduction_it_enabled' not in st.session_state:
             st.session_state.deduction_it_enabled = True
@@ -3875,10 +3925,314 @@ def main_app():
             st.session_state.deduction_fine_desc = "Fine"
         if 'deduction_fine_amount' not in st.session_state:
             st.session_state.deduction_fine_amount = 0.0
+        # ADD KSEB:
+        if 'deduction_kseb_enabled' not in st.session_state:
+            st.session_state.deduction_kseb_enabled = False
+        if 'deduction_kseb_amount' not in st.session_state:
+            st.session_state.deduction_kseb_amount = 0.0    
+        # ADD NEW FIELDS:
+        if 'deduction_other_charges_enabled' not in st.session_state:
+            st.session_state.deduction_other_charges_enabled = False
+        if 'deduction_other_charges_desc' not in st.session_state:
+            st.session_state.deduction_other_charges_desc = "Other Charges"
+        if 'deduction_other_charges_amount' not in st.session_state:
+            st.session_state.deduction_other_charges_amount = 0.0
+        if 'deduction_other_deductions_enabled' not in st.session_state:
+            st.session_state.deduction_other_deductions_enabled = False
+        if 'deduction_other_deductions_desc' not in st.session_state:
+            st.session_state.deduction_other_deductions_desc = "Other Deductions"
+        if 'deduction_other_deductions_amount' not in st.session_state:
+            st.session_state.deduction_other_deductions_amount = 0.0
         
+        
+        # -------------------- DEDUCTION OPTIONS SECTION (Collapsible) --------------------
+        with st.expander("📋 Other Charges", expanded=False):
+            # Create a container for all deductions in a single column layout
+            othercharges_container = st.container()
+            
+            with othercharges_container:
+                # Row 1: KSEB Charges (added to Grand Total, not a deduction)
+                ded_row6 = st.container()
+                with ded_row6:
+                    col1, col2, col3 = st.columns([2, 1, 1])
+                    with col1:
+                        st.session_state.deduction_kseb_enabled = st.checkbox(
+                            "KSEB Charges (Added to Grand Total Excluding GST)",
+                            value=st.session_state.deduction_kseb_enabled,
+                            key="deduction_kseb_enabled_cb",
+                            on_change=reset_bill_download
+                        )
+                    with col3:
+                        if st.session_state.deduction_kseb_enabled:
+                            # Use text_input with validation
+                            kseb_amount_input = st.text_input(
+                                "",
+                                value=str(st.session_state.deduction_kseb_amount),
+                                key="deduction_kseb_amount_text",
+                                placeholder="Amount (₹)",
+                                label_visibility="collapsed"
+                            )
+                            
+                            # Validate and update session state
+                            if kseb_amount_input:
+                                try:
+                                    # Remove commas and convert to float
+                                    clean_input = kseb_amount_input.replace(',', '').strip()
+                                    if clean_input:
+                                        amount = float(clean_input)
+                                        if amount >= 0:
+                                            st.session_state.deduction_kseb_amount = amount
+                                        else:
+                                            st.warning("Amount must be positive")
+                                except ValueError:
+                                    st.warning("Please enter a valid number")
+                # Row 2: Other Charges (added to Grand Total, not a deduction)
+                ded_row7 = st.container()
+                with ded_row7:
+                    col1, col2, col3 = st.columns([2, 1, 1])
+                    with col1:
+                        st.session_state.deduction_other_charges_enabled = st.checkbox(
+                            "Other Charges (Added to Grand Total Excluding GST)",
+                            value=st.session_state.deduction_other_charges_enabled,
+                            key="deduction_other_charges_enabled_cb",
+                            on_change=reset_bill_download
+                        )
+                    with col2:
+                        if st.session_state.deduction_other_charges_enabled:
+                            st.text_input(
+                                "",
+                                value=st.session_state.deduction_other_charges_desc,
+                                key="deduction_other_charges_desc_input",
+                                on_change=lambda: setattr(st.session_state, 'deduction_other_charges_desc', 
+                                                        st.session_state.deduction_other_charges_desc_input),
+                                placeholder="Description",
+                                label_visibility="collapsed"
+                            )
+                    with col3:
+                        if st.session_state.deduction_other_charges_enabled:
+                            # Use text_input with validation
+                            other_charges_amount_input = st.text_input(
+                                "",
+                                value=str(st.session_state.deduction_other_charges_amount),
+                                key="deduction_other_charges_amount_text",
+                                placeholder="Amount (₹)",
+                                label_visibility="collapsed"
+                            )
+                            
+                            # Validate and update session state
+                            if other_charges_amount_input:
+                                try:
+                                    # Remove commas and convert to float
+                                    clean_input = other_charges_amount_input.replace(',', '').strip()
+                                    if clean_input:
+                                        amount = float(clean_input)
+                                        if amount >= 0:
+                                            st.session_state.deduction_other_charges_amount = amount
+                                        else:
+                                            st.warning("Amount must be positive")
+                                except ValueError:
+                                    st.warning("Please enter a valid number")
+                
+                
+        # -------------------- DEDUCTION OPTIONS SECTION (Collapsible) --------------------
+        with st.expander("📋 Deductions", expanded=False):
+            # Create a container for all deductions in a single column layout
+            deductions_container = st.container()
+            
+            with deductions_container:
+                # Row 1: Income Tax TDS
+                ded_row1 = st.container()
+                with ded_row1:
+                    col1, col2, col3 = st.columns([4, 3, 1])
+                    with col1:
+                        st.session_state.deduction_it_enabled = st.checkbox(
+                            "TDS towards Income Tax",
+                            value=st.session_state.deduction_it_enabled,
+                            key="deduction_it_enabled_cb",
+                            on_change=reset_bill_download
+                        )
+                    with col2:
+                        if st.session_state.deduction_it_enabled:
+                            # Use radio buttons instead of dropdown
+                            it_rate_option = st.radio(
+                                "Select Type",
+                                options=["Individual (1%)", "Organisation (2%)"],
+                                index=0 if st.session_state.deduction_it_rate == 1 else 1,
+                                key="deduction_it_rate_radio",
+                                horizontal=True,
+                                label_visibility="collapsed"
+                            )
+                            
+                            # Update the rate based on selection
+                            if it_rate_option == "Individual (1%)":
+                                st.session_state.deduction_it_rate = 1
+                            else:
+                                st.session_state.deduction_it_rate = 2
+                
+                # Row 2: Workers Welfare Board
+                ded_row2 = st.container()
+                with ded_row2:
+                    st.session_state.deduction_welfare_enabled = st.checkbox(
+                        "Deduction towards Workers Welfare Fund (1%)",
+                        value=st.session_state.deduction_welfare_enabled,
+                        key="deduction_welfare_enabled_cb",
+                        on_change=reset_bill_download
+                    )
+                
+                # Row 3: GST TDS
+                ded_row3 = st.container()
+                with ded_row3:
+                    st.session_state.deduction_gst_enabled = st.checkbox(
+                        "TDS towards GST (2%)",
+                        value=st.session_state.deduction_gst_enabled,
+                        key="deduction_gst_enabled_cb",
+                        on_change=reset_bill_download
+                    )
+                
+                # Row 4: Departmental Deduction
+                ded_row4 = st.container()
+                with ded_row4:
+                    col1, col2, col3 = st.columns([2, 1, 1])
+                    with col1:
+                        st.session_state.deduction_dept_enabled = st.checkbox(
+                            "Departmental Deduction",
+                            value=st.session_state.deduction_dept_enabled,
+                            key="deduction_dept_enabled_cb",
+                            on_change=reset_bill_download
+                        )
+                    with col2:
+                        if st.session_state.deduction_dept_enabled:
+                            st.text_input(
+                                "",
+                                value=st.session_state.deduction_dept_desc,
+                                key="deduction_dept_desc_input",
+                                on_change=lambda: setattr(st.session_state, 'deduction_dept_desc', 
+                                                        st.session_state.deduction_dept_desc_input),
+                                placeholder="Description",
+                                label_visibility="collapsed"
+                            )
+                    with col3:
+                        if st.session_state.deduction_dept_enabled:
+                            # Use text_input with validation instead of number_input
+                            dept_amount_input = st.text_input(
+                                "",
+                                value=str(st.session_state.deduction_dept_amount),
+                                key="deduction_dept_amount_text",
+                                placeholder="Amount (₹)",
+                                label_visibility="collapsed"
+                            )
+                            
+                            # Validate and update session state
+                            if dept_amount_input:
+                                try:
+                                    # Remove commas and convert to float
+                                    clean_input = dept_amount_input.replace(',', '').strip()
+                                    if clean_input:
+                                        amount = float(clean_input)
+                                        if amount >= 0:
+                                            st.session_state.deduction_dept_amount = amount
+                                        else:
+                                            st.warning("Amount must be positive")
+                                except ValueError:
+                                    st.warning("Please enter a valid number")
+                
+                # Row 5: Fine
+                ded_row5 = st.container()
+                with ded_row5:
+                    col1, col2, col3 = st.columns([2, 1, 1])
+                    with col1:
+                        st.session_state.deduction_fine_enabled = st.checkbox(
+                            "Panlties",
+                            value=st.session_state.deduction_fine_enabled,
+                            key="deduction_fine_enabled_cb",
+                            on_change=reset_bill_download
+                        )
+                    with col2:
+                        if st.session_state.deduction_fine_enabled:
+                            st.text_input(
+                                "",
+                                value=st.session_state.deduction_fine_desc,
+                                key="deduction_fine_desc_input",
+                                on_change=lambda: setattr(st.session_state, 'deduction_fine_desc', 
+                                                        st.session_state.deduction_fine_desc_input),
+                                placeholder="Description",
+                                label_visibility="collapsed"
+                            )
+                    with col3:
+                        if st.session_state.deduction_fine_enabled:
+                            # Use text_input with validation instead of number_input
+                            fine_amount_input = st.text_input(
+                                "",
+                                value=str(st.session_state.deduction_fine_amount),
+                                key="deduction_fine_amount_text",
+                                placeholder="Amount (₹)",
+                                label_visibility="collapsed"
+                            )
+                            
+                            # Validate and update session state
+                            if fine_amount_input:
+                                try:
+                                    # Remove commas and convert to float
+                                    clean_input = fine_amount_input.replace(',', '').strip()
+                                    if clean_input:
+                                        amount = float(clean_input)
+                                        if amount >= 0:
+                                            st.session_state.deduction_fine_amount = amount
+                                        else:
+                                            st.warning("Amount must be positive")
+                                except ValueError:
+                                    st.warning("Please enter a valid number")
+                
+                # Row 6: Other Deductions (contributes to deductions)
+                ded_row8 = st.container()
+                with ded_row8:
+                    col1, col2, col3 = st.columns([2, 1, 1])
+                    with col1:
+                        st.session_state.deduction_other_deductions_enabled = st.checkbox(
+                            "Other Deductions",
+                            value=st.session_state.deduction_other_deductions_enabled,
+                            key="deduction_other_deductions_enabled_cb",
+                            on_change=reset_bill_download
+                        )
+                    with col2:
+                        if st.session_state.deduction_other_deductions_enabled:
+                            st.text_input(
+                                "",
+                                value=st.session_state.deduction_other_deductions_desc,
+                                key="deduction_other_deductions_desc_input",
+                                on_change=lambda: setattr(st.session_state, 'deduction_other_deductions_desc', 
+                                                        st.session_state.deduction_other_deductions_desc_input),
+                                placeholder="Description",
+                                label_visibility="collapsed"
+                            )
+                    with col3:
+                        if st.session_state.deduction_other_deductions_enabled:
+                            # Use text_input with validation
+                            other_deductions_amount_input = st.text_input(
+                                "",
+                                value=str(st.session_state.deduction_other_deductions_amount),
+                                key="deduction_other_deductions_amount_text",
+                                placeholder="Amount (₹)",
+                                label_visibility="collapsed"
+                            )
+                            
+                            # Validate and update session state
+                            if other_deductions_amount_input:
+                                try:
+                                    # Remove commas and convert to float
+                                    clean_input = other_deductions_amount_input.replace(',', '').strip()
+                                    if clean_input:
+                                        amount = float(clean_input)
+                                        if amount >= 0:
+                                            st.session_state.deduction_other_deductions_amount = amount
+                                        else:
+                                            st.warning("Amount must be positive")
+                                except ValueError:
+                                    st.warning("Please enter a valid number")
+                                    
         # -------------------- SINGLE TOOLBAR ROW --------------------
-        col0, col1, col2, col3, col4, col5 = st.columns(
-            [1.3, 2.2, 2.2, 0.6, 2.4, 2.4]
+        col0, col1, col2, col3,colb, col4, col5 = st.columns(
+            [1.3, 2.2, 0.75, 0.3, 0.5, 2.4, 2.4]
         )
         
         # Tender Quoted label
@@ -3939,7 +4293,16 @@ def main_app():
                         'dept_amount': st.session_state.deduction_dept_amount,
                         'fine_enabled': st.session_state.deduction_fine_enabled,
                         'fine_desc': st.session_state.deduction_fine_desc,
-                        'fine_amount': st.session_state.deduction_fine_amount
+                        'fine_amount': st.session_state.deduction_fine_amount,
+                        'kseb_enabled': st.session_state.deduction_kseb_enabled,
+                        'kseb_amount': st.session_state.deduction_kseb_amount,
+                        # ADD NEW FIELDS:
+                        'other_charges_enabled': st.session_state.deduction_other_charges_enabled,
+                        'other_charges_desc': st.session_state.deduction_other_charges_desc,
+                        'other_charges_amount': st.session_state.deduction_other_charges_amount,
+                        'other_deductions_enabled': st.session_state.deduction_other_deductions_enabled,
+                        'other_deductions_desc': st.session_state.deduction_other_deductions_desc,
+                        'other_deductions_amount': st.session_state.deduction_other_deductions_amount
                     }
                 )
                 st.session_state.show_bill_download = True
@@ -3960,158 +4323,6 @@ def main_app():
                     st.session_state.show_bill_download = False
                     st.session_state.bill_excel_io = None
                     st.rerun()
-        
-        # -------------------- DEDUCTION OPTIONS SECTION (Collapsible) --------------------
-        with st.expander("📋 Bill Deductions", expanded=False):
-            # Create a container for all deductions in a single column layout
-            deductions_container = st.container()
-            
-            with deductions_container:
-                # Row 1: Income Tax TDS
-                ded_row1 = st.container()
-                with ded_row1:
-                    col1, col2, col3 = st.columns([1, 2, 1])
-                    with col1:
-                        st.session_state.deduction_it_enabled = st.checkbox(
-                            "TDS towards Income Tax",
-                            value=st.session_state.deduction_it_enabled,
-                            key="deduction_it_enabled_cb",
-                            on_change=reset_bill_download
-                        )
-                    with col2:
-                        if st.session_state.deduction_it_enabled:
-                            # Use radio buttons instead of dropdown
-                            it_rate_option = st.radio(
-                                "Select Type",
-                                options=["Individual (1%)", "Firm (2%)"],
-                                index=0 if st.session_state.deduction_it_rate == 1 else 1,
-                                key="deduction_it_rate_radio",
-                                horizontal=True,
-                                label_visibility="collapsed"
-                            )
-                            
-                            # Update the rate based on selection
-                            if it_rate_option == "Individual (1%)":
-                                st.session_state.deduction_it_rate = 1
-                            else:
-                                st.session_state.deduction_it_rate = 2
-                
-                # Row 2: Workers Welfare Board
-                ded_row2 = st.container()
-                with ded_row2:
-                    st.session_state.deduction_welfare_enabled = st.checkbox(
-                        "Deduction towards Workers Welfare Board (1%)",
-                        value=st.session_state.deduction_welfare_enabled,
-                        key="deduction_welfare_enabled_cb",
-                        on_change=reset_bill_download
-                    )
-                
-                # Row 3: GST TDS
-                ded_row3 = st.container()
-                with ded_row3:
-                    st.session_state.deduction_gst_enabled = st.checkbox(
-                        "TDS towards GST (2%)",
-                        value=st.session_state.deduction_gst_enabled,
-                        key="deduction_gst_enabled_cb",
-                        on_change=reset_bill_download
-                    )
-                
-                # Row 4: Departmental Deduction
-                ded_row4 = st.container()
-                with ded_row4:
-                    col1, col2, col3, col4 = st.columns([1, 1, 1, 2])
-                    with col1:
-                        st.session_state.deduction_dept_enabled = st.checkbox(
-                            "Departmental Deduction",
-                            value=st.session_state.deduction_dept_enabled,
-                            key="deduction_dept_enabled_cb",
-                            on_change=reset_bill_download
-                        )
-                    with col2:
-                        if st.session_state.deduction_dept_enabled:
-                            st.text_input(
-                                "",
-                                value=st.session_state.deduction_dept_desc,
-                                key="deduction_dept_desc_input",
-                                on_change=lambda: setattr(st.session_state, 'deduction_dept_desc', 
-                                                        st.session_state.deduction_dept_desc_input),
-                                placeholder="Description",
-                                label_visibility="collapsed"
-                            )
-                    with col3:
-                        if st.session_state.deduction_dept_enabled:
-                            # Use text_input with validation instead of number_input
-                            dept_amount_input = st.text_input(
-                                "",
-                                value=str(st.session_state.deduction_dept_amount),
-                                key="deduction_dept_amount_text",
-                                placeholder="Amount (₹)",
-                                label_visibility="collapsed"
-                            )
-                            
-                            # Validate and update session state
-                            if dept_amount_input:
-                                try:
-                                    # Remove commas and convert to float
-                                    clean_input = dept_amount_input.replace(',', '').strip()
-                                    if clean_input:
-                                        amount = float(clean_input)
-                                        if amount >= 0:
-                                            st.session_state.deduction_dept_amount = amount
-                                        else:
-                                            st.warning("Amount must be positive")
-                                except ValueError:
-                                    st.warning("Please enter a valid number")
-                
-                # Row 5: Fine
-                ded_row5 = st.container()
-                with ded_row5:
-                    col1, col2, col3, col4 = st.columns([1, 1, 1, 2])
-                    with col1:
-                        st.session_state.deduction_fine_enabled = st.checkbox(
-                            "Panlties",
-                            value=st.session_state.deduction_fine_enabled,
-                            key="deduction_fine_enabled_cb",
-                            on_change=reset_bill_download
-                        )
-                    with col2:
-                        if st.session_state.deduction_fine_enabled:
-                            st.text_input(
-                                "",
-                                value=st.session_state.deduction_fine_desc,
-                                key="deduction_fine_desc_input",
-                                on_change=lambda: setattr(st.session_state, 'deduction_fine_desc', 
-                                                        st.session_state.deduction_fine_desc_input),
-                                placeholder="Description",
-                                label_visibility="collapsed"
-                            )
-                    with col3:
-                        if st.session_state.deduction_fine_enabled:
-                            # Use text_input with validation instead of number_input
-                            fine_amount_input = st.text_input(
-                                "",
-                                value=str(st.session_state.deduction_fine_amount),
-                                key="deduction_fine_amount_text",
-                                placeholder="Amount (₹)",
-                                label_visibility="collapsed"
-                            )
-                            
-                            # Validate and update session state
-                            if fine_amount_input:
-                                try:
-                                    # Remove commas and convert to float
-                                    clean_input = fine_amount_input.replace(',', '').strip()
-                                    if clean_input:
-                                        amount = float(clean_input)
-                                        if amount >= 0:
-                                            st.session_state.deduction_fine_amount = amount
-                                        else:
-                                            st.warning("Amount must be positive")
-                                except ValueError:
-                                    st.warning("Please enter a valid number")
-
-            
-
     # Add this right after the totals section but before the "else" for "No items added"
     if st.session_state.get('show_preview', False) and any(i.get("Type") != "Subheading" for i in st.session_state.selected_items):
         st.markdown("""

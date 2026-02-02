@@ -1,6 +1,7 @@
 import io
 from openpyxl import Workbook
-from openpyxl.styles import Alignment, Border, Side, Font
+from openpyxl.styles import Alignment, Border, Side, Font, PatternFill
+from openpyxl.styles.colors import Color
 
 def generate_bill_excel(
     selected_items,
@@ -20,7 +21,16 @@ def generate_bill_excel(
             'dept_amount': 0.0,
             'fine_enabled': False,
             'fine_desc': "Fine",
-            'fine_amount': 0.0
+            'fine_amount': 0.0,
+            'kseb_enabled': False,
+            'kseb_amount': 0.0,
+            # ADD NEW FIELDS:
+            'other_charges_enabled': False,
+            'other_charges_desc': "Other Charges",
+            'other_charges_amount': 0.0,
+            'other_deductions_enabled': False,
+            'other_deductions_desc': "Other Deductions",
+            'other_deductions_amount': 0.0
         }
     
     wb = Workbook()
@@ -32,9 +42,15 @@ def generate_bill_excel(
     border = Border(left=thin, right=thin, top=thin, bottom=thin)
 
     header_font = Font(bold=True)
+    summary_font = Font(bold=True)
+    
+    # Color fills
+    yellow_fill = PatternFill(start_color="FFFF00", end_color="FFFF00", fill_type="solid")
+    green_fill = PatternFill(start_color="C6EFCE", end_color="C6EFCE", fill_type="solid")  # Light green
 
     center_align = Alignment(horizontal="center", vertical="center", wrap_text=True)
     left_align = Alignment(horizontal="left", vertical="center", wrap_text=True)
+    right_align = Alignment(horizontal="right", vertical="center", wrap_text=True)
 
     # ------------------ DYNAMIC HEADER ------------------
     if tender_mode == "Below":
@@ -110,6 +126,17 @@ def generate_bill_excel(
     ws.cell(row=row, column=1, value="Sub Total")
     ws.cell(row=row, column=7, value=f"=ROUND(SUM(G2:G{row-1}),0)")
     subtotal_excl_gst = f"G{sub_total_row}"  # Save reference for deductions
+    
+    # Apply right alignment and bold to title cell
+    title_cell = ws.cell(row=row, column=1)
+    title_cell.alignment = right_align
+    title_cell.font = summary_font
+    
+    # Apply center alignment and bold to value cell
+    value_cell = ws.cell(row=row, column=7)
+    value_cell.alignment = center_align
+    value_cell.font = summary_font
+    
     row += 1
 
     # GST
@@ -117,16 +144,94 @@ def generate_bill_excel(
     ws.cell(row=row, column=1, value="GST @18%")
     ws.cell(row=row, column=7, value=f"=ROUND({subtotal_excl_gst}*0.18,0)")
     gst_row = row
+    
+    # Apply right alignment and bold to title cell
+    title_cell = ws.cell(row=row, column=1)
+    title_cell.alignment = right_align
+    title_cell.font = summary_font
+    
+    # Apply center alignment and bold to value cell
+    value_cell = ws.cell(row=row, column=7)
+    value_cell.alignment = center_align
+    value_cell.font = summary_font
+    
     row += 1
 
-    # Grand Total
+    # KSEB Charges (if applicable) - ADDED TO GRAND TOTAL, NOT A DEDUCTION
+    kseb_amount = 0
+    if 'kseb_enabled' in deductions and deductions['kseb_enabled']:
+        kseb_amount = deductions.get('kseb_amount', 0)
+        if kseb_amount > 0:
+            ws.merge_cells(start_row=row, start_column=1, end_row=row, end_column=6)
+            ws.cell(row=row, column=1, value="KSEB Charges")
+            ws.cell(row=row, column=7, value=f"=ROUND({kseb_amount},0)")
+            
+            # Apply right alignment and bold to title cell
+            title_cell = ws.cell(row=row, column=1)
+            title_cell.alignment = right_align
+            title_cell.font = summary_font
+            
+            # Apply center alignment and bold to value cell
+            value_cell = ws.cell(row=row, column=7)
+            value_cell.alignment = center_align
+            value_cell.font = summary_font
+            
+            kseb_row = row
+            row += 1
+
+    # Other Charges (if applicable) - ADDED TO GRAND TOTAL, NOT A DEDUCTION
+    other_charges_amount = 0
+    if 'other_charges_enabled' in deductions and deductions['other_charges_enabled']:
+        other_charges_amount = deductions.get('other_charges_amount', 0)
+        if other_charges_amount > 0:
+            ws.merge_cells(start_row=row, start_column=1, end_row=row, end_column=6)
+            ws.cell(row=row, column=1, value=deductions.get('other_charges_desc', 'Other Charges'))
+            ws.cell(row=row, column=7, value=f"=ROUND({other_charges_amount},0)")
+            
+            # Apply right alignment and bold to title cell
+            title_cell = ws.cell(row=row, column=1)
+            title_cell.alignment = right_align
+            title_cell.font = summary_font
+            
+            # Apply center alignment and bold to value cell
+            value_cell = ws.cell(row=row, column=7)
+            value_cell.alignment = center_align
+            value_cell.font = summary_font
+            
+            other_charges_row = row
+            row += 1
+
+    # Grand Total (update to include KSEB and Other Charges if applicable)
     ws.merge_cells(start_row=row, start_column=1, end_row=row, end_column=6)
     ws.cell(row=row, column=1, value="Grand Total")
-    ws.cell(
-        row=row,
-        column=7,
-        value=f"=ROUND({subtotal_excl_gst}+G{gst_row},0)"
-    )
+    
+    # Build the Grand Total formula dynamically
+    formula_parts = [f"{subtotal_excl_gst}", f"G{gst_row}"]
+    
+    if 'kseb_enabled' in deductions and deductions['kseb_enabled'] and kseb_amount > 0:
+        formula_parts.append(f"G{kseb_row}")
+    
+    if 'other_charges_enabled' in deductions and deductions['other_charges_enabled'] and other_charges_amount > 0:
+        formula_parts.append(f"G{other_charges_row}")
+    
+    formula = "=ROUND(" + "+".join(formula_parts) + ",0)"
+    ws.cell(row=row, column=7, value=formula)
+    
+    # Apply green fill to both title and value cells for Grand Total
+    for col in [1, 7]:
+        cell = ws.cell(row=row, column=col)
+        cell.fill = green_fill
+    
+    # Apply right alignment and bold to title cell
+    title_cell = ws.cell(row=row, column=1)
+    title_cell.alignment = right_align
+    title_cell.font = summary_font
+    
+    # Apply center alignment and bold to value cell
+    value_cell = ws.cell(row=row, column=7)
+    value_cell.alignment = center_align
+    value_cell.font = summary_font
+    
     grand_total_row = row
     grand_total_ref = f"G{grand_total_row}"
     row += 1
@@ -142,6 +247,17 @@ def generate_bill_excel(
         ws.merge_cells(start_row=row, start_column=1, end_row=row, end_column=6)
         ws.cell(row=row, column=1, value=f"Deduction: {it_rate}% TDS Towards Income Tax")
         ws.cell(row=row, column=7, value=f"=ROUND({subtotal_excl_gst}*{it_rate/100},0)")
+        
+        # Apply right alignment and bold to title cell
+        title_cell = ws.cell(row=row, column=1)
+        title_cell.alignment = right_align
+        title_cell.font = summary_font
+        
+        # Apply center alignment and bold to value cell
+        value_cell = ws.cell(row=row, column=7)
+        value_cell.alignment = center_align
+        value_cell.font = summary_font
+        
         row += 1
         deduction_rows_added += 1
     
@@ -150,6 +266,17 @@ def generate_bill_excel(
         ws.merge_cells(start_row=row, start_column=1, end_row=row, end_column=6)
         ws.cell(row=row, column=1, value="Deduction: 1% Payment Towards Workers Welfare Board")
         ws.cell(row=row, column=7, value=f"=ROUND({subtotal_excl_gst}*0.01,0)")
+        
+        # Apply right alignment and bold to title cell
+        title_cell = ws.cell(row=row, column=1)
+        title_cell.alignment = right_align
+        title_cell.font = summary_font
+        
+        # Apply center alignment and bold to value cell
+        value_cell = ws.cell(row=row, column=7)
+        value_cell.alignment = center_align
+        value_cell.font = summary_font
+        
         row += 1
         deduction_rows_added += 1
     
@@ -160,10 +287,20 @@ def generate_bill_excel(
         # Where B28 is subtotal_excl_gst
         gst_tds_formula = f'=IF(MOD(ROUND({subtotal_excl_gst}/50,0),2)=1, ROUND({subtotal_excl_gst}/50,0)+1, ROUND({subtotal_excl_gst}/50,0))'
         
-        # Add the row only if the formula doesn't result in 0
         ws.merge_cells(start_row=row, start_column=1, end_row=row, end_column=6)
         ws.cell(row=row, column=1, value="Deduction: 2% TDS Towards GST")
         ws.cell(row=row, column=7, value=gst_tds_formula)
+        
+        # Apply right alignment and bold to title cell
+        title_cell = ws.cell(row=row, column=1)
+        title_cell.alignment = right_align
+        title_cell.font = summary_font
+        
+        # Apply center alignment and bold to value cell
+        value_cell = ws.cell(row=row, column=7)
+        value_cell.alignment = center_align
+        value_cell.font = summary_font
+        
         row += 1
         deduction_rows_added += 1
     
@@ -172,6 +309,17 @@ def generate_bill_excel(
         ws.merge_cells(start_row=row, start_column=1, end_row=row, end_column=6)
         ws.cell(row=row, column=1, value=f"Deduction: {deductions['dept_desc']}")
         ws.cell(row=row, column=7, value=deductions['dept_amount'])
+        
+        # Apply right alignment and bold to title cell
+        title_cell = ws.cell(row=row, column=1)
+        title_cell.alignment = right_align
+        title_cell.font = summary_font
+        
+        # Apply center alignment and bold to value cell
+        value_cell = ws.cell(row=row, column=7)
+        value_cell.alignment = center_align
+        value_cell.font = summary_font
+        
         row += 1
         deduction_rows_added += 1
     
@@ -180,6 +328,36 @@ def generate_bill_excel(
         ws.merge_cells(start_row=row, start_column=1, end_row=row, end_column=6)
         ws.cell(row=row, column=1, value=f"Deduction: {deductions['fine_desc']}")
         ws.cell(row=row, column=7, value=deductions['fine_amount'])
+        
+        # Apply right alignment and bold to title cell
+        title_cell = ws.cell(row=row, column=1)
+        title_cell.alignment = right_align
+        title_cell.font = summary_font
+        
+        # Apply center alignment and bold to value cell
+        value_cell = ws.cell(row=row, column=7)
+        value_cell.alignment = center_align
+        value_cell.font = summary_font
+        
+        row += 1
+        deduction_rows_added += 1
+    
+    # Other Deductions (if applicable) - CONTRIBUTES TO DEDUCTIONS
+    if deductions.get('other_deductions_enabled', False) and deductions.get('other_deductions_amount', 0) > 0:
+        ws.merge_cells(start_row=row, start_column=1, end_row=row, end_column=6)
+        ws.cell(row=row, column=1, value=f"Deduction: {deductions.get('other_deductions_desc', 'Other Deductions')}")
+        ws.cell(row=row, column=7, value=deductions.get('other_deductions_amount', 0))
+        
+        # Apply right alignment and bold to title cell
+        title_cell = ws.cell(row=row, column=1)
+        title_cell.alignment = right_align
+        title_cell.font = summary_font
+        
+        # Apply center alignment and bold to value cell
+        value_cell = ws.cell(row=row, column=7)
+        value_cell.alignment = center_align
+        value_cell.font = summary_font
+        
         row += 1
         deduction_rows_added += 1
     
@@ -193,12 +371,39 @@ def generate_bill_excel(
         ws.cell(row=row, column=7, value=f"=SUM({deduction_range})")
         total_deductions_row = row
         total_deductions_ref = f"G{total_deductions_row}"
+        
+        # Apply right alignment and bold to title cell
+        title_cell = ws.cell(row=row, column=1)
+        title_cell.alignment = right_align
+        title_cell.font = summary_font
+        
+        # Apply center alignment and bold to value cell
+        value_cell = ws.cell(row=row, column=7)
+        value_cell.alignment = center_align
+        value_cell.font = summary_font
+        
         row += 1
         
         # Final Payment to Contractor
         ws.merge_cells(start_row=row, start_column=1, end_row=row, end_column=6)
         ws.cell(row=row, column=1, value="Final Payment to Contractor")
         ws.cell(row=row, column=7, value=f"={grand_total_ref}-{total_deductions_ref}")
+        
+        # Apply yellow fill to both title and value cells for final payment
+        for col in [1, 7]:
+            cell = ws.cell(row=row, column=col)
+            cell.fill = yellow_fill
+        
+        # Apply right alignment and bold to title cell
+        title_cell = ws.cell(row=row, column=1)
+        title_cell.alignment = right_align
+        title_cell.font = summary_font
+        
+        # Apply center alignment and bold to value cell
+        value_cell = ws.cell(row=row, column=7)
+        value_cell.alignment = center_align
+        value_cell.font = summary_font
+        
         row += 1
 
     # ------------------ FORMATTING ------------------
@@ -207,15 +412,17 @@ def generate_bill_excel(
             cell = ws.cell(row=r, column=c)
             cell.border = border
 
-            # Vertical center for all
+            # Apply formatting for regular rows (not summary rows)
             if r == 1:
                 cell.alignment = center_align
-            else:
-                # Row 2 onwards
-                if c == 2:
-                    cell.alignment = left_align
-                else:
-                    cell.alignment = center_align
+            elif r >= 2:
+                # Skip formatting for summary rows (already formatted)
+                # Check if this is a regular row by checking if it's not in the summary section
+                if r < sub_total_row:
+                    if c == 2:
+                        cell.alignment = left_align
+                    else:
+                        cell.alignment = center_align
 
     # ------------------ COLUMN WIDTHS ------------------
     ws.column_dimensions["A"].width = 6
