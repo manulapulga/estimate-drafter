@@ -47,6 +47,8 @@ def generate_bill_excel(
     # Color fills
     yellow_fill = PatternFill(start_color="FFFF00", end_color="FFFF00", fill_type="solid")
     green_fill = PatternFill(start_color="C6EFCE", end_color="C6EFCE", fill_type="solid")  # Light green
+    purple_fill = PatternFill(start_color="E6E0FA", end_color="E6E0FA", fill_type="solid")
+
 
     center_align = Alignment(horizontal="center", vertical="center", wrap_text=True)
     left_align = Alignment(horizontal="left", vertical="center", wrap_text=True)
@@ -88,9 +90,17 @@ def generate_bill_excel(
         # ---- Subheading ----
         if item.get("Type") == "Subheading":
             ws.merge_cells(start_row=row, start_column=1, end_row=row, end_column=7)
+            
             cell = ws.cell(row=row, column=1, value=item["Item"])
             cell.alignment = left_align
-            cell.border = border
+            cell.font = header_font   # optional: makes it bold
+            cell.fill = purple_fill   # apply purple fill
+            
+            # Apply fill + border to entire merged row
+            for col in range(1, 8):
+                ws.cell(row=row, column=col).fill = purple_fill
+                ws.cell(row=row, column=col).border = border
+        
             row += 1
             continue
 
