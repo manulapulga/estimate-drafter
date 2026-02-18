@@ -505,7 +505,19 @@ def login_page(credentials_df):
         </div>
     """, unsafe_allow_html=True)
 
-
+def is_restricted_item(item_name, wizard_data):
+    """
+    Check if an item has Sub Category 1 enclosed in * (restricted)
+    """
+    try:
+        item_row = wizard_data[wizard_data['Item Name'] == item_name]
+        if not item_row.empty:
+            sub1 = item_row.iloc[0]['Sub Category 1']
+            return isinstance(sub1, str) and sub1.startswith('*') and sub1.endswith('*')
+    except:
+        pass
+    return False
+    
 def set_rounding_option(option):
     """Handle mutually exclusive rounding options"""
     if option == 'manual':
@@ -3087,7 +3099,9 @@ def main_app():
             
                 pdf = FPDF()
                 pdf.set_auto_page_break(auto=True, margin=15)
-                
+                # At the beginning of your PDF generation section, ensure wizard_data is available
+                if 'wizard_data' not in locals():
+                    wizard_data = load_wizard_items(st.session_state.logged_in_username)
                 def add_watermark(pdf):
                     """Function to add a diagonal watermark to every page"""
                     pdf.set_font("Arial", style='B', size=72)
@@ -3481,7 +3495,13 @@ def main_app():
                             x_row_start + sum(col_widths[:i]), y_row_start + row_height
                         )
                 
-                    if item.get("Type") == "Other":
+                    # Check if this is a restricted item (has Sub Category 1 in *)
+                    is_restricted = False
+                    if item.get("Type") != "Other" and item.get("Type") != "Subheading":
+                        is_restricted = is_restricted_item(item['Item'], wizard_data)
+                    
+                    if item.get("Type") == "Other" or is_restricted:
+                        # Draw circle around serial number for both Other items and restricted items
                         r = 4
                         x = x_row_start + col_widths[0]/2
                         y = y_row_start + row_height/2
@@ -3491,12 +3511,13 @@ def main_app():
                     else:
                         pdf.set_xy(x_row_start, y_row_start)
                         pdf.cell(col_widths[0], row_height, str(serial), 0, 0, 'C')
-                        # Accumulate cost for summary sections (add this condition)
-                        if item.get("Type") not in ["Subheading", "Other"]:
-                            try:
-                                summary_accumulator += float(item['Cost'])
-                            except (KeyError, ValueError):
-                                pass
+                        
+                    # Accumulate cost for summary sections (for standard items only)
+                    if item.get("Type") not in ["Subheading", "Other"] and not is_restricted:
+                        try:
+                            summary_accumulator += float(item['Cost'])
+                        except (KeyError, ValueError):
+                            pass
                 
                     pdf.set_xy(x_row_start + col_widths[0], y_row_start)
                     cell_lines = split_text(str(item['Item']), col_widths[1])
