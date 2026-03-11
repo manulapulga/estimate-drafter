@@ -535,7 +535,53 @@ def set_rounding_option(option):
                 st.session_state[key] = False
     
     # Force immediate update
-    st.rerun()    
+    st.rerun() 
+    
+def clean_text_for_pdf(text):
+    """
+    Clean text to remove or replace characters that cause PDF encoding issues
+    """
+    if not isinstance(text, str):
+        return str(text)
+    
+    # Replace special characters with ASCII equivalents
+    replacements = {
+        '°': ' deg ',      # degree symbol
+        '—': '-',          # em dash
+        '–': '-',          # en dash
+        '‘': "'",          # smart quote left
+        '’': "'",          # smart quote right
+        '“': '"',          # smart double quote left
+        '”': '"',          # smart double quote right
+        '′': "'",          # prime
+        '″': '"',          # double prime
+        '​': '',           # zero-width space
+        '\u200b': '',      # zero-width space (Unicode)
+        '\u00a0': ' ',     # non-breaking space
+        '•': '*',          # bullet
+        '·': '*',          # interpunct
+        '…': '...',        # ellipsis
+        '\t': ' ',         # tabs
+        '\r': ' ',         # carriage return
+    }
+    
+    # Handle newlines separately
+    if '\n' in text:
+        lines = text.split('\n')
+        cleaned_lines = []
+        for line in lines:
+            for old, new in replacements.items():
+                line = line.replace(old, new)
+            cleaned_lines.append(line)
+        text = '\n'.join(cleaned_lines)
+    else:
+        for old, new in replacements.items():
+            text = text.replace(old, new)
+    
+    # Remove any remaining control characters
+    text = ''.join(char for char in text if ord(char) >= 32 or char in '\n\r\t')
+    
+    return text.strip()    
 # Main app
 def main_app():
     # Load data
@@ -3403,13 +3449,18 @@ def main_app():
                             text_x = x_start + 5  # left padding
                             text_y = y_start
                             
+                            # CLEAN THE TEXT BEFORE PROCESSING
+                            cleaned_subheading = clean_text_for_pdf(item['Item'])
+                            
                             # Draw the multi_cell on a temporary FPDF instance to calculate the height
                             from fpdf import FPDF
                             temp_pdf = FPDF()
                             temp_pdf.add_page()
                             temp_pdf.set_font("Arial", 'B', 10)
                             temp_pdf.set_xy(0, 0)
-                            lines = temp_pdf.multi_cell(available_width, 6, item['Item'], split_only=True)
+                            
+                            # Use cleaned text for split calculation
+                            lines = temp_pdf.multi_cell(available_width, 6, cleaned_subheading, split_only=True)
                             subheading_height = 6 * len(lines)
                             
                             # Check if we need a new page
@@ -3424,16 +3475,15 @@ def main_app():
                             # Draw subheading border
                             pdf.rect(x_start, y_start, table_width, subheading_height)
                             
-                            # Write the multi-line subheading centered
+                            # Write the multi-line subheading centered - USE CLEANED TEXT
                             pdf.set_xy(text_x, text_y)
-                            pdf.multi_cell(available_width, 6, item['Item'], border=0, align='C')
+                            pdf.multi_cell(available_width, 6, cleaned_subheading, border=0, align='C')
                             
                             # Move Y to the next row's position
                             pdf.set_y(y_start + subheading_height)
                             
                             # Reset font for next item
                             pdf.set_font("Arial", '', 10)
-                            
                         
                         continue
                     
