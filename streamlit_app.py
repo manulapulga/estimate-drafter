@@ -4213,7 +4213,7 @@ def main_app():
                     col1, col2, col3 = st.columns([2, 1, 1])
                     with col1:
                         st.session_state.deduction_fine_enabled = st.checkbox(
-                            "Panlties",
+                            "Penalties",
                             value=st.session_state.deduction_fine_enabled,
                             key="deduction_fine_enabled_cb",
                             on_change=reset_bill_download
