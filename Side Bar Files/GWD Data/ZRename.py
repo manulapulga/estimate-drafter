@@ -4,7 +4,7 @@ import os
 folder_path = os.getcwd()
 
 # Prefix to remove
-prefix = "GWD Revised Rates 2025 Based on DSR 21_"
+prefix = "GWD Revised Rates Based on DSR 21_"
 
 # Iterate through files and rename
 for filename in os.listdir(folder_path):
