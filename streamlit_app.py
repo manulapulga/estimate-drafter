@@ -279,14 +279,37 @@ def authenticate(username, password, credentials_df):
         return user_row.iloc[0]['password'] == password
     return False
 
-# Load main items data
+# Replace the existing load_main_items function
 @st.cache_data
-def load_main_items(username):
+def load_main_items(username, gen_file=None):
     try:
-        data = pd.read_excel("Data Base/items.xltm", sheet_name=username)
+        # Determine which file to load
+        if gen_file:
+            file_path = f"Data Base/Items/{gen_file}"
+        else:
+            # Fallback to default
+            file_path = "Data Base/items.xltm"
+        
+        data = pd.read_excel(file_path, sheet_name=username)
         return data['Item Name'].tolist(), data['Unit Price'].tolist(), data['Item Unit'].tolist(), data
     except Exception as e:
         st.error(f"Error loading main items data for {username}: {str(e)}")
+        st.stop()
+
+@st.cache_data
+def load_wizard_items(username, gen_file=None):
+    try:
+        # Determine which file to load
+        if gen_file:
+            file_path = f"Data Base/Items/{gen_file}"
+        else:
+            # Fallback to default
+            file_path = "Data Base/items.xltm"
+        
+        wizard_data = pd.read_excel(file_path, sheet_name=username)
+        return wizard_data
+    except Exception as e:
+        st.error(f"Error loading wizard items data for {username}: {str(e)}")
         st.stop()
         
 @st.cache_data
@@ -346,15 +369,7 @@ def load_local_templates(username):
     except Exception as e:
         st.error(f"Error loading local template data: {str(e)}")
         st.stop()
-# Load wizard items data
-@st.cache_data
-def load_wizard_items(username):
-    try:
-        wizard_data = pd.read_excel("Data Base/items.xltm", sheet_name=username)
-        return wizard_data
-    except Exception as e:
-        st.error(f"Error loading wizard items data for {username}: {str(e)}")
-        st.stop()
+
 
 # Login screen
 import streamlit as st
@@ -473,6 +488,7 @@ def login_page(credentials_df):
             if authenticate(username_input, password_input, credentials_df):
                 st.session_state.logged_in_username = username_input
                 st.session_state.authenticated = True
+                st.session_state.credentials_df = credentials_df  # Add this line
                 st.rerun()
             else:
                 st.error("Invalid username or password")
@@ -586,6 +602,17 @@ def clean_text_for_pdf(text):
 def main_app():
     # Load data
     username = st.session_state.logged_in_username
+    credentials_df = st.session_state.get('credentials_df')
+    
+    # Get selected Gen ID file
+    gen_file = st.session_state.get('selected_gen_file', None)
+    gen_id = st.session_state.get('selected_gen_id', None)
+    
+    # Load data with selected Gen ID
+    item_names, unit_prices, item_units, data = load_main_items(username, gen_file)
+    wizard_data = load_wizard_items(username, gen_file)
+    
+    # ... rest of the function remains the same ...
     
     
     
@@ -606,12 +633,6 @@ def main_app():
             del st.session_state["__pending_restore_items__"]
             del st.session_state["__restore_index__"]
 
-
-
-
-    
-    item_names, unit_prices, item_units, data = load_main_items(username)
-    wizard_data = load_wizard_items(username)
         
     # Pre-load work_desc, head_note, estimate_note, file_name, and estimate_date from uploaded_excel_data if available
     if 'uploaded_excel_data' in st.session_state:
@@ -724,6 +745,128 @@ def main_app():
             <div class="ribbon-right">Cost Index: {cost_index}</div>
         </div>
     """, unsafe_allow_html=True)
+
+    # Add this after the ribbon-bar section (around line 550-600)
+
+    # -------- GEN ID SELECTION SECTION (ULTRA COMPACT) --------
+    st.markdown("""
+    <style>
+    .genid-compact {
+        background: #f0f4f8;
+        padding: 4px 15px;
+        border-radius: 8px;
+        margin: 0px 0 6px 0;  /* Reduced from 3px 0 12px 0 */
+        border-left: 4px solid #5d89a3;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+    .genid-compact .stSelectbox {
+        flex: 0 0 160px;
+        min-width: 130px;
+    }
+    .genid-compact .genid-badge {
+        font-size: 12px;
+        color: #2e7d32;
+        background: #e8f5e9;
+        padding: 2px 10px;
+        border-radius: 10px;
+        border: 1px solid #a5d6a7;
+        white-space: nowrap;
+    }
+    .genid-compact .genid-warning {
+        font-size: 12px;
+        color: #e65100;
+        background: #fff3e0;
+        padding: 2px 10px;
+        border-radius: 10px;
+        border: 1px solid #ffcc80;
+        white-space: nowrap;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
+    # Function to get available Gen ID files
+    def get_available_gen_ids():
+        """Scan the Items folder and return available Gen ID files"""
+        import os
+        items_folder = "Data Base/Items"
+        gen_ids = []
+        
+        if os.path.exists(items_folder) and os.path.isdir(items_folder):
+            for file in os.listdir(items_folder):
+                if file.lower().startswith("genid") and file.lower().endswith((".xltm", ".xlsx", ".xls")):
+                    try:
+                        name = file.lower()
+                        if "genid" in name:
+                            num_str = name.replace("genid", "").split(".")[0]
+                        elif "gen_id" in name:
+                            num_str = name.replace("gen_id", "").split(".")[0]
+                        else:
+                            continue
+                        
+                        gen_id = int(num_str)
+                        gen_ids.append((gen_id, file))
+                    except (ValueError, IndexError):
+                        continue
+        
+        gen_ids.sort(reverse=True)
+        return gen_ids
+
+    # Initialize Gen ID selection in session state
+    if 'selected_gen_id' not in st.session_state:
+        available_gen_ids = get_available_gen_ids()
+        if available_gen_ids:
+            latest_gen_id, latest_file = available_gen_ids[0]
+            st.session_state.selected_gen_id = latest_gen_id
+            st.session_state.selected_gen_file = latest_file
+        else:
+            st.session_state.selected_gen_id = None
+            st.session_state.selected_gen_file = None
+
+    # Get available Gen IDs
+    available_gen_ids = get_available_gen_ids()
+
+    if available_gen_ids:
+        gen_id_options = {}
+        for gen_id, file in available_gen_ids:
+            gen_id_options[f"Gen ID {gen_id}"] = (gen_id, file)
+        
+        # Create two equal columns for dropdown and status
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            selected_label = st.selectbox(
+                "Select Gen ID Version",
+                options=list(gen_id_options.keys()),
+                key="gen_id_selector",
+                label_visibility="collapsed"
+            )
+            
+            if selected_label in gen_id_options:
+                gen_id, file = gen_id_options[selected_label]
+                if gen_id != st.session_state.selected_gen_id:
+                    st.session_state.selected_gen_id = gen_id
+                    st.session_state.selected_gen_file = file
+                    st.cache_data.clear()
+                    st.rerun()
+        
+        with col2:
+            gen_id_num = selected_label.replace("Gen ID ", "")
+            
+            st.markdown(f"""
+            <div style="background:#e8f5e9;padding:6px 12px;border-radius:6px;border:1px solid #a5d6a7;text-align:center;height:38px;display:flex;align-items:center;justify-content:center;gap:6px;flex-wrap:wrap;">
+                <span style="font-size:13px;color:#1a4c74;font-weight:500;">Selected PRICE LMR Version:</span>
+                <span style="font-size:14px;color:#2e7d32;font-weight:600;">Gen ID {gen_id_num}</span>
+            </div>
+            """, unsafe_allow_html=True)
+    else:
+        st.markdown("""
+        <div style="background:#fff3e0;padding:4px 12px;border-radius:6px;border:1px solid #ffcc80;text-align:center;margin:0px 0 6px 0;">  <!-- Reduced margin -->
+            <span style="font-size:13px;color:#e65100;">⚠️ No Gen ID files found. Using default items.xltm.</span>
+        </div>
+        """, unsafe_allow_html=True)
     
     st.markdown("""
         <style>
@@ -3199,9 +3342,10 @@ def main_app():
                 pdf.set_xy(10, 15)  # Top left margin (same Y level as user_info)
                 pdf.multi_cell(60, 5, file_info, 0, 'L')
                 
-                # Add user info at top right
+                # Add user info at top right (including Gen ID)
                 pdf.set_font("Arial", '', 10)
-                user_info = f"User: {username}\nCost Index: {cost_index}"
+                gen_id = st.session_state.get('selected_gen_id', 'N/A')
+                user_info = f"User: {username}\nCost Index: {cost_index}\nGen ID: {gen_id}"
                 pdf.set_xy(pdf.w - 60, 15)  # Position at top right with some margin
                 pdf.multi_cell(50, 5, user_info, 0, 'R')  # Right-aligned multi-cell for multiple lines
                 
