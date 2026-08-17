@@ -184,7 +184,14 @@ div[data-testid="stExpander"]:not([open]):hover {
 </style>
 """, unsafe_allow_html=True)
 
-
+# Add this after your imports and before login_page()
+def clear_data_cache():
+    """Clear all cached data functions to force fresh loads on every login"""
+    load_main_items.clear()
+    load_wizard_items.clear()
+    load_credentials.clear()
+    load_templates.clear()
+    load_local_templates.clear()
 
 # Load user credentials from Sheet 2 of Excel
 @st.cache_data
@@ -384,7 +391,7 @@ def login_page(credentials_df):
     with open("Icons/spec1.png", "rb") as image_file:
         encoded_logospec = base64.b64encode(image_file.read()).decode()
 
-     # Inject CSS to remove top space
+    # Inject CSS to remove top space
     st.markdown("""
         <style>
         html, body, .stApp {
@@ -404,7 +411,7 @@ def login_page(credentials_df):
     st.markdown("""
         <style>
         html, body, .stApp {
-            background-color: #e3f2fd !important;  /* soft blue background */
+            background-color: #e3f2fd !important;
             background-attachment: fixed;
             background-size: cover;
         }
@@ -446,7 +453,7 @@ def login_page(credentials_df):
             padding: 5px;
             box-shadow: 0 0 25px rgba(0,0,0,0.15);
             border-radius: 16px;
-            background-color: rgba(255, 255, 255, 0.65); /* optional light tint */
+            background-color: rgba(255, 255, 255, 0.65);
             padding-top: 0px !important;
         }
     
@@ -486,9 +493,12 @@ def login_page(credentials_df):
 
         if st.button("Login"):
             if authenticate(username_input, password_input, credentials_df):
+                # ✅ CLEAR ALL CACHED DATA ON EVERY SUCCESSFUL LOGIN
+                clear_data_cache()
+                
                 st.session_state.logged_in_username = username_input
                 st.session_state.authenticated = True
-                st.session_state.credentials_df = credentials_df  # Add this line
+                st.session_state.credentials_df = credentials_df
                 st.rerun()
             else:
                 st.error("Invalid username or password")
@@ -512,7 +522,7 @@ def login_page(credentials_df):
             <p style='
                 font-family: "Cursive", sans-serif;
                 font-size: 12px;
-                color: rgba(26, 76, 116, 0.15); /* semi-transparent */
+                color: rgba(26, 76, 116, 0.15);
                 font-style: italic;
                 letter-spacing: 2px;
             '>
