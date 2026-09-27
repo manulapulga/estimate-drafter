@@ -1772,7 +1772,7 @@ def main_app():
             st.rerun()
     with button_col5:
         if st.button("🧩 Other Items", key="add_other_btn", type="secondary", 
-                    help="Add custom items not in database", use_container_width=True):
+                    help="Add other items not in database", use_container_width=True):
             # Toggle other items section and hide others
             st.session_state.show_add_other = not st.session_state.get('show_add_other', False)
             st.session_state.show_add_item = False
@@ -2673,7 +2673,7 @@ def main_app():
     
             col1a, col2a = st.columns([1, 1])
             with col1a:
-                if st.button(f"Add Custom Item", key=f"add_other_item", use_container_width=True):
+                if st.button(f"Add Other Item", key=f"add_other_item", use_container_width=True):
                     if item_name and quantity and unit and unit_price:
                         try:
                             qty = float(quantity)
