@@ -555,7 +555,20 @@ def show_item_wizard(items_df, add_callback, selected_items=None):
                                 add_callback(row['Item Name'])
                             st.rerun()
                     else:
-                        st.markdown("<div style='height: 42px;'></div>", unsafe_allow_html=True)  # Empty space for alignment
+                        st.markdown("""
+                            <div style="
+                                height: 42px;
+                                display: flex;
+                                align-items: center;
+                                justify-content: center;
+                                color: #d32f2f;
+                                font-size: 0.8rem;
+                                font-weight: 600;
+                                text-align: center;
+                            ">
+                                Rate not updated
+                            </div>
+                        """, unsafe_allow_html=True)
 
             # Navigation buttons
             if total_pages > 1:
