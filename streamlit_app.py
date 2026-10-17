@@ -192,6 +192,7 @@ def clear_data_cache():
     load_credentials.clear()
     load_templates.clear()
     load_local_templates.clear()
+    load_name_aliases.clear()
 
 # Load user credentials from Sheet 2 of Excel
 @st.cache_data
@@ -377,6 +378,104 @@ def load_local_templates(username):
         st.error(f"Error loading local template data: {str(e)}")
         st.stop()
 
+@st.cache_data
+def load_name_aliases():
+    """
+    Load Old Name → New Name mapping from Data Base/Name Changed Items.xlsx
+    Returns a dict: {old_name: new_name}
+    Strict: requires exact header text 'Old Name' and 'New Name'.
+    """
+    import os
+    alias_path = "Data Base/Name Changed Items.xlsx"
+
+    # If file missing → warn once (session flag) and return empty
+    if not os.path.exists(alias_path):
+        if not st.session_state.get("_alias_missing_warned"):
+            st.warning(f"⚠️ Alias file not found: {alias_path}. Renamed items will fall back to 'Other'.")
+            st.session_state["_alias_missing_warned"] = True
+        return {}
+
+    try:
+        alias_df = pd.read_excel(alias_path)
+
+        # Strict header check
+        required_cols = ["Old Name", "New Name"]
+        if not all(col in alias_df.columns for col in required_cols):
+            if not st.session_state.get("_alias_headers_warned"):
+                st.warning(
+                    f"⚠️ Alias file must have columns exactly 'Old Name' and 'New Name'. "
+                    f"Found: {list(alias_df.columns)}. Aliases will not be applied."
+                )
+                st.session_state["_alias_headers_warned"] = True
+            return {}
+
+        # Build dict, skipping empty rows
+        aliases = {}
+        duplicates = []
+        for _, row in alias_df.iterrows():
+            old = row["Old Name"]
+            new = row["New Name"]
+
+            # Skip if either is empty/NaN
+            if pd.isna(old) or pd.isna(new):
+                continue
+            old = str(old).strip()
+            new = str(new).strip()
+            if not old or not new:
+                continue
+
+            if old in aliases:
+                duplicates.append(old)
+                continue  # first occurrence wins
+            aliases[old] = new
+
+        # Warn once about duplicates
+        if duplicates and not st.session_state.get("_alias_dupes_warned"):
+            st.warning(
+                f"⚠️ Duplicate 'Old Name' entries (first one kept): "
+                f"{', '.join(duplicates[:5])}{'...' if len(duplicates) > 5 else ''}"
+            )
+            st.session_state["_alias_dupes_warned"] = True
+
+        return aliases
+
+    except Exception as e:
+        if not st.session_state.get("_alias_read_error_warned"):
+            st.warning(f"⚠️ Could not read alias file: {e}")
+            st.session_state["_alias_read_error_warned"] = True
+        return {}
+
+
+def resolve_item_name(raw_name, data_df):
+    """
+    Resolve an item name against the current DB, using the alias table
+    as a fallback.
+
+    Returns (resolved_name, status)
+    - status == "exact"    → raw_name matched directly in the DB
+    - status == "alias"    → raw_name was renamed; resolved_name is the new name
+    - status == "not_found"→ no match; caller should fall back to 'Other'
+                             resolved_name is None in this case
+    """
+    if raw_name is None:
+        return None, "not_found"
+
+    raw_name = str(raw_name).strip()
+    if not raw_name:
+        return None, "not_found"
+
+    # Step 1: exact match against current DB
+    if raw_name in data_df["Item Name"].values:
+        return raw_name, "exact"
+
+    # Step 2: alias lookup (case-sensitive exact match on Old Name)
+    aliases = load_name_aliases()
+    mapped = aliases.get(raw_name)
+    if mapped and mapped in data_df["Item Name"].values:
+        return mapped, "alias"
+
+    # Step 3: give up
+    return None, "not_found"        
 
 # Login screen
 import streamlit as st
@@ -1963,13 +2062,14 @@ def main_app():
                                         except ValueError:
                                             quantity = None
     
-                                main_item = data[data['Item Name'] == item_name]
-    
-                                if not main_item.empty and quantity is not None:
+                                # 🔽 NEW: resolve old name via alias table
+                                resolved_name, match_status = resolve_item_name(item_name, data)
+
+                                if match_status in ("exact", "alias") and quantity is not None:
                                     # Standard item
-                                    main_item = main_item.iloc[0]
+                                    main_item = data[data['Item Name'] == resolved_name].iloc[0]
                                     st.session_state.selected_items.append({
-                                        'Item': item_name,
+                                        'Item': resolved_name,
                                         'Quantity': quantity,
                                         'Unit Price': main_item['Unit Price'],
                                         'Item Unit': main_item['Item Unit'],
@@ -2067,13 +2167,14 @@ def main_app():
                                         except ValueError:
                                             quantity = None
     
-                                main_item = data[data['Item Name'] == item_name]
-    
-                                if not main_item.empty and quantity is not None:
+                                # 🔽 NEW: resolve old name via alias table
+                                resolved_name, match_status = resolve_item_name(item_name, data)
+
+                                if match_status in ("exact", "alias") and quantity is not None:
                                     # Standard item
-                                    main_item = main_item.iloc[0]
+                                    main_item = data[data['Item Name'] == resolved_name].iloc[0]
                                     st.session_state.selected_items.append({
-                                        'Item': item_name,
+                                        'Item': resolved_name,
                                         'Quantity': quantity,
                                         'Unit Price': main_item['Unit Price'],
                                         'Item Unit': main_item['Item Unit'],
@@ -2390,10 +2491,13 @@ def main_app():
                         is_other_item = False
                         if unit_cell == "-" and rate_cell == "-":
                             is_other_item = True
-                        elif not data[data['Item Name'] == item_name].empty:
-                            is_other_item = False
                         else:
-                            is_other_item = True
+                            # 🔽 NEW: consider alias mapping before declaring it "Other"
+                            resolved_preview, match_status = resolve_item_name(item_name, data)
+                            if match_status in ("exact", "alias"):
+                                is_other_item = False
+                            else:
+                                is_other_item = True
     
                         if is_other_item:
                             try:
@@ -2456,7 +2560,7 @@ def main_app():
                             
                         
                             items.append({
-                                'Item Name': item_name,
+                                'Item Name': resolved_preview,   # 🔽 use resolved name
                                 'Quantity': quantity,
                                 'Unit': unit_cell,
                                 'Rate': rate_cell,
@@ -2536,7 +2640,7 @@ def main_app():
                             item_name = row['Item Name']
                             quantity = row['Quantity']
                             remarks = row.get('Remarks', '')
-                            gst_applicable = row.get('GST_Applicable', True)  # Default to True if not specified
+                            gst_applicable = row.get('GST_Applicable', True)
                             
                             if row.get('Type') == 'Other':
                                 # Add "Other" item with all extracted values
@@ -2552,13 +2656,13 @@ def main_app():
                                 })
                                 added_count += 1
                             else:
-                                # Standard item processing
-                                main_item = main_items_data[main_items_data['Item Name'] == item_name]
-                                
-                                if not main_item.empty and quantity is not None:
-                                    main_item = main_item.iloc[0]
+                                # 🔽 NEW: resolve old name via alias table
+                                resolved_name, match_status = resolve_item_name(item_name, main_items_data)
+
+                                if match_status in ("exact", "alias") and quantity is not None:
+                                    main_item = main_items_data[main_items_data['Item Name'] == resolved_name].iloc[0]
                                     st.session_state.selected_items.append({
-                                        'Item': item_name,
+                                        'Item': resolved_name,
                                         'Quantity': float(quantity),
                                         'Unit Price': main_item['Unit Price'],
                                         'Item Unit': main_item['Item Unit'],
