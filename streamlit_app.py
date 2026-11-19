@@ -587,14 +587,23 @@ def login_page(credentials_df):
     col1, col2, col3 = st.columns([1, 3, 1])
 
     with col2:
-        username_input = st.text_input("", key="username_input", placeholder="Username", label_visibility="collapsed")
-        password_input = st.text_input("", type="password", key="password_input", placeholder="Password", label_visibility="collapsed")
+        st.markdown("""
+            <style>
+            [data-testid="stForm"] {
+                border: none !important;
+                padding: 0 !important;
+            }
+            </style>
+        """, unsafe_allow_html=True)
 
-        if st.button("Login"):
+        with st.form("login_form", clear_on_submit=False):
+            username_input = st.text_input("", key="username_input", placeholder="Username", label_visibility="collapsed")
+            password_input = st.text_input("", type="password", key="password_input", placeholder="Password", label_visibility="collapsed")
+            login_clicked = st.form_submit_button("Login")
+
+        if login_clicked:
             if authenticate(username_input, password_input, credentials_df):
-                # ✅ CLEAR ALL CACHED DATA ON EVERY SUCCESSFUL LOGIN
                 clear_data_cache()
-                
                 st.session_state.logged_in_username = username_input
                 st.session_state.authenticated = True
                 st.session_state.credentials_df = credentials_df
