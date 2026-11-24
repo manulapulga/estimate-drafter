@@ -599,7 +599,7 @@ def login_page(credentials_df):
         with st.form("login_form", clear_on_submit=False):
             username_input = st.text_input("", key="username_input", placeholder="Username", label_visibility="collapsed")
             password_input = st.text_input("", type="password", key="password_input", placeholder="Password", label_visibility="collapsed")
-            login_clicked = st.form_submit_button("Login")
+            login_clicked = st.form_submit_button("Login", use_container_width=True)
 
         if login_clicked:
             if authenticate(username_input, password_input, credentials_df):
@@ -620,24 +620,11 @@ def login_page(credentials_df):
                 color: #39779a;
                 margin-top: 20px;
             '>
-                Powered by DSR 2021 (Gen ID 40)
+                Powered by DSR 2021
             </p>
         </div>
     """, unsafe_allow_html=True)
-    # Subtle creator signature
-    st.markdown("""
-        <div style='text-align: center; margin-top: -20px;'>
-            <p style='
-                font-family: "Cursive", sans-serif;
-                font-size: 12px;
-                color: rgba(26, 76, 116, 0.15);
-                font-style: italic;
-                letter-spacing: 2px;
-            '>
-                Created by 1d10t
-            </p>
-        </div>
-    """, unsafe_allow_html=True)
+    
 
 def is_restricted_item(item_name, wizard_data):
     """
