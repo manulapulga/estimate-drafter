@@ -266,6 +266,7 @@ def toggle_section(section_key):
         'show_priceapprovedmr_options',
         'show_costindex_options',
         'show_gwd_options',
+        'show_downloads_options',
         'show_templates_options',
         'show_pump_selector'
     ]
@@ -4839,200 +4840,133 @@ st.sidebar.markdown("""
 """, unsafe_allow_html=True)
 
 
+# ---------------------------------------------------------------------------
+# Downloads browser: mirrors the "Side Bar Files" folder dynamically
+# ---------------------------------------------------------------------------
+SIDEBAR_ROOT = "Side Bar Files"
+
+_DL_MIME_TYPES = {
+    '.pdf': 'application/pdf',
+    '.xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    '.xlsm': 'application/vnd.ms-excel.sheet.macroEnabled.12',
+    '.xls': 'application/vnd.ms-excel',
+    '.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    '.doc': 'application/msword',
+    '.txt': 'text/plain',
+    '.csv': 'text/csv',
+    '.zip': 'application/zip',
+    '.png': 'image/png',
+    '.jpg': 'image/jpeg',
+    '.jpeg': 'image/jpeg',
+}
+
+def _natural_key(text):
+    """Sort 'Vol 2' before 'Vol 10'."""
+    return [int(t) if t.isdigit() else t.lower() for t in re.split(r'(\d+)', text)]
+
+def _human_size(num_bytes):
+    size = float(num_bytes)
+    for unit in ("B", "KB", "MB", "GB"):
+        if size < 1024 or unit == "GB":
+            return f"{size:.0f} {unit}" if unit == "B" else f"{size:.1f} {unit}"
+        size /= 1024
+
+def _scan_folder(abs_dir):
+    """Return (folders, files) in a directory, skipping hidden/temp files."""
+    folders, files = [], []
+    for name in os.listdir(abs_dir):
+        if name.startswith(('.', '~$')) or name.lower() in ('desktop.ini', 'thumbs.db'):
+            continue
+        if os.path.isdir(os.path.join(abs_dir, name)):
+            folders.append(name)
+        else:
+            files.append(name)
+    folders.sort(key=_natural_key)
+    files.sort(key=_natural_key)
+    return folders, files
+
+def _resolve_downloads_path(parts):
+    """Validate the stored path against the real folder tree (stays inside root)."""
+    root = os.path.realpath(SIDEBAR_ROOT)
+    current, valid = root, []
+    for p in parts:
+        candidate = os.path.realpath(os.path.join(current, p))
+        if os.path.isdir(candidate) and candidate.startswith(root + os.sep):
+            current = candidate
+            valid.append(p)
+        else:
+            break
+    return current, valid
+
+def render_downloads_browser():
+    """Drill-down browser for the Side Bar Files folder, drawn in the sidebar."""
+    if not os.path.isdir(SIDEBAR_ROOT):
+        st.sidebar.error(f"'{SIDEBAR_ROOT}' folder not found")
+        return
+
+    parts = list(st.session_state.get('downloads_path', []))
+    current_dir, parts = _resolve_downloads_path(parts)
+    st.session_state['downloads_path'] = parts
+
+    # Breadcrumb + navigation
+    if parts:
+        c1, c2 = st.sidebar.columns(2)
+        if c1.button("⬆️ Back", key="dl_back", use_container_width=True):
+            st.session_state['downloads_path'] = parts[:-1]
+            st.rerun()
+        if c2.button("🏠 Root", key="dl_root", use_container_width=True):
+            st.session_state['downloads_path'] = []
+            st.rerun()
+
+    try:
+        folders, files = _scan_folder(current_dir)
+    except Exception as e:
+        st.sidebar.error(f"Error reading folder: {e}")
+        return
+
+    if not folders and not files:
+        st.sidebar.info("This folder is empty")
+        return
+
+    # Sub-folders -> buttons that drill down
+    for name in folders:
+        if st.sidebar.button(f"📁 {name}", key="dl_dir_" + "/".join(parts + [name]),
+                             use_container_width=True):
+            st.session_state['downloads_path'] = parts + [name]
+            st.rerun()
+
+    # Files -> selectbox + single download button
+    if files:
+        selected = st.sidebar.selectbox(
+            "Select file", files, key="dl_file_" + "/".join(parts)
+        )
+        file_path = os.path.join(current_dir, selected)
+        ext = os.path.splitext(selected)[1].lower()
+        mime_type = _DL_MIME_TYPES.get(ext, 'application/octet-stream')
+        try:
+            with open(file_path, "rb") as f:
+                data = f.read()
+            st.sidebar.download_button(
+                label=f"⬇️ {selected} ({_human_size(len(data))})",
+                data=data,
+                file_name=selected,
+                mime=mime_type,
+                key="dl_btn_" + "/".join(parts + [selected]),
+                use_container_width=True,
+            )
+        except Exception as e:
+            st.sidebar.error(f"Error reading {selected}: {e}")
+
+
 if st.session_state.get('authenticated', False):
-    # Add the DSR download button and dropdowns
-    # DSR/DAR button
-    if st.sidebar.button("Download DSR/DAR", use_container_width=True):
-        toggle_section('show_dsr_options')
-        st.rerun()  # Force immediate update
-
-    if st.session_state.get('show_dsr_options', False):
-        # Year selection
-        selected_year = st.sidebar.selectbox("Select Year", ["2018", "2021"])
-        
-        # Document type selection
-        doc_type = st.sidebar.selectbox("Select Document Type", ["DSR", "DAR"])
-        
-        # Volume selection
-        volume = st.sidebar.selectbox("Select Volume", ["Vol 1", "Vol 2"])
-        
-        # Construct the file path
-        file_path = f"Side Bar Files/DSR/{selected_year}/{doc_type}/{volume}.pdf"
-        
-        # Display download button
-        try:
-            with open(file_path, "rb") as file:
-                st.sidebar.download_button(
-                    label=f"⬇️ Download {selected_year} {doc_type} {volume}",
-                    data=file,
-                    file_name=f"{selected_year}_{doc_type}_{volume}.pdf",
-                    mime="application/pdf", use_container_width=True
-                )
-        except FileNotFoundError:
-            st.sidebar.error("Requested file not found")
-        except Exception as e:
-            st.sidebar.error(f"Error downloading file: {str(e)}")
-    if 'show_price_options' not in st.session_state:
-        st.session_state.show_price_options = False
-    # Add PRICE Rates download button
-    # PRICE Rates button
-    if st.sidebar.button("Download PRICE Rates", use_container_width=True):
-        toggle_section('show_price_options')
+    # Downloads button (dynamic Side Bar Files browser)
+    if st.sidebar.button("Downloads", use_container_width=True):
+        toggle_section('show_downloads_options')
         st.rerun()
 
-    if st.session_state.get('show_price_options', False):
-        try:
-            with open("Side Bar Files/PRICE Rates (DSR 21).xlsx", "rb") as file:
-                st.sidebar.download_button(
-                    label="⬇️ Download PRICE Rates (DSR 21) Excel",
-                    data=file,
-                    file_name="PRICE Rates (DSR 21).xlsx",
-                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",  use_container_width=True
-                )
-        except FileNotFoundError:
-            st.sidebar.error("PRICE Rates file not found")
-        except Exception as e:
-            st.sidebar.error(f"Error downloading PRICE Rates: {str(e)}")
-            
-    if 'show_dsr21basicrates_options' not in st.session_state:
-        st.session_state.show_dsr21basicrates_options = False
-    # Add DSR 21 Basic Rates download button
-    # Basic Rates button
-    if st.sidebar.button("Download Basic Rates",  use_container_width=True):
-        toggle_section('show_dsr21basicrates_options')
-        st.rerun()
+    if st.session_state.get('show_downloads_options', False):
+        render_downloads_browser()
 
-    
-    if st.session_state.get('show_dsr21basicrates_options', False):
-        try:
-            with open("Side Bar Files/DSR 21 Basic Rates.xlsx", "rb") as file:
-                st.sidebar.download_button(
-                    label="⬇️ Download Basic Rates (DSR 21) Excel",
-                    data=file,
-                    file_name="DSR 21 Basic Rates.xlsx",
-                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",  use_container_width=True
-                )
-        except FileNotFoundError:
-            st.sidebar.error("DSR 21 Basic Rates file not found")
-        except Exception as e:
-            st.sidebar.error(f"Error downloading DSR 21 Basic Rates: {str(e)}")
-        try:
-            with open("Side Bar Files/DSR 21 Basic Rates.pdf", "rb") as file:
-                st.sidebar.download_button(
-                    label="⬇️ Download Basic Rates (DSR 21) PDF",
-                    data=file,
-                    file_name="DSR 21 Basic Rates.pdf",
-                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",  use_container_width=True
-                )
-        except FileNotFoundError:
-            st.sidebar.error("DSR 21 Basic Rates file not found")
-        except Exception as e:
-            st.sidebar.error(f"Error downloading DSR 21 Basic Rates: {str(e)}")    
-    if 'show_priceapprovedmr_options' not in st.session_state:
-        st.session_state.show_priceapprovedmr_options = False
-    
-    # Add PRICE Approved MR download button
-    # PRICE Approved MR button
-    if st.sidebar.button("PRICE Approved MR",  use_container_width=True):
-        toggle_section('show_priceapprovedmr_options')
-        st.rerun()
-    
-    if st.session_state.get('show_priceapprovedmr_options', False):
-        try:
-            with open("Side Bar Files/PRICE Approved MR.pdf", "rb") as file:
-                st.sidebar.download_button(
-                    label="⬇️ Download PRICE Approved MR PDF",
-                    data=file,
-                    file_name="PRICE Approved MR.pdf",
-                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",  use_container_width=True
-                )
-        except FileNotFoundError:
-            st.sidebar.error("PRICE Approved MR file not found")
-        except Exception as e:
-            st.sidebar.error(f"Error downloading PRICE Approved MR: {str(e)}")
-    if 'show_gwd_options' not in st.session_state:
-        st.session_state.show_gwd_options = False
-    if 'show_costindex_options' not in st.session_state:
-        st.session_state.show_costindex_options = False
-    
-    # Add Cost Index 2021 download button
-    # Cost Index 2021 button
-    if st.sidebar.button("Cost Index 2021",  use_container_width=True):
-        toggle_section('show_costindex_options')
-        st.rerun()
-    
-    if st.session_state.get('show_costindex_options', False):
-        try:
-            with open("Side Bar Files/Cost Index 2021.pdf", "rb") as file:
-                st.sidebar.download_button(
-                    label="⬇️ Download Cost Index 2021 PDF",
-                    data=file,
-                    file_name="Cost Index 2021.pdf",
-                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",  use_container_width=True
-                )
-        except FileNotFoundError:
-            st.sidebar.error("Cost Index 2021 file not found")
-        except Exception as e:
-            st.sidebar.error(f"Error downloading Cost Index 2021: {str(e)}")
-    if 'show_gwd_options' not in st.session_state:
-        st.session_state.show_gwd_options = False
-        
-    # Add GWD Data download button - similar to DSR download
-    # GWD Data button
-    if st.sidebar.button("Download GWD Data",  use_container_width=True):
-        toggle_section('show_gwd_options')
-        st.rerun()
-
-    if st.session_state.get('show_gwd_options', False):
-        try:
-            # List files in the GWD Data directory
-            import os
-            gwd_files = []
-            gwd_dir = "Side Bar Files/GWD Data"
-            
-            if os.path.exists(gwd_dir) and os.path.isdir(gwd_dir):
-                gwd_files = [f for f in os.listdir(gwd_dir) if os.path.isfile(os.path.join(gwd_dir, f))]
-            
-            if not gwd_files:
-                st.sidebar.warning("No files found in GWD Data directory")
-            else:
-                # Sort files alphabetically
-                gwd_files.sort()
-                
-                # Create dropdown to select file
-                selected_file = st.sidebar.selectbox(
-                    "Select GWD Data File",
-                    gwd_files,
-                    key="gwd_file_select"
-                )
-                
-                # Create download button for selected file
-                file_path = os.path.join(gwd_dir, selected_file)
-                
-                # Determine MIME type based on file extension
-                file_ext = os.path.splitext(selected_file)[1].lower()
-                mime_types = {
-                    '.pdf': 'application/pdf',
-                    '.xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-                    '.xls': 'application/vnd.ms-excel',
-                    '.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-                    '.doc': 'application/msword',
-                    '.txt': 'text/plain',
-                    '.csv': 'text/csv'
-                }
-                mime_type = mime_types.get(file_ext, 'application/octet-stream')
-                
-                with open(file_path, "rb") as file:
-                    st.sidebar.download_button(
-                        label=f"⬇️ Download {selected_file}",
-                        data=file,
-                        file_name=selected_file,
-                        mime=mime_type
-                    )
-                    
-        except Exception as e:
-            st.sidebar.error(f"Error accessing GWD Data: {str(e)}")    
-    
     if 'show_templates_options' not in st.session_state:
         st.session_state.show_templates_options = False
     
